@@ -42,12 +42,16 @@ namespace LabsQueueBot
             {new GroupKey() { Course = 2, Number = 91 }, new Group(2, 91) }
         };
 
+        //сделал удаление группы если удалили последнего ее студента
         public static bool Remove(long id)
         {
             GroupKey key = new GroupKey(Users.At(id).Course, Users.At(id).Group);
             if (!groups.ContainsKey(key))
                 return false;
             groups[key].RemoveUser(id);
+            groups[key].StudentsCount -= 1;
+            if (groups[key].StudentsCount == 0)
+                groups.Remove(key);
             return true;
         }
 
@@ -96,7 +100,8 @@ namespace LabsQueueBot
             foreach (var queue in group)
             {
                 var position = queue.Value.Position(id) + 1;
-                string text = position != 0 ? position.ToString() : "Отсутствует";
+                string text = position != 0 ? position.ToString() : "отсутствует";
+                builder.AppendLine($"{queue.Key} -> {text}");
                 builder.AppendLine($"Предмет: {queue.Key}\nНомер в очереди: {text}");
             }
             return builder.ToString();

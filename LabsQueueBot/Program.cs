@@ -23,22 +23,23 @@ namespace LabsQueueBot
             {"/stop", new Stop() },
             {"/join", new Join() },
             {"/quit", new Quit() },
-            {"/change_info", new ChangeGroup() },
+            {"/change_info", new SetGroup() },
             {"/help", new Help() },
             {"/skip", new Skip() },
             {"/subjects", new Subjects() },
             {"/show", null }
+            //{"/add_new_once", null }
         };
 
         internal static readonly Dictionary<User.UserState, Command> actions = new()
         {
-            {User.UserState.UnsetStudentData, new StartApplier() },
-            {User.UserState.SetGroup, null },
-            {User.UserState.ChoiceSubject, null },
-            {User.UserState.Validation, null }
+            //{ },
+            {User.UserState.Unregistred, new StartApplier() },
+            {User.UserState.UnsetStudentData, new SetGroup() },
+            {User.UserState.ChoiceSubject, null }
         };
 
-        static ITelegramBotClient bot = new TelegramBotClient("...");
+        static ITelegramBotClient bot = new TelegramBotClient("6535106104:AAGsn1yLvHBBj0GD3Fc0kic67fao3JeFffo");
         public static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
             // Некоторые действия
@@ -70,7 +71,9 @@ namespace LabsQueueBot
                     await botClient.SendTextMessageAsync(message.Chat, request.Text);
                     return;
                 }
-                await botClient.SendTextMessageAsync(message.Chat, "Введи команду, ящур");
+
+                await botClient.SendTextMessageAsync(chatId: message.Chat, text: "iuhdfggbkjhlgfjk", replyMarkup: KeyboardCreator.ListToKeyboardTemplate<string>(new List<string>() {"ihdgaufladhjog", "aodghiju;i", "a'liksdfhnj", "aoihj;aoihjf;oiajn;h", "adh" }, 5, 1));
+                //await botClient.SendTextMessageAsync(message.Chat, "Введи команду, ящур");
             }
         }
 

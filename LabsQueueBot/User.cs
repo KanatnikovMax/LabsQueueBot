@@ -10,7 +10,7 @@ namespace LabsQueueBot
     {
         public enum UserState
         {
-            None, SetGroup, ChoiceSubject, UnsetStudentData, Validation, ShowQueue
+            None, ChoiceSubject, Unregistred, ShowQueue, UnsetStudentData
         }
         //TODO: сделать состояния для очереди
         public byte Group { get; set; }
@@ -29,7 +29,7 @@ namespace LabsQueueBot
             {
                 builder.AppendLine("Некорректный номер группы");
             }
-            if (name.Split(' ')[0].Length < 2) 
+            if (name.Split(' ')[0].Length < 2)
             {
                 builder.AppendLine("Фамилия должна содержать как минимум две буквы");
             }
@@ -51,5 +51,29 @@ namespace LabsQueueBot
             ID = id;
         }      
         public User(long id) => ID = id;
+        public User(string name, long id)
+        {
+            StringBuilder builder = new StringBuilder();
+            if (name.Split(' ')[0].Length < 2)
+            {
+                builder.AppendLine("Фамилия должна содержать как минимум две буквы");
+            }
+            if (name.Split(' ')[1].Length < 2)
+            {
+                builder.Append("Имя должно содержать как минимум две буквы");
+            }
+            if (name.Any(c => "0123456789~!@#$%^&*()_+{}:\"|?><`=[]\\;',./№".Contains(c)))
+            {
+                builder.AppendLine("Имя и фамилия не должны содержать цифр и специальных символов");
+            }
+            if (builder.Length != 0)
+            {
+                throw new ArgumentException(builder.ToString());
+            }
+            Course = 0;
+            Group = 0;
+            Name = name;
+            ID = id;
+        }
     }
 }

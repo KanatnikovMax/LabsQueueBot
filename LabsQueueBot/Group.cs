@@ -19,6 +19,7 @@ namespace LabsQueueBot
                 _subjects?.Clear();
             }
         }
+        public byte StudentsCount { get; set; }
         public int CountSubjects { get => _subjects.Count; }
         public byte Number { get; set; }    
         // название дисциплины : очередь по дисциплине
@@ -45,7 +46,6 @@ namespace LabsQueueBot
         {
             foreach(var queue in _subjects.Values)
             {
-                //TODO: queue.delete_user(id);
                 queue.Remove(id);
             }
         }
