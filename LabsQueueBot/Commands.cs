@@ -15,53 +15,10 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace LabsQueueBot
 {
-    static internal class KeyboardCreator
-    {
-        public static InlineKeyboardMarkup ListToKeyboardTemplate<T>(List<string> list, int n, int m) where T : IConvertible
-        {
-            //n = количество элементов в листе
-            //m = желаемое количество элементов в строке выходной таблицы
-            int size = n / m + (n % m != 0 ? 1 : 0); //значи size = количество строк в выходной таблице
-            InlineKeyboardButton[][] arr = new InlineKeyboardButton[size + 1][];
-
-            for (int i = 0; i < n / m; i++)
-            {
-                arr[i] = new InlineKeyboardButton[m];
-                for (int j = 0; j < m; j++)
-                {
-                    arr[i][j] = InlineKeyboardButton.WithCallbackData(Convert.ToString(list[i * m + j]));
-                }
-            }
-            if (n % m != 0)
-            {
-                arr[size - 1] = new InlineKeyboardButton[n % m];
-                for (int i = 0; i < n % m; i++)
-                {
-                    arr[size - 1][i] = InlineKeyboardButton.WithCallbackData(Convert.ToString(list[(size - 1) * m + i]));
-                }
-            }
-            arr[size] = new InlineKeyboardButton[1] { InlineKeyboardButton.WithCallbackData("Назад") };
-            return new InlineKeyboardMarkup(arr);
-        }
-
-        public static InlineKeyboardMarkup ListToKeyboard(List<string> list, int size)
-        {
-            InlineKeyboardButton[][] arr = new InlineKeyboardButton[size + 1][];
-            for (int i = 0; i < size; ++i)
-            {
-                arr[i] = new InlineKeyboardButton[1];
-                arr[i][1] = InlineKeyboardButton.WithCallbackData(list[i]);
-            }
-            
-            arr[size] = new InlineKeyboardButton[1] { InlineKeyboardButton.WithCallbackData("Назад") };
-            return new InlineKeyboardMarkup(arr);
-        }
-    }
-
-
-    internal abstract class Command
+    internal abstract class Command 
     {
         public abstract SendMessageRequest Run(Update update);
+        public abstract InlineKeyboardMarkup? GetKeyboard(Update update);
         public abstract string Definition { get; }
     }
 
@@ -69,6 +26,11 @@ namespace LabsQueueBot
     internal class Start : Command
     {
         public override string Definition { get => "/start"; }
+
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            return null;
+        }
 
         public override SendMessageRequest Run(Update update)
         {
@@ -88,17 +50,19 @@ namespace LabsQueueBot
     {
         public override string Definition { get => "/start_applier"; }
 
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            return new SetGroup().GetKeyboard(update);
+        }
+
         public override SendMessageRequest Run(Update update)
         {
-            /*
-                TODO: Добавить меню регистрации в группу и создания новой группы 
-                
-             */
+            
             long id = update.Message.Chat.Id;
-            // TODO: обработать ситуацию с отсылкой файла
-            string[] data = update.Message.Text.ToString().Split(' ');
+
+            var data = update.Message.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToArray();
             Users.At(id).State = User.UserState.None;
-            if (data.Length != 2 || data[0].Equals("") || data[1].Equals(""))
+            if (data.Length != 2)
             {
                 Users.Remove(id);
                 return new SendMessageRequest(id, "Твое имя - ошибка, и жизнь твоя - ошибка");
@@ -113,19 +77,42 @@ namespace LabsQueueBot
                 Users.Remove(id);
                 return new SendMessageRequest(update.Message.Chat.Id, exception.Message);
             }
-            
-            return new SetGroup().Run(update);
+            return new SendMessageRequest(id, "Выберете свои курс и группу:");
         }
     }
 
     //очевидно, помощь
     internal class Help : Command
-    {
-        public override string Definition { get => "/help"; }
+    { 
+        public override string Definition { get => "/help - Список команд"; }
+
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            return null;
+        }
 
         public override SendMessageRequest Run(Update update)
         {
-            StringBuilder builder = new StringBuilder("список");
+            StringBuilder builder = new StringBuilder();
+
+            builder.AppendLine("\n(Описание блока с /help)");
+            builder.AppendLine(new Help().Definition);
+
+            builder.AppendLine("\nДействия с очередями");
+            builder.AppendLine(new Subjects().Definition);
+            builder.AppendLine(new ShowQueue().Definition);
+            builder.AppendLine(new Join().Definition);
+            builder.AppendLine(new Quit().Definition);
+            builder.AppendLine(new Skip().Definition);
+
+            //TODO: может добавить возможность смены имени?
+            builder.AppendLine("\nИзменить информацию о себе");
+            builder.AppendLine("(change_name - команда для смены имени)");
+            builder.AppendLine(new SetGroup().Definition);
+
+            builder.AppendLine("(Описание блока с /stop)");
+            builder.AppendLine(new Stop().Definition);
+
             return new SendMessageRequest(update.Message.Chat.Id, builder.ToString());
         }
     }
@@ -133,7 +120,12 @@ namespace LabsQueueBot
     //отписаться от бота
     internal class Stop : Command
     {
-        public override string Definition { get => "/stop"; }
+        public override string Definition { get => "/stop - Отписаться"; }
+
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            return null;
+        }
 
         public override SendMessageRequest Run(Update update)
         {
@@ -149,12 +141,32 @@ namespace LabsQueueBot
     //пропустить человека вперед себя
     internal class Skip : Command
     {
-        public override string Definition { get => "/skip"; }
+        public override string Definition { get => "/skip - Пропустить одного человека вперёд себя"; }
+
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            return new Show().GetKeyboard(update);
+        }
 
         public override SendMessageRequest Run(Update update)
         {
+            long id = update.Message.Chat.Id;
+            Users.At(id).State = User.UserState.Skip;
+            return new SendMessageRequest(id, "Выберете предмет");
+        }
+    }
 
-            // Вызвать /subjects и выбираешь предмет
+    internal class SkipApplier : Command
+    {
+        public override string Definition => "/skip_applier";
+
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            return null;
+        }
+
+        public override SendMessageRequest Run(Update update)
+        {
             throw new NotImplementedException();
         }
     }
@@ -162,19 +174,47 @@ namespace LabsQueueBot
     //выйти из очереди
     internal class Quit : Command
     {
-        public override string Definition { get => "/quit"; }
+        public override string Definition { get => "/quit - Выйти из очереди"; }
+
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            return new Show().GetKeyboard(update);
+        }
 
         public override SendMessageRequest Run(Update update)
         {
+            long id = update.Message.Chat.Id;
+            Users.At(id).State = User.UserState.Quit;
+            return new SendMessageRequest(id, "Выберите предмет:");
+        }
+    }
 
+    internal class QuitApplier : Command
+    {
+        public override string Definition { get => "/quit_applier"; }
+
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override SendMessageRequest Run(Update update)
+        {
             throw new NotImplementedException();
         }
     }
 
+
     //показывает предметы и номера в очереди по ним
     internal class Subjects : Command
     {
-        public override string Definition { get => "/subjects"; }
+        public override string Definition { get => "/subjects - Список предметов и номера в очередях по ним"; }
+
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            
+            return null;
+        }
 
         public override SendMessageRequest Run(Update update)
         {
@@ -183,56 +223,146 @@ namespace LabsQueueBot
         }
     }
 
-    //общий класс для изменеия курса и группы
+    //общий класс для изменения курса и группы
     internal class SetGroup : Command
     {
-        public override string Definition { get => "/change_group"; }
+        public override string Definition { get => "/change_info - Изменить номера курса и  группы"; }
+
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            long id = update.Message.Chat.Id;
+            if (!Users.Contains(id))
+                return null;
+            var list = Groups.Keys.Select(x => x.ToString()).ToList();
+            bool flag = Users.At(id).State != User.UserState.UnsetStudentData; // нужна ли кнопка "Назад"
+            return KeyboardCreator.ListToKeyboard(list, flag, 1);
+        }
 
         public override SendMessageRequest Run(Update update)
         {
             long id = update.Message.Chat.Id;
+            return new SendMessageRequest(id, "Выберете свои курс и группу:");
+        }
+    }
 
-            //TODO: проверка что не превышаем количество людей в группе
-            Users.At(id).State = User.UserState.None;
-            return new SendMessageRequest(id, $"Вызван {Definition}");
+    // TODO: доделать
+    internal class SetGroupApplier : Command
+    {
+        public override string Definition => "/set_group_applier";
+
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            return null;
+        }
+
+        public override SendMessageRequest Run(Update update)
+        {
+            var text = update.CallbackQuery.Data;
+            var id = update.CallbackQuery.Message.Chat.Id;
+            if (text == "Назад")
+                return new SendMessageRequest(id, text);
+            //TODO: добавление пользователя в группу
+            if (text != "Добавить")
+            {
+                var line = text.Split(' ');
+                byte course = Convert.ToByte(line[0]);
+                byte group = Convert.ToByte(line[2]);
+                if (!Groups.At(new GroupKey(course, group)).AddStudent())
+                    return new SendMessageRequest(id, "Много");
+
+                Users.Add(new User(course, group, Users.At(id).Name, id));
+                return new SendMessageRequest(id, $"Вызван {Definition}");
+            }
+            // TODO: на кнопку добавить появляется новая группа
+
+            return new SendMessageRequest(id, "Создана новая группа");
         }
     }
 
     //встать в очередь
     internal class Join : Command
     {
-        public override string Definition { get => "/join"; }
+        public override string Definition { get => "/join - Встать в очередь"; }
+
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            return new Show().GetKeyboard(update);
+        }
 
         public override SendMessageRequest Run(Update update)
         {
-            throw new NotImplementedException();
+            long id = update.Message.Chat.Id;
+            Users.At(id).State = User.UserState.Join;
+            return new SendMessageRequest(id, "Выберете предмет");
         }
     }
+
+    internal class JoinApplier : Command
+    {
+        public override string Definition { get => "/join_applier"; }
+
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            return null;
+        }
+        public override SendMessageRequest Run(Update update)
+        {
+            var subject = update.CallbackQuery.Data;
+            var id = update.CallbackQuery.Message.Chat.Id;
+
+            if (subject == "Назад")
+                return new SendMessageRequest(id, subject);
+
+            User user = Users.At(id);
+            Group group = Groups.At(new GroupKey(user.Course, user.Group));
+
+            if (subject == "Добавить" && !group.AddSubject(subject))
+                return new SendMessageRequest(id, "Много");
+
+            group.AddStudent(id, subject);
+            return new SendMessageRequest(id, $"Твой номер в очереди — {group[subject].Position(id) + 1}");
+        }
+    }
+
 
     //показывает очереди по предметам
     internal class Show : Command
     {
         public override string Definition { get => "/show"; }
 
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            User user = Users.At(update.Message.Chat.Id);
+            var gr = Groups.groups[new GroupKey(2, 9)]._Keys();
+            List<string> subjects = Groups.groups[new GroupKey(user.Course, user.Group)].Keys.ToList();
+            return KeyboardCreator.ListToKeyboard(subjects, true, 1);
+        }
+
         public override SendMessageRequest Run(Update update)
         {
             long id = update.Message.Chat.Id;
-            SendMessageRequest request;
-            try
-            {
-                request = new Subjects().Run(update);
-                request = new SendMessageRequest(id, new StringBuilder(request.Text).AppendLine("Введите название предмета").ToString());
-                Users.At(id).State = User.UserState.ShowQueue;
-            }
-            catch(InvalidDataException)
-            {
-                request = new SendMessageRequest(id, "Твои данные - ошибка, и жизнь твоя - ошибка");
-            }
-            catch (Exception)
-            {
-                request = new SendMessageRequest(id, "Твои данные - ошибка, и жизнь твоя - ошибка");
-            }
-            return request;
+            //SendMessageRequest request;
+            //try
+            //{
+            //    request = new Subjects().Run(update);
+            //    request = new SendMessageRequest(id, new StringBuilder(request.Text).AppendLine("Введите название предмета").ToString());
+            //    Users.At(id).State = User.UserState.ShowQueue;
+            //}
+            //catch(InvalidDataException)
+            //{
+            //    request = new SendMessageRequest(id, "Твои данные - ошибка, и жизнь твоя - ошибка");
+            //}
+            //catch (Exception)
+            //{
+            //    request = new SendMessageRequest(id, "Твои данные - ошибка, и жизнь твоя - ошибка");
+            //}
+
+
+            //var keyboard = KeyboardCreator.ListToKeyboardTemplate<string>(subjects, subjects.Count, 1);
+            //var keyboard = KeyboardCreator.ListToKeyboard(subjects, true, 1);
+            //return new SendMessageRequest(id,subjects);
+            Users.At(id).State = User.UserState.ShowQueue;
+            return new SendMessageRequest(id, "Выберите предмет:");
         }
     }
 
@@ -241,13 +371,50 @@ namespace LabsQueueBot
     {
         public override string Definition { get => "/show_applier"; }
 
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            return null;
+        }
+
         public override SendMessageRequest Run(Update update)
         {
             long id = update.Message.Chat.Id;
             string subject = update.Message.Text;
+            
 
 
+            return new SendMessageRequest(id, "");
+        }
+    }
+
+    internal class ShowQueue : Command
+    {
+        public override string Definition => "/show - Показать очередь полностью";
+
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override SendMessageRequest Run(Update update)
+        {
             throw new NotImplementedException();
         }
     }
+    internal class ShowQueueApplier : Command
+    {
+        public override string Definition => throw new NotImplementedException();
+
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override SendMessageRequest Run(Update update)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
 }
+

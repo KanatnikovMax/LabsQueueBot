@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace LabsQueueBot
 {
-    struct GroupKey
+    struct GroupKey // TODO : реализовать IComparable
     {
         public byte Course { get; init; }
         public byte Number { get; init; }
@@ -20,7 +20,7 @@ namespace LabsQueueBot
 
         public static bool operator ==(GroupKey gk1, GroupKey gk2)
         {
-            return gk1.Course == gk2.Course && gk1.Number == gk1.Number;
+            return gk1.Course == gk2.Course && gk1.Number == gk2.Number;
         }
 
         public static bool operator !=(GroupKey gk1, GroupKey gk2)
@@ -31,6 +31,7 @@ namespace LabsQueueBot
         public bool Equals(GroupKey other) => other == this;
 
         public override int GetHashCode() => HashCode.Combine(Number,Course);
+        public override string ToString() => $"{Course} курс {Number} группа";
     }
 
     internal static class Groups
@@ -38,8 +39,8 @@ namespace LabsQueueBot
         //TODO: здесь должны храниться Group
         internal static readonly Dictionary<GroupKey, Group> groups = new()
         {
-            {new GroupKey() { Course = 2, Number = 9  }, new Group(2, 9) },
-            {new GroupKey() { Course = 2, Number = 91 }, new Group(2, 91) }
+            {new GroupKey(2, 9), new Group(2, 9) },
+            {new GroupKey(2, 91), new Group(2, 91) }
         };
 
         //сделал удаление группы если удалили последнего ее студента
@@ -48,8 +49,7 @@ namespace LabsQueueBot
             GroupKey key = new GroupKey(Users.At(id).Course, Users.At(id).Group);
             if (!groups.ContainsKey(key))
                 return false;
-            groups[key].RemoveUser(id);
-            groups[key].StudentsCount -= 1;
+            groups[key].RemoveStudent(id);
             if (groups[key].StudentsCount == 0)
                 groups.Remove(key);
             return true;
@@ -68,7 +68,7 @@ namespace LabsQueueBot
             if (group.ContainsKey(subject))
                 return "";
             StringBuilder builder = new StringBuilder();
-            //TODO: выбрать один из циклов и определить возвращаемые значения
+            //TODO: косметика: выбрать один из циклов и определить возвращаемые значения
             //for (int number = 1; number < group[subject].Count; ++number)
             //{
             //    builder.AppendLine($"{number}. {group[subject][number].Name}");
@@ -89,14 +89,13 @@ namespace LabsQueueBot
         public static string ShowSubjects(long id)
         {
             GroupKey key = new GroupKey(Users.At(id).Course, Users.At(id).Group);
-            if (!groups.ContainsKey(key))
-                return "Вашей группы нет в списке\n/add_group чтобы добавить группу";
+            //if (!groups.ContainsKey(key))
+            //    return "Вашей группы нет в списке\n/change_info чтобы изменить свои курс и группу";
             Group group = groups[key];
             StringBuilder builder = new StringBuilder();
-            // TODO: сделать проверку, что для группы не зарегистрировано ни одного предмета
             if (group.CountSubjects == 0)
-                return "В вашей группе не открыто ни одной очереди\n" +
-                    "/add_queue чтобы создать очередь";
+                return "В вашей группе не открыто ни одной очереди\n"
+                    + "/join чтобы создать очередь";
             foreach (var queue in group)
             {
                 var position = queue.Value.Position(id) + 1;
@@ -106,5 +105,6 @@ namespace LabsQueueBot
             }
             return builder.ToString();
         }
+        public static Dictionary<GroupKey, Group>.KeyCollection Keys => groups.Keys;
     }
 }

@@ -11,9 +11,11 @@ namespace LabsQueueBot
     internal class Queue : IEnumerable<User>
     {
         private readonly List<User> _data = new();
+
         public User First { get => _data[0]; }
         public int Count { get => _data.Count; }
         public int Position(long id) => _data.FindIndex(0, Count, val => val.ID == id);
+        //TODO: сделать доп хранилище и добавлять туда
         public void Add(User user) => _data.Add(user);
         public void Clear() => _data.Clear();
         public bool Remove(long id)

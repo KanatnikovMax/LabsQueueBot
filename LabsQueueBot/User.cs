@@ -10,7 +10,7 @@ namespace LabsQueueBot
     {
         public enum UserState
         {
-            None, ChoiceSubject, Unregistred, ShowQueue, UnsetStudentData
+            None, ChoiceSubject, Unregistred, ShowQueue, UnsetStudentData, Join, Quit, Skip
         }
         //TODO: сделать состояния для очереди
         public byte Group { get; set; }
@@ -29,11 +29,11 @@ namespace LabsQueueBot
             {
                 builder.AppendLine("Некорректный номер группы");
             }
-            if (name.Split(' ')[0].Length < 2)
+            if (name.Split(' ')[0].Trim().Length < 2)
             {
                 builder.AppendLine("Фамилия должна содержать как минимум две буквы");
             }
-            if (name.Split(' ')[1].Length < 2)
+            if (name.Split(' ')[1].Trim().Length < 2)
             {
                 builder.Append("Имя должно содержать как минимум две буквы");
             }

@@ -10,23 +10,24 @@ namespace LabsQueueBot
     internal class Group : IEnumerable<KeyValuePair<string, Queue>>
     {
         private byte _course;
-        public byte Course 
+        public byte Course
         {
             get => _course;
             set
             {
                 _course = value;
-                _subjects?.Clear();
+                //_subjects?.Clear();
             }
         }
-        public byte StudentsCount { get; set; }
+        public byte StudentsCount { get; private set; }
         public int CountSubjects { get => _subjects.Count; }
-        public byte Number { get; set; }    
+        public byte Number { get; set; }
         // название дисциплины : очередь по дисциплине
         private readonly Dictionary<string, Queue> _subjects;
+
         public bool AddSubject(string subject)
         {
-            if (_subjects.ContainsKey(subject))
+            if (_subjects.ContainsKey(subject) || CountSubjects > 15)
                 return false;
             _subjects.Add(subject, new Queue());
             return true;
@@ -37,23 +38,41 @@ namespace LabsQueueBot
         }
         public Group(byte course, byte number)
         {
-            Course = course;
+            _course = course;
             Number = number;
             _subjects = new Dictionary<string, Queue>();
+
+            AddSubject("ЯСП");
+            AddSubject("C#");
         }
-        
-        public void RemoveUser(long id)
+
+        public bool AddStudent()
         {
-            foreach(var queue in _subjects.Values)
+            if (StudentsCount == 50)
+                return false;
+            StudentsCount++;
+            return true;
+        }
+
+        public void AddStudent(long id, string subject)
+        {
+            _subjects[subject].Add(Users.At(id));
+        }
+
+        public void RemoveStudent(long id)
+        {
+            foreach (var queue in _subjects.Values)
             {
                 queue.Remove(id);
             }
+            StudentsCount -= 1;
         }
         public bool ContainsKey(string key) => _subjects.ContainsKey(key);
 
         public void ClearSubjects()
         {
             _subjects.Clear();
+            StudentsCount = 0;
         }
 
         public IEnumerator<KeyValuePair<string, Queue>> GetEnumerator()
@@ -71,7 +90,8 @@ namespace LabsQueueBot
             get => _subjects[key];
         }
 
+        public Dictionary<string, Queue>.KeyCollection Keys { get => _subjects.Keys; }
+        public Dictionary<string, Queue>.KeyCollection _Keys()  => _subjects.Keys; 
         public Dictionary<string, Queue>.ValueCollection Values => _subjects.Values;
-        public Dictionary<string, Queue>.KeyCollection Keys => _subjects.Keys;
     }
 }
