@@ -14,6 +14,7 @@ using System.Reflection.Metadata.Ecma335;
 
 namespace LabsQueueBot
 {
+    // TODO: РЕШИТЬ ПРОБЛЕМУ С РАЗДЕЛЕНИЕМ РЕСУРСОВ ! ! !
     class Program
     {
         internal static readonly Dictionary<string, Command> commands = new()
@@ -26,7 +27,9 @@ namespace LabsQueueBot
             {"/skip", new Skip() },
             {"/change_info", new SetGroup() },
             {"/subjects", new Subjects() },
-            {"/show", new Show() }
+            {"/show", new Show() },
+            {"/rename", new Rename() },
+            {"/mult", new Mult() }
         };
 
 
@@ -34,11 +37,15 @@ namespace LabsQueueBot
         internal static readonly Dictionary<User.UserState, Command> actions = new()
         {
             {User.UserState.Unregistred, new StartApplier() },
-            {User.UserState.UnsetStudentData, new SetGroupApplier() },//,
+            {User.UserState.UnsetStudentData, new SetGroupApplier() },
+            {User.UserState.ChangeData, new SetGroupApplier() },
             {User.UserState.Join, new JoinApplier() },
             {User.UserState.Quit, new QuitApplier() },
             {User.UserState.Skip, new SkipApplier() },
-            {User.UserState.ShowQueue, new ShowQueueApplier() }
+            {User.UserState.ShowQueue, new ShowQueueApplier() },
+            {User.UserState.AddSubject, new AddSubjectApplier() },
+            {User.UserState.AddGroup, new AddGroupApplier() },
+            {User.UserState.Rename, new RenameApplier() }
         };
 
         static ITelegramBotClient bot = new TelegramBotClient("7098667146:AAHlUf4Y-cmOtkOmCcvFDVnKFHbkVlCgpJE");
@@ -80,7 +87,9 @@ namespace LabsQueueBot
                     return;
             }
 
-            if (Users.Contains(id) && Users.At(id).State != User.UserState.Unregistred && Users.At(id).State != User.UserState.None)
+            if (Users.Contains(id) && Users.At(id).State != User.UserState.Unregistred && Users.At(id).State != User.UserState.None
+                && Users.At(id).State != User.UserState.AddGroup && Users.At(id).State != User.UserState.AddSubject
+                && Users.At(id).State != User.UserState.Rename)
             {
                 if (update.Type == Telegram.Bot.Types.Enums.UpdateType.CallbackQuery)
                 {
@@ -93,7 +102,8 @@ namespace LabsQueueBot
                     //await botClient.SendTextMessageAsync(message.Chat, request.Text)
                     if (request.Text != "Назад")
                         await botClient.SendTextMessageAsync(message.Chat, request.Text);
-                    if (request.Text != "Добавить")
+                    //if (request.Text != "Добавить")
+                    if (Users.At(id).State != User.UserState.AddSubject && Users.At(id).State != User.UserState.AddGroup)
                         Users.At(id).State = User.UserState.None;
 
                     //if (request.Text != "Назад")
@@ -160,7 +170,7 @@ namespace LabsQueueBot
         static void Main(string[] args)
         {
             Console.WriteLine("Запущен бот " + bot.GetMeAsync().Result.FirstName);
-
+            //throw new Exception("idi naxui"); //блять нахуй ты это добавил?!
             var cts = new CancellationTokenSource();
             var cancellationToken = cts.Token;
             var receiverOptions = new ReceiverOptions

@@ -43,6 +43,13 @@ namespace LabsQueueBot
             {new GroupKey(2, 91), new Group(2, 91) }
         };
 
+        private static int _groupsCount;
+        public static int GroupsCount
+        {
+            get => groups.Count;
+            private set => _groupsCount = value;
+        }
+
         //сделал удаление группы если удалили последнего ее студента
         public static bool Remove(long id)
         {
@@ -55,6 +62,23 @@ namespace LabsQueueBot
             return true;
         }
 
+        public static void Add(byte course, byte group)
+        {
+            StringBuilder builder = new StringBuilder();
+            if (course > 6 || course < 1)
+                builder.AppendLine();
+            if (group > 99 || group < 1)
+                builder.AppendLine();
+            if (builder.Length != 0)
+                throw new ArgumentException(builder.ToString());
+
+            GroupKey key = new GroupKey(course, group);
+            if (groups.ContainsKey(key))
+                throw new InvalidOperationException();
+
+            GroupsCount++;
+            groups.Add(key, new Group(course, group));
+        }
 
         public static Group At(GroupKey key) => groups[key];
 

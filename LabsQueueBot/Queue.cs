@@ -51,7 +51,7 @@ namespace LabsQueueBot
         {
             var index = Position(id);
             if (index < 0)
-                throw new ArgumentOutOfRangeException("Тебя тут нет, кого ты пропускаешь?");
+                throw new InvalidOperationException("Тебя тут нет, кого ты пропускаешь?");
             if (index == Count - 1)
                 throw new InvalidOperationException("Ты уже итак в конце очереди, ожидай своего часа :)");
             (_data[index], _data[index + 1]) = (_data[index + 1], _data[index]);

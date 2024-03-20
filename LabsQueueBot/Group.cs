@@ -25,12 +25,13 @@ namespace LabsQueueBot
         // название дисциплины : очередь по дисциплине
         private readonly Dictionary<string, Queue> _subjects;
 
-        public bool AddSubject(string subject)
+        public void AddSubject(string subject)
         {
-            if (_subjects.ContainsKey(subject) || CountSubjects > 20)
-                return false;
+            if (_subjects.ContainsKey(subject))
+                throw new ArgumentException("Этот предмет уже есть в списке");
+            if (CountSubjects == 2)
+                throw new InvalidOperationException("Очередей в этой группе слишком много");
             _subjects.Add(subject, new Queue());
-            return true;
         }
         public bool DeleteSubject(string subject)
         {

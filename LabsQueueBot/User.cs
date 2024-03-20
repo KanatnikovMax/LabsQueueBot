@@ -10,9 +10,14 @@ namespace LabsQueueBot
     {
         public enum UserState
         {
-            None, ChoiceSubject, Unregistred, ShowQueue, UnsetStudentData, Join, Quit, Skip
+            //
+            None, ShowQueue,
+            //
+            Unregistred, UnsetStudentData,
+            //
+            Join, Quit, Skip, AddGroup, AddSubject, Rename, ChangeData
         }
-        //TODO: сделать состояния для очереди
+        //TODO: сделать состояния для очереди (ожидает/уже в очереди типа того)
         public byte Group { get; set; }
         public byte Course { get; set; }
         public string Name { get; set; }
@@ -47,6 +52,16 @@ namespace LabsQueueBot
             }
             Course = course;
             Group = group;
+            int first = name.IndexOf("👑");
+            if (first != -1)
+                name = name.Remove(first);
+            first = name.IndexOf("Ватага");
+            if (first != -1)
+            {
+                name = name[..first];
+                name += "👑";
+            }
+            //"🌈";
             Name = name;
             ID = id;
         }      

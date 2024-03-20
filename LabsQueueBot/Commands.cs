@@ -14,9 +14,10 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types.ReplyMarkups;
 using System.Linq.Expressions;
 
+
 namespace LabsQueueBot
 {
-    internal abstract class Command 
+    internal abstract class Command
     {
         public abstract SendMessageRequest Run(Update update);
         public abstract InlineKeyboardMarkup? GetKeyboard(Update update);
@@ -39,7 +40,7 @@ namespace LabsQueueBot
             if (Users.Contains(id))
             {
                 return new SendMessageRequest(id, "Ты уже зареган\nИди отсюда, розбийник");
-            }    
+            }
             Users.Add(new User(id));
             Users.At(id).State = User.UserState.Unregistred;
             return new SendMessageRequest(id, "Кто ты, воин?\n\nВведи свои данные в формате\nФамилия Имя");
@@ -58,7 +59,7 @@ namespace LabsQueueBot
 
         public override SendMessageRequest Run(Update update)
         {
-            
+
             long id = update.Message.Chat.Id;
 
             var data = update.Message.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToArray();
@@ -73,7 +74,7 @@ namespace LabsQueueBot
                 Users.Add(id, $"{data[0]} {data[1]}");
                 Users.At(id).State = User.UserState.UnsetStudentData;
             }
-            catch(ArgumentException exception)
+            catch (ArgumentException exception)
             {
                 Users.Remove(id);
                 return new SendMessageRequest(update.Message.Chat.Id, exception.Message);
@@ -84,7 +85,7 @@ namespace LabsQueueBot
 
     //очевидно, помощь
     internal class Help : Command
-    { 
+    {
         public override string Definition { get => "/help - Список команд"; }
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
@@ -94,6 +95,12 @@ namespace LabsQueueBot
 
         public override SendMessageRequest Run(Update update)
         {
+            long id;
+            if (update.Type == Telegram.Bot.Types.Enums.UpdateType.Message)
+                id = update.Message.Chat.Id;
+            else
+                id = update.CallbackQuery.Message.Chat.Id;
+
             StringBuilder builder = new StringBuilder();
 
             builder.AppendLine("\n(Описание блока с /help)");
@@ -106,15 +113,14 @@ namespace LabsQueueBot
             builder.AppendLine(new Quit().Definition);
             builder.AppendLine(new Skip().Definition);
 
-            //TODO: может добавить возможность смены имени?
             builder.AppendLine("\nИзменить информацию о себе");
-            builder.AppendLine("(change_name - команда для смены имени)");
+            builder.AppendLine(new Rename().Definition);
             builder.AppendLine(new SetGroup().Definition);
 
             builder.AppendLine("(Описание блока с /stop)");
             builder.AppendLine(new Stop().Definition);
 
-            return new SendMessageRequest(update.Message.Chat.Id, builder.ToString());
+            return new SendMessageRequest(id, builder.ToString());
         }
     }
 
@@ -131,9 +137,7 @@ namespace LabsQueueBot
         public override SendMessageRequest Run(Update update)
         {
             long id = update.Message.Chat.Id;
-            // TODO: убрать из всех очередей
             Groups.Remove(id);
-
             Users.Remove(id);
             return new SendMessageRequest(id, "Прощай, мой друг");
         }
@@ -181,16 +185,12 @@ namespace LabsQueueBot
                 group[subject].Skip(id);
                 return new SendMessageRequest(id, "Это как шаг вперед, но назад");
             }
-            catch (ArgumentOutOfRangeException exception)
-            {
-                return new SendMessageRequest(id, "Тебя тут нет, кого ты пропускаешь?");
-            }
             catch (InvalidOperationException exception)
             {
                 return new SendMessageRequest(id, exception.Message);
-            }        
+            }
         }
-    }
+    } 
 
     //выйти из очереди
     internal class Quit : Command
@@ -229,7 +229,7 @@ namespace LabsQueueBot
 
             User user = Users.At(id);
             Group group = Groups.At(new GroupKey(user.Course, user.Group));
-            
+
             if (group.RemoveStudentFromQueue(id, subject))
                 return new SendMessageRequest(id, "Ты вышел из очереди");
 
@@ -245,7 +245,7 @@ namespace LabsQueueBot
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
-            
+
             return null;
         }
 
@@ -268,7 +268,10 @@ namespace LabsQueueBot
                 return null;
             var list = Groups.Keys.Select(x => x.ToString()).ToList();
             bool backFlag = Users.At(id).State != User.UserState.UnsetStudentData; // нужна ли кнопка "Назад"
-            return KeyboardCreator.ListToKeyboard(list, true, backFlag, 1);
+            if(backFlag)
+                Users.At(id).State = User.UserState.ChangeData;
+            bool addFlag = Groups.GroupsCount < 50;
+            return KeyboardCreator.ListToKeyboard(list, addFlag, backFlag, 1);
         }
 
         public override SendMessageRequest Run(Update update)
@@ -300,17 +303,80 @@ namespace LabsQueueBot
                 var line = text.Split(' ');
                 byte course = Convert.ToByte(line[0]);
                 byte group = Convert.ToByte(line[2]);
+                if(Users.At(id).State == User.UserState.ChangeData)
+                    Groups.Remove(id);
                 if (!Groups.At(new GroupKey(course, group)).AddStudent())
+                {
+
+
                     return new SendMessageRequest(id, "Много");
-
+                }
                 Users.Add(new User(course, group, Users.At(id).Name, id));
-                return new SendMessageRequest(id, $"Вызван {Definition}");
+                Users.At(id).State = User.UserState.None;
+                return new Help().Run(update);
+                //return new SendMessageRequest(id, $"Вы были зачислены на {Definition} ");
             }
+            else
+                Users.At(id).State = User.UserState.AddGroup;
             // TODO: на кнопку добавить появляется новая группа
-
-            return new SendMessageRequest(id, "Создана новая группа");
+            return new SendMessageRequest(id, "Введите свои курс и группу. Например, для n курса m группы\nn:m");
         }
     }
+
+    internal class AddGroupApplier : Command
+    {
+        public override string Definition => "/add_group_applier";
+
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            return null;
+        }
+
+        public override SendMessageRequest Run(Update update)
+        {
+            long id = update.Message.Chat.Id;
+            string[] text = update.Message.Text.Split(':');
+
+            byte course;
+            byte group;
+
+            if (text.Length != 2 || !Byte.TryParse(text[0], out course) || !Byte.TryParse(text[1], out group))
+                return new SendMessageRequest(id, "Некорректные данные\nПовторите ввод");
+
+            if (course == Users.At(id).Course && group == Users.At(id).Group)
+                return new SendMessageRequest(id, "Ты итак в этой группе, дурачок\nПовтори ввод");
+
+            StringBuilder builder = new StringBuilder();
+            
+            try
+            {
+                Groups.Remove(id);
+                Groups.Add(course, group);
+
+                Users.Add(new User(course, group, Users.At(id).Name, id));
+                Users.At(id).State = User.UserState.None;
+                Groups.At(new GroupKey(course, group)).AddStudent();
+
+                builder.AppendLine($"Вы были добавлены в {course} курс {group} группу");
+            }
+            catch (ArgumentException exception)
+            {
+                builder.AppendLine(exception.Message);
+            }
+            catch (InvalidOperationException exception)
+            {
+                Users.Add(new User(course, group, Users.At(id).Name, id));
+                Users.At(id).State = User.UserState.None;
+                Groups.At(new GroupKey(course, group)).AddStudent();
+
+                builder.AppendLine(exception.Message);
+                builder.AppendLine($"Вы были добавлены в {course} курс {group} группу");
+            }
+
+            return new SendMessageRequest(id, builder.ToString());
+        }
+    }
+
 
     //встать в очередь
     internal class Join : Command
@@ -349,15 +415,46 @@ namespace LabsQueueBot
             User user = Users.At(id);
             Group group = Groups.At(new GroupKey(user.Course, user.Group));
 
-            if (subject == "Добавить" && !group.AddSubject(subject))
-                return new SendMessageRequest(id, "Много");
-
+            if (subject == "Добавить" /*&& !group.AddSubject(subject)*/)
+            {
+                user.State = User.UserState.AddSubject;
+                return new SendMessageRequest(id, "Введите название нового предмета");
+            }
             if (group.AddStudent(id, subject))
                 return new SendMessageRequest(id, $"Твой номер в очереди — {group[subject].Position(id) + 1}");
             return new SendMessageRequest(id, "Ты уже записан в эту очередь");
         }
     }
 
+    internal class AddSubjectApplier : Command
+    {
+        public override string Definition { get => "/add_subject_applier"; }
+
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            return null;
+        }
+
+        public override SendMessageRequest Run(Update update)
+        {
+            long id = update.Message.Chat.Id;
+            string subject = update.Message.Text.Trim();
+            User user = Users.At(id);
+            Group group = Groups.At(new GroupKey(user.Course, user.Group));
+            user.State = User.UserState.None;
+            try
+            {
+                group.AddSubject(subject);
+                // TODO: решить что делать с добавлением студента в очередь сразу после создания
+                return new SendMessageRequest(id, $"Очередь по предмету {subject} добавлена");
+            }
+            catch (Exception exception)
+            {
+                return new SendMessageRequest(id, exception.Message);
+            }
+            
+        }
+    }
 
     //показывает очереди по предметам
     internal class Show : Command
@@ -416,7 +513,7 @@ namespace LabsQueueBot
         {
             long id = update.Message.Chat.Id;
             string subject = update.Message.Text;
-            
+
 
 
             return new SendMessageRequest(id, "");
@@ -425,7 +522,7 @@ namespace LabsQueueBot
 
     internal class ShowQueue : Command
     {
-        public override string Definition => "/show - Показать очередь полностью";
+        public override string Definition { get => "/show - Показать очередь полностью"; }
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
@@ -436,9 +533,10 @@ namespace LabsQueueBot
         {
             long id = update.Message.Chat.Id;
             Users.At(id).State = User.UserState.ShowQueue;
-            return new SendMessageRequest(id, "Выберете предмет");
+            return new SendMessageRequest(id, "Выберете предмет:");
         }
     }
+
     internal class ShowQueueApplier : Command
     {
         public override string Definition => "/show_queue_applier";
@@ -457,11 +555,13 @@ namespace LabsQueueBot
                 return new SendMessageRequest(id, subject);
 
             User user = Users.At(id);
+            if (subject == "Добавить")
+            {
+                user.State = User.UserState.AddSubject;
+                return new SendMessageRequest(id, "Введите название нового предмета:");
+            }
+
             Group group = Groups.At(new GroupKey(user.Course, user.Group));
-
-            if (subject == "Добавить" && !group.AddSubject(subject))
-                return new SendMessageRequest(id, "Много");
-
             //var queue = group[subject];
             //var builder = new StringBuilder();
             //int i = 1;
@@ -470,11 +570,79 @@ namespace LabsQueueBot
             //    builder.AppendLine($"{i}. {student.Name}");
             //    ++i;
             //}
-           return new SendMessageRequest(id, Groups.ShowQueue(id, subject));
-            //var result = builder.ToString();    
-            //return new SendMessageRequest(id, result != "" ? result : "Эта очередь пуста");
+            return new SendMessageRequest(id, Groups.ShowQueue(id, subject));
         }
     }
 
-}
+    internal class Rename : Command
+    {
+        public override string Definition { get => "/rename - Смена фамилии и имени"; }
 
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            return null;
+        }
+
+        public override SendMessageRequest Run(Update update)
+        {
+            long id = update.Message.Chat.Id;
+            Users.At(id).State = User.UserState.Rename;
+            return new SendMessageRequest(id, "Кто таков будешь?\n(фамилия, имя)");
+        }
+    }
+
+    internal class RenameApplier : Command
+    {
+        public override string Definition { get => "/rename_applier"; }
+
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            return null;
+        }
+
+        public override SendMessageRequest Run(Update update)
+        {
+            long id = update.Message.Chat.Id;
+            var data = update.Message.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToArray();
+            Users.At(id).State = User.UserState.None;
+            if (data.Length != 2)
+            {
+                return new SendMessageRequest(id, "Смена личности не удалась");
+            }
+            try
+            {
+                //Users.Add(id, $"{data[0]} {data[1]}");
+                Users.At(id).Name = $"{data[0]} {data[1]}";
+                //Users.At(id).State = User.UserState.None;
+            }
+            catch (ArgumentException exception)
+            {
+                return new SendMessageRequest(update.Message.Chat.Id, exception.Message);
+            }
+            return new SendMessageRequest(id, "Смена личности завершена");
+        }
+
+
+    }
+    internal class Mult : Command
+    {
+        public override string Definition { get => "/Mult - Смена фамилии и имени"; }
+
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            return null;
+        }
+
+        public override SendMessageRequest Run(Update update)
+        {
+            long id = update.Message.Chat.Id;
+            Users.At(id).State = User.UserState.Rename;
+            return new SendMessageRequest(id, "wdaad");
+        }
+
+        //public override SendMessageRequest animation(Update update)
+        //{
+
+        //}
+    }
+}
