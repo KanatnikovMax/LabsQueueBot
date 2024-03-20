@@ -47,20 +47,14 @@ namespace LabsQueueBot
             private set => _data[position] = value;
         }
 
-        public bool Skip(long id)
+        public void Skip(long id)
         {
             var index = Position(id);
             if (index < 0)
-                return false;
+                throw new ArgumentOutOfRangeException("Тебя тут нет, кого ты пропускаешь?");
             if (index == Count - 1)
-                throw new ArgumentOutOfRangeException("Ты уже итак в конце очереди, ожидай своего часа :)");
+                throw new InvalidOperationException("Ты уже итак в конце очереди, ожидай своего часа :)");
             (_data[index], _data[index + 1]) = (_data[index + 1], _data[index]);
-            return true;
         }
-
-
-        
-        //public readonly byte Group;
-        
     }
 }

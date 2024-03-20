@@ -89,6 +89,7 @@ namespace LabsQueueBot
                     await bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
                         cancellationToken: cancellationToken);
 
+                    //TODO: обрабатывать кнопку "Добавить"
                     //await botClient.SendTextMessageAsync(message.Chat, request.Text)
                     if (request.Text != "Назад")
                         await botClient.SendTextMessageAsync(message.Chat, request.Text);

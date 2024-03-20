@@ -12,6 +12,7 @@ using Telegram.Bots.Extensions.Polling;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types.ReplyMarkups;
+using System.Linq.Expressions;
 
 namespace LabsQueueBot
 {
@@ -134,7 +135,7 @@ namespace LabsQueueBot
             Groups.Remove(id);
 
             Users.Remove(id);
-            return new SendMessageRequest(id, "Вы разлогинены");
+            return new SendMessageRequest(id, "Прощай, мой друг");
         }
     }
 
@@ -167,7 +168,27 @@ namespace LabsQueueBot
 
         public override SendMessageRequest Run(Update update)
         {
-            throw new NotImplementedException();
+            var subject = update.CallbackQuery.Data;
+            var id = update.CallbackQuery.Message.Chat.Id;
+
+            if (subject == "Назад")
+                return new SendMessageRequest(id, subject);
+
+            User user = Users.At(id);
+            Group group = Groups.At(new GroupKey(user.Course, user.Group));
+            try
+            {
+                group[subject].Skip(id);
+                return new SendMessageRequest(id, "Это как шаг вперед, но назад");
+            }
+            catch (ArgumentOutOfRangeException exception)
+            {
+                return new SendMessageRequest(id, "Тебя тут нет, кого ты пропускаешь?");
+            }
+            catch (InvalidOperationException exception)
+            {
+                return new SendMessageRequest(id, exception.Message);
+            }        
         }
     }
 
@@ -195,12 +216,24 @@ namespace LabsQueueBot
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
-            throw new NotImplementedException();
+            return null;
         }
 
         public override SendMessageRequest Run(Update update)
         {
-            throw new NotImplementedException();
+            var subject = update.CallbackQuery.Data;
+            var id = update.CallbackQuery.Message.Chat.Id;
+
+            if (subject == "Назад")
+                return new SendMessageRequest(id, subject);
+
+            User user = Users.At(id);
+            Group group = Groups.At(new GroupKey(user.Course, user.Group));
+            
+            if (group.RemoveStudentFromQueue(id, subject))
+                return new SendMessageRequest(id, "Ты вышел из очереди");
+
+            return new SendMessageRequest(id, "Ты не можешь выйти из очереди, в которой не числишься");
         }
     }
 
@@ -234,8 +267,8 @@ namespace LabsQueueBot
             if (!Users.Contains(id))
                 return null;
             var list = Groups.Keys.Select(x => x.ToString()).ToList();
-            bool flag = Users.At(id).State != User.UserState.UnsetStudentData; // нужна ли кнопка "Назад"
-            return KeyboardCreator.ListToKeyboard(list, flag, 1);
+            bool backFlag = Users.At(id).State != User.UserState.UnsetStudentData; // нужна ли кнопка "Назад"
+            return KeyboardCreator.ListToKeyboard(list, true, backFlag, 1);
         }
 
         public override SendMessageRequest Run(Update update)
@@ -319,8 +352,9 @@ namespace LabsQueueBot
             if (subject == "Добавить" && !group.AddSubject(subject))
                 return new SendMessageRequest(id, "Много");
 
-            group.AddStudent(id, subject);
-            return new SendMessageRequest(id, $"Твой номер в очереди — {group[subject].Position(id) + 1}");
+            if (group.AddStudent(id, subject))
+                return new SendMessageRequest(id, $"Твой номер в очереди — {group[subject].Position(id) + 1}");
+            return new SendMessageRequest(id, "Ты уже записан в эту очередь");
         }
     }
 
@@ -332,10 +366,12 @@ namespace LabsQueueBot
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
+            long id = update.Message.Chat.Id;
             User user = Users.At(update.Message.Chat.Id);
             var gr = Groups.groups[new GroupKey(2, 9)]._Keys();
             List<string> subjects = Groups.groups[new GroupKey(user.Course, user.Group)].Keys.ToList();
-            return KeyboardCreator.ListToKeyboard(subjects, true, 1);
+            bool addFlag = Users.At(id).State == User.UserState.Join;
+            return KeyboardCreator.ListToKeyboard(subjects, addFlag, true, 1);
         }
 
         public override SendMessageRequest Run(Update update)
@@ -393,26 +429,50 @@ namespace LabsQueueBot
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
-            throw new NotImplementedException();
+            return new Show().GetKeyboard(update);
         }
 
         public override SendMessageRequest Run(Update update)
         {
-            throw new NotImplementedException();
+            long id = update.Message.Chat.Id;
+            Users.At(id).State = User.UserState.ShowQueue;
+            return new SendMessageRequest(id, "Выберете предмет");
         }
     }
     internal class ShowQueueApplier : Command
     {
-        public override string Definition => throw new NotImplementedException();
+        public override string Definition => "/show_queue_applier";
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
-            throw new NotImplementedException();
+            return null;
         }
 
         public override SendMessageRequest Run(Update update)
         {
-            throw new NotImplementedException();
+            var subject = update.CallbackQuery.Data;
+            var id = update.CallbackQuery.Message.Chat.Id;
+
+            if (subject == "Назад")
+                return new SendMessageRequest(id, subject);
+
+            User user = Users.At(id);
+            Group group = Groups.At(new GroupKey(user.Course, user.Group));
+
+            if (subject == "Добавить" && !group.AddSubject(subject))
+                return new SendMessageRequest(id, "Много");
+
+            //var queue = group[subject];
+            //var builder = new StringBuilder();
+            //int i = 1;
+            //foreach (var student in queue)
+            //{
+            //    builder.AppendLine($"{i}. {student.Name}");
+            //    ++i;
+            //}
+           return new SendMessageRequest(id, Groups.ShowQueue(id, subject));
+            //var result = builder.ToString();    
+            //return new SendMessageRequest(id, result != "" ? result : "Эта очередь пуста");
         }
     }
 

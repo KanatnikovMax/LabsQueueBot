@@ -16,7 +16,7 @@ namespace LabsQueueBot
             set
             {
                 _course = value;
-                //_subjects?.Clear();
+                ClearSubjects();
             }
         }
         public byte StudentsCount { get; private set; }
@@ -27,7 +27,7 @@ namespace LabsQueueBot
 
         public bool AddSubject(string subject)
         {
-            if (_subjects.ContainsKey(subject) || CountSubjects > 15)
+            if (_subjects.ContainsKey(subject) || CountSubjects > 20)
                 return false;
             _subjects.Add(subject, new Queue());
             return true;
@@ -54,18 +54,34 @@ namespace LabsQueueBot
             return true;
         }
 
-        public void AddStudent(long id, string subject)
+        public bool AddStudent(long id, string subject)
         {
+            if (_subjects[subject].Position(id) != -1)
+                return false;
             _subjects[subject].Add(Users.At(id));
+            return true;
         }
 
         public void RemoveStudent(long id)
         {
-            foreach (var queue in _subjects.Values)
+            foreach (var queue in _subjects)
             {
-                queue.Remove(id);
+                queue.Value.Remove(id);
+                if (queue.Value.Count == 0)
+                    DeleteSubject(queue.Key);
             }
             StudentsCount -= 1;
+        }
+        public bool RemoveStudentFromQueue(long id, string subject)
+        {
+            var queue = _subjects[subject];
+            if (queue.Remove(id))
+            {
+                if (queue.Count == 0)
+                    DeleteSubject(subject);
+                return true;
+            }
+            return false;
         }
         public bool ContainsKey(string key) => _subjects.ContainsKey(key);
 

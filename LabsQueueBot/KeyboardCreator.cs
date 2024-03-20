@@ -45,13 +45,13 @@ namespace LabsQueueBot
             return new InlineKeyboardMarkup(arr);
         }
 
-        public static InlineKeyboardMarkup ListToKeyboard(List<string> list, bool isNeedBack, int collumnsCount)
+        public static InlineKeyboardMarkup ListToKeyboard(List<string> list, bool isNeedAdd, bool isNeedBack, int collumnsCount)
         {
             int elementsCount = list.Count;
             int size = elementsCount / collumnsCount + (elementsCount % collumnsCount != 0 ? 1 : 0);
             //TODO: подумать над сортировкой выводимых данных
             //list.Sort();
-            InlineKeyboardButton[][] arr = new InlineKeyboardButton[size + (isNeedBack ? 2 : 1)][];
+            InlineKeyboardButton[][] arr = new InlineKeyboardButton[size + (isNeedAdd ? 1 : 0) + (isNeedBack ? 1 : 0)][];
 
             for (int i = 0; i < elementsCount / collumnsCount; i++)
             {
@@ -69,9 +69,25 @@ namespace LabsQueueBot
                     arr[size - 1][i] = InlineKeyboardButton.WithCallbackData(Convert.ToString(list[(size - 1) * collumnsCount + i]));
                 }
             }
-            arr[size] = new InlineKeyboardButton[1] { InlineKeyboardButton.WithCallbackData("Добавить") };
+
+
+            if (isNeedAdd)
+                arr[size] = new InlineKeyboardButton[1] { InlineKeyboardButton.WithCallbackData("Добавить") };
             if (isNeedBack)
-                arr[size + 1] = new InlineKeyboardButton[1] { InlineKeyboardButton.WithCallbackData("Назад") };
+                arr[size + (isNeedAdd ? 1 : 0)] = new InlineKeyboardButton[1] { InlineKeyboardButton.WithCallbackData("Назад") };
+
+
+
+            //if (isNeedAdd)
+            //{
+            //    arr[size] = new InlineKeyboardButton[1] { InlineKeyboardButton.WithCallbackData("Добавить") };
+            //    if (isNeedBack)
+            //        arr[size + 1] = new InlineKeyboardButton[1] { InlineKeyboardButton.WithCallbackData("Назад") };
+            //}
+            //else 
+            //    if (isNeedBack)
+            //        arr[size] = new InlineKeyboardButton[1] { InlineKeyboardButton.WithCallbackData("Назад") };
+
             return new InlineKeyboardMarkup(arr);
         }
     }
