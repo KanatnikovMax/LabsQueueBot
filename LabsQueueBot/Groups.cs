@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace LabsQueueBot
 {
-    struct GroupKey // TODO : реализовать IComparable
+    struct GroupKey : IComparable<GroupKey>
     {
         public byte Course { get; init; }
         public byte Number { get; init; }
@@ -28,20 +28,50 @@ namespace LabsQueueBot
             return gk1.Course != gk2.Course || gk1.Number != gk2.Number;
         }
 
+        public static bool operator>(GroupKey gk1, GroupKey gk2)
+        {
+            if (gk1.Course > gk2.Course)
+                return true;
+            if (gk1.Course < gk2.Course)
+                return false;
+            return gk1.Number > gk2.Number;
+        }
+        public static bool operator >=(GroupKey gk1, GroupKey gk2)
+        {
+            return gk1 > gk2 || gk1 == gk2;
+        }
+
+        public static bool operator <(GroupKey gk1, GroupKey gk2)
+        {
+            if (gk1.Course < gk2.Course)
+                return true;
+            if (gk1.Course > gk2.Course)
+                return false;
+            return gk1.Number < gk2.Number;
+        }
+        public static bool operator <=(GroupKey gk1, GroupKey gk2)
+        {
+            return gk1 < gk2 || gk1 == gk2;
+        }
+
         public bool Equals(GroupKey other) => other == this;
 
         public override int GetHashCode() => HashCode.Combine(Number,Course);
         public override string ToString() => $"{Course} курс {Number} группа";
+
+        public int CompareTo(GroupKey other)
+        {
+            if (this > other)
+                return 1;
+            if (this < other)
+                return -1;
+            return 0;
+        }
     }
 
     internal static class Groups
     {
-        //TODO: здесь должны храниться Group
-        internal static readonly Dictionary<GroupKey, Group> groups = new()
-        {
-            {new GroupKey(2, 9), new Group(2, 9) },
-            {new GroupKey(2, 91), new Group(2, 91) }
-        };
+        internal static readonly Dictionary<GroupKey, Group> groups = new();
 
         private static int _groupsCount;
         public static int GroupsCount
@@ -49,6 +79,7 @@ namespace LabsQueueBot
             get => groups.Count;
             private set => _groupsCount = value;
         }
+        public static bool ContainsKey(GroupKey key) => groups.ContainsKey(key);
 
         //сделал удаление группы если удалили последнего ее студента
         public static bool Remove(long id)
@@ -62,20 +93,22 @@ namespace LabsQueueBot
             return true;
         }
 
-        public static void Add(byte course, byte group)
+        public static void Add(byte course, byte group) 
         {
             StringBuilder builder = new StringBuilder();
             if (course > 6 || course < 1)
-                builder.AppendLine();
+                builder.AppendLine("Некорректный номер курса");
             if (group > 99 || group < 1)
-                builder.AppendLine();
+                builder.AppendLine("Некорректный номер группы");
             if (builder.Length != 0)
                 throw new ArgumentException(builder.ToString());
 
             GroupKey key = new GroupKey(course, group);
             if (groups.ContainsKey(key))
-                throw new InvalidOperationException();
+                throw new InvalidDataException("Такая группа уже существует");
 
+            if (GroupsCount == 60)
+                throw new InvalidOperationException("Много групп");
             GroupsCount++;
             groups.Add(key, new Group(course, group));
         }
@@ -84,29 +117,22 @@ namespace LabsQueueBot
 
         public static string ShowQueue(long id, string subject)
         {
-            
             GroupKey key = new GroupKey(Users.At(id).Course, Users.At(id).Group);
             if (!groups.ContainsKey(key))
-                return "";
+                return $"Не существует {key.ToString()}";
+
             Group group = groups[key];
             if (!group.ContainsKey(subject))
-                return "";
+                return "Эта очередь пуста";
+
             StringBuilder builder = new StringBuilder();
-            //TODO: косметика: выбрать один из циклов и определить возвращаемые значения
-            //for (int number = 1; number < group[subject].Count; ++number)
-            //{
-            //    builder.AppendLine($"{number}. {group[subject][number].Name}");
-            //}
             int number = 1;
+
             foreach (var user in group[subject])
-            {
                 builder.AppendLine($"{number++}. {user.Name}");
-                //++number;
-            }
+
             if (builder.Equals(""))
-            {
                 builder.AppendLine("Эта очередь пуста");
-            }
             return builder.ToString();
         }
 

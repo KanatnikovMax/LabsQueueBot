@@ -10,11 +10,12 @@ using System.Text;
 using Telegram.Bot.Requests;
 using System.Diagnostics.Contracts;
 using Telegram.Bot.Types.ReplyMarkups;
-using System.Reflection.Metadata.Ecma335;
+using Telegram.Bots.Http;
+using System.Security.Cryptography;
 
 namespace LabsQueueBot
 {
-    // TODO: РЕШИТЬ ПРОБЛЕМУ С РАЗДЕЛЕНИЕМ РЕСУРСОВ ! ! !
+    //TODO: подключить б/д и продумать логирование
     class Program
     {
         internal static readonly Dictionary<string, Command> commands = new()
@@ -54,9 +55,12 @@ namespace LabsQueueBot
             // Некоторые действия
             //return;
             Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
+
+
+            //RemoveInactiveUsers(null);
+            //update.ChatMember.
             long id = 0;
             Message message;
-
             switch (update.Type)
             {
                 case Telegram.Bot.Types.Enums.UpdateType.CallbackQuery:
@@ -69,6 +73,12 @@ namespace LabsQueueBot
 
                     message = update.Message;
                     id = message.Chat.Id;
+                    //if (message.Type == Telegram.Bot.Types.Enums.MessageType.ChatMemberLeft)
+                    //{
+                    //    //await bot.Del
+                    //    new Stop().Run(update);
+                    //    return;
+                    //}
                     if (update.Message.Type != Telegram.Bot.Types.Enums.MessageType.Text)
                     {
                         string request;
@@ -82,10 +92,34 @@ namespace LabsQueueBot
                     }
                     break;
 
-                default:
+                case Telegram.Bot.Types.Enums.UpdateType.MyChatMember:
 
+                    id = update.MyChatMember.Chat.Id;
+                    message = null;
+                    if(Users.Contains(id))
+                        Groups.Remove(id);
+                        Users.Remove(id);
+                    return;
+
+                default:                    
                     return;
             }
+
+            
+            ///карантин---------------------------
+            //if (update.MyChatMember != null && (update.MyChatMember.OldChatMember.Status == Telegram.Bot.Types.Enums.ChatMemberStatus.Kicked
+            //    || update.MyChatMember.OldChatMember.Status == Telegram.Bot.Types.Enums.ChatMemberStatus.Left))
+            //{
+            //    try
+            //    {
+            //        await
+            //    }
+
+            //    new Stop().Run(update);
+            //    return;
+            //}
+            ///карантин---------------------------
+
 
             if (Users.Contains(id) && Users.At(id).State != User.UserState.Unregistred && Users.At(id).State != User.UserState.None
                 && Users.At(id).State != User.UserState.AddGroup && Users.At(id).State != User.UserState.AddSubject
@@ -98,25 +132,13 @@ namespace LabsQueueBot
                     await bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
                         cancellationToken: cancellationToken);
 
-                    //TODO: обрабатывать кнопку "Добавить"
-                    //await botClient.SendTextMessageAsync(message.Chat, request.Text)
                     if (request.Text != "Назад")
                         await botClient.SendTextMessageAsync(message.Chat, request.Text);
-                    //if (request.Text != "Добавить")
                     if (Users.At(id).State != User.UserState.AddSubject && Users.At(id).State != User.UserState.AddGroup)
                         Users.At(id).State = User.UserState.None;
-
-                    //if (request.Text != "Назад")
-                    //    await botClient.SendTextMessageAsync(message.Chat, request.Text);
-                    //if (request.Text != "Много")
-                    //    await bot.DeleteMessageAsync(chatId: buttonClick.Chat.Id, messageId: buttonClick.MessageId,
-                    //    cancellationToken: cancellationToken);
                 }
                 else
                 {
-                    //await botClient.CopyMessageAsync(id, id, message.MessageId-1);
-                    //await botClient.CopyMessageAsync(id, id, message.MessageId);// копируем сообщение в тот же чат
-
                     await bot.DeleteMessageAsync(chatId: message.Chat.Id,
                         messageId: message.MessageId,
                         cancellationToken: cancellationToken);
@@ -127,8 +149,6 @@ namespace LabsQueueBot
             if (update.Type == Telegram.Bot.Types.Enums.UpdateType.Message)
             {
 
-
-                //TODO: обновить все имеющиеся данные по очередям во время потоки.sleep
 
                 if (!Users.Contains(id) && message.Text != "/start")
                 {
@@ -166,11 +186,51 @@ namespace LabsQueueBot
             Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(exception));
         }
 
+        private async static Task CheckUserStatus(long id)
+        {
+            try
+            {
+                await bot.SendTextMessageAsync(id, "оаоаоао таймер");
+                //ChatMember chatMember = await bot.GetChatMemberAsync(id, id);
+                //bot. 
+                //if()
+                //{
+                //    Console.WriteLine("оаоаоао оно сработало");
+                //}
+                //chatMember.User.
+                //var status = chatMember.Status;
+                //if (chatMember.Status == Telegram.Bot.Types.Enums.ChatMemberStatus.Kicked )
+            }
+            catch (ApiRequestException ex)
+            {
+                if (ex.Message.Contains("Forbidden: bot was blocked by the user"))
+                {
+                    Groups.Remove(id);
+                    Users.Remove(id);
+                }
+            }
+        }
+
+        private static void RemoveInactiveUsers(object obj)
+        {
+            lock (new object())
+            {
+                foreach (long id in Users.Keys)
+                    CheckUserStatus(id);
+            }
+        }
+
+        private static void RemoveUsersTimer()
+        {
+            TimerCallback tm = new TimerCallback(RemoveInactiveUsers);
+            Timer timer = new Timer(tm, null, 0, 5000);
+        }
+
 
         static void Main(string[] args)
         {
             Console.WriteLine("Запущен бот " + bot.GetMeAsync().Result.FirstName);
-            //throw new Exception("idi naxui"); //блять нахуй ты это добавил?!
+
             var cts = new CancellationTokenSource();
             var cancellationToken = cts.Token;
             var receiverOptions = new ReceiverOptions
@@ -183,6 +243,10 @@ namespace LabsQueueBot
                 receiverOptions,
                 cancellationToken
             );
+            //TimerCallback tm = new TimerCallback(RemoveInactiveUsers);
+            //Timer timer = new Timer(tm, null, 0, 5000);
+            //RemoveUsersTimer();
+
             Console.ReadLine();
         }
     }

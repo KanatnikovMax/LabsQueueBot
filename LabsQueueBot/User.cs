@@ -40,7 +40,7 @@ namespace LabsQueueBot
             }
             if (name.Split(' ')[1].Trim().Length < 2)
             {
-                builder.Append("Имя должно содержать как минимум две буквы");
+                builder.AppendLine("Имя должно содержать как минимум две буквы");
             }
             if (name.Any(c => "0123456789~!@#$%^&*()_+{}:\"|?><`=[]\\;',./№".Contains(c)))
             {

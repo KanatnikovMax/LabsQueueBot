@@ -182,6 +182,8 @@ namespace LabsQueueBot
             Group group = Groups.At(new GroupKey(user.Course, user.Group));
             try
             {
+                if (!group.ContainsKey(subject))
+                    return new SendMessageRequest(id, "Тебя тут нет, кого ты пропускаешь ?");
                 group[subject].Skip(id);
                 return new SendMessageRequest(id, "Это как шаг вперед, но назад");
             }
@@ -230,7 +232,7 @@ namespace LabsQueueBot
             User user = Users.At(id);
             Group group = Groups.At(new GroupKey(user.Course, user.Group));
 
-            if (group.RemoveStudentFromQueue(id, subject))
+            if (group.ContainsKey(subject) && group.RemoveStudentFromQueue(id, subject))
                 return new SendMessageRequest(id, "Ты вышел из очереди");
 
             return new SendMessageRequest(id, "Ты не можешь выйти из очереди, в которой не числишься");
@@ -266,11 +268,11 @@ namespace LabsQueueBot
             long id = update.Message.Chat.Id;
             if (!Users.Contains(id))
                 return null;
-            var list = Groups.Keys.Select(x => x.ToString()).ToList();
+            var list = Groups.Keys.Select(x => x.ToString()).Order().ToList();
             bool backFlag = Users.At(id).State != User.UserState.UnsetStudentData; // нужна ли кнопка "Назад"
             if(backFlag)
                 Users.At(id).State = User.UserState.ChangeData;
-            bool addFlag = Groups.GroupsCount < 50;
+            bool addFlag = Groups.GroupsCount < 60;
             return KeyboardCreator.ListToKeyboard(list, addFlag, backFlag, 1);
         }
 
@@ -281,7 +283,6 @@ namespace LabsQueueBot
         }
     }
 
-    // TODO: доделать
     internal class SetGroupApplier : Command
     {
         public override string Definition => "/set_group_applier";
@@ -297,7 +298,6 @@ namespace LabsQueueBot
             var id = update.CallbackQuery.Message.Chat.Id;
             if (text == "Назад")
                 return new SendMessageRequest(id, text);
-            //TODO: добавление пользователя в группу
             if (text != "Добавить")
             {
                 var line = text.Split(' ');
@@ -305,20 +305,34 @@ namespace LabsQueueBot
                 byte group = Convert.ToByte(line[2]);
                 if(Users.At(id).State == User.UserState.ChangeData)
                     Groups.Remove(id);
-                if (!Groups.At(new GroupKey(course, group)).AddStudent())
+
+                try
                 {
-
-
-                    return new SendMessageRequest(id, "Много");
+                    if (!Groups.ContainsKey(new GroupKey(course, group)))
+                        Groups.Add(course, group);
+                    if (!Groups.At(new GroupKey(course, group)).AddStudent())
+                    {
+                        throw new InvalidOperationException("Много студентов в группе");
+                    }
+                    Users.Add(new User(course, group, Users.At(id).Name, id));
+                    Users.At(id).State = User.UserState.None;
+                    return new Help().Run(update);
                 }
-                Users.Add(new User(course, group, Users.At(id).Name, id));
-                Users.At(id).State = User.UserState.None;
-                return new Help().Run(update);
-                //return new SendMessageRequest(id, $"Вы были зачислены на {Definition} ");
+                catch (ArgumentException exception)
+                {
+                    return new SendMessageRequest(id, $"{exception.Message}\nПовторите ввод:");
+                }
+                catch (InvalidDataException exception)
+                {
+                    return new SendMessageRequest(id, exception.Message);
+                }
+                catch (InvalidOperationException exception)
+                {
+                    return new SendMessageRequest(id, exception.Message);
+                }
             }
             else
                 Users.At(id).State = User.UserState.AddGroup;
-            // TODO: на кнопку добавить появляется новая группа
             return new SendMessageRequest(id, "Введите свои курс и группу. Например, для n курса m группы\nn:m");
         }
     }
@@ -362,8 +376,9 @@ namespace LabsQueueBot
             catch (ArgumentException exception)
             {
                 builder.AppendLine(exception.Message);
+                builder.AppendLine("Повторите ввод:");
             }
-            catch (InvalidOperationException exception)
+            catch (InvalidDataException exception)
             {
                 Users.Add(new User(course, group, Users.At(id).Name, id));
                 Users.At(id).State = User.UserState.None;
@@ -371,6 +386,11 @@ namespace LabsQueueBot
 
                 builder.AppendLine(exception.Message);
                 builder.AppendLine($"Вы были добавлены в {course} курс {group} группу");
+            }
+            catch (InvalidOperationException exception)
+            {
+                builder.AppendLine(exception.Message);
+                builder.AppendLine("Повторите ввод:");
             }
 
             return new SendMessageRequest(id, builder.ToString());
@@ -415,11 +435,14 @@ namespace LabsQueueBot
             User user = Users.At(id);
             Group group = Groups.At(new GroupKey(user.Course, user.Group));
 
-            if (subject == "Добавить" /*&& !group.AddSubject(subject)*/)
+            if (subject == "Добавить")
             {
                 user.State = User.UserState.AddSubject;
                 return new SendMessageRequest(id, "Введите название нового предмета");
             }
+            if (!group.ContainsKey(subject))
+                group.AddSubject(subject);
+                
             if (group.AddStudent(id, subject))
                 return new SendMessageRequest(id, $"Твой номер в очереди — {group[subject].Position(id) + 1}");
             return new SendMessageRequest(id, "Ты уже записан в эту очередь");
@@ -445,8 +468,7 @@ namespace LabsQueueBot
             try
             {
                 group.AddSubject(subject);
-                // TODO: решить что делать с добавлением студента в очередь сразу после создания
-                return new SendMessageRequest(id, $"Очередь по предмету {subject} добавлена");
+                return new SendMessageRequest(id, $"Очередь по предмету {subject} добавлена\nНажмите /join для добавления в очередь");
             }
             catch (Exception exception)
             {
@@ -465,7 +487,6 @@ namespace LabsQueueBot
         {
             long id = update.Message.Chat.Id;
             User user = Users.At(update.Message.Chat.Id);
-            var gr = Groups.groups[new GroupKey(2, 9)]._Keys();
             List<string> subjects = Groups.groups[new GroupKey(user.Course, user.Group)].Keys.ToList();
             bool addFlag = Users.At(id).State == User.UserState.Join;
             return KeyboardCreator.ListToKeyboard(subjects, addFlag, true, 1);
@@ -473,52 +494,13 @@ namespace LabsQueueBot
 
         public override SendMessageRequest Run(Update update)
         {
-            long id = update.Message.Chat.Id;
-            //SendMessageRequest request;
-            //try
-            //{
-            //    request = new Subjects().Run(update);
-            //    request = new SendMessageRequest(id, new StringBuilder(request.Text).AppendLine("Введите название предмета").ToString());
-            //    Users.At(id).State = User.UserState.ShowQueue;
-            //}
-            //catch(InvalidDataException)
-            //{
-            //    request = new SendMessageRequest(id, "Твои данные - ошибка, и жизнь твоя - ошибка");
-            //}
-            //catch (Exception)
-            //{
-            //    request = new SendMessageRequest(id, "Твои данные - ошибка, и жизнь твоя - ошибка");
-            //}
-
-
-            //var keyboard = KeyboardCreator.ListToKeyboardTemplate<string>(subjects, subjects.Count, 1);
-            //var keyboard = KeyboardCreator.ListToKeyboard(subjects, true, 1);
-            //return new SendMessageRequest(id,subjects);
+            long id = update.Message.Chat.Id;         
             Users.At(id).State = User.UserState.ShowQueue;
             return new SendMessageRequest(id, "Выберите предмет:");
         }
     }
 
     //вызывает меню с предметами
-    internal class ShowApplier : Command
-    {
-        public override string Definition { get => "/show_applier"; }
-
-        public override InlineKeyboardMarkup? GetKeyboard(Update update)
-        {
-            return null;
-        }
-
-        public override SendMessageRequest Run(Update update)
-        {
-            long id = update.Message.Chat.Id;
-            string subject = update.Message.Text;
-
-
-
-            return new SendMessageRequest(id, "");
-        }
-    }
 
     internal class ShowQueue : Command
     {
@@ -562,14 +544,7 @@ namespace LabsQueueBot
             }
 
             Group group = Groups.At(new GroupKey(user.Course, user.Group));
-            //var queue = group[subject];
-            //var builder = new StringBuilder();
-            //int i = 1;
-            //foreach (var student in queue)
-            //{
-            //    builder.AppendLine($"{i}. {student.Name}");
-            //    ++i;
-            //}
+            
             return new SendMessageRequest(id, Groups.ShowQueue(id, subject));
         }
     }

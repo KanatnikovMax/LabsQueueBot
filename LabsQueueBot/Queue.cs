@@ -23,7 +23,6 @@ namespace LabsQueueBot
             var index = Position(id);
             if (index < 0)
                 return false;
-            //_data[index].State = Waiting;
             _data.RemoveAt(index);
             return true;
         }
@@ -31,7 +30,6 @@ namespace LabsQueueBot
         {
             if (Count > 0)
             {
-                //_data[0].State = Waiting;
                 _data.RemoveAt(0);
             }
         }

@@ -9,6 +9,9 @@ namespace LabsQueueBot
 {
     internal class Group : IEnumerable<KeyValuePair<string, Queue>>
     {
+        // название дисциплины : очередь по дисциплине
+        private readonly Dictionary<string, Queue> _subjects;
+
         private byte _course;
         public byte Course
         {
@@ -22,14 +25,11 @@ namespace LabsQueueBot
         public byte StudentsCount { get; private set; }
         public int CountSubjects { get => _subjects.Count; }
         public byte Number { get; set; }
-        // название дисциплины : очередь по дисциплине
-        private readonly Dictionary<string, Queue> _subjects;
-
         public void AddSubject(string subject)
         {
             if (_subjects.ContainsKey(subject))
                 throw new ArgumentException("Этот предмет уже есть в списке");
-            if (CountSubjects == 2)
+            if (CountSubjects == 20)
                 throw new InvalidOperationException("Очередей в этой группе слишком много");
             _subjects.Add(subject, new Queue());
         }
@@ -42,9 +42,6 @@ namespace LabsQueueBot
             _course = course;
             Number = number;
             _subjects = new Dictionary<string, Queue>();
-
-            AddSubject("ЯСП");
-            AddSubject("C#");
         }
 
         public bool AddStudent()
@@ -108,7 +105,5 @@ namespace LabsQueueBot
         }
 
         public Dictionary<string, Queue>.KeyCollection Keys { get => _subjects.Keys; }
-        public Dictionary<string, Queue>.KeyCollection _Keys()  => _subjects.Keys; 
-        public Dictionary<string, Queue>.ValueCollection Values => _subjects.Values;
     }
 }

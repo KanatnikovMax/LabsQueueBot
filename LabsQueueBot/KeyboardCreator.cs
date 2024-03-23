@@ -22,8 +22,6 @@ namespace LabsQueueBot
             
             int elementsCount = list.Count;
             int size = elementsCount / collumnsCount + (elementsCount % collumnsCount != 0 ? 1 : 0);
-            //TODO: подумать над сортировкой выводимых данных
-            //list.Sort();
             InlineKeyboardButton[][] arr = new InlineKeyboardButton[size + (isNeedAdd ? 1 : 0) + (isNeedBack ? 1 : 0)][];
 
             for (int i = 0; i < elementsCount / collumnsCount; i++)

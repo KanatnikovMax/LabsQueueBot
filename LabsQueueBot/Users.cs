@@ -20,7 +20,7 @@ namespace LabsQueueBot
 
         public static void Add(long id, string name) 
         {
-            User user = new User(name, id);
+            User user = new (name, id);
             _users.Remove(user.ID);
             _users.Add(user.ID, user);
         }
@@ -29,24 +29,14 @@ namespace LabsQueueBot
         {
             _users.Remove(user.ID);
             _users.Add(user.ID, user);
-
-            //if (Groups.groups[new GroupKey(user.Course, user.Group)].StudentsCount > 99)
-            //    return false;
-            //TODO: перенести в StartApplier
-            //Groups.groups[new GroupKey(user.Course, user.Group)].StudentsCount += 1;
-            //return true;
         }
 
         public static bool Remove(long id)
         {
             //удаление  студента из группы
-            if (_users.Remove(id))
-            {
-                //Groups.Remove(id);
-                return true; 
-            }
-            return false;
+            return _users.Remove(id);
         }
         public static User At(long id) => _users[id];
+        public static Dictionary<long, User>.KeyCollection Keys => _users.Keys;
     }
 }
