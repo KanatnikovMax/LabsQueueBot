@@ -10,9 +10,14 @@ namespace LabsQueueBot
     {
         public enum UserState
         {
-            None, SetGroup, ChoiceSubject, UnsetStudentData, Validation, ShowQueue
+            //
+            None, ShowQueue,
+            //
+            Unregistred, UnsetStudentData,
+            //
+            Join, Quit, Skip, AddGroup, AddSubject, Rename, ChangeData
         }
-        //TODO: сделать состояния для очереди
+        //TODO: сделать состояния для очереди (ожидает/уже в очереди типа того)
         public byte Group { get; set; }
         public byte Course { get; set; }
         public string Name { get; set; }
@@ -29,15 +34,15 @@ namespace LabsQueueBot
             {
                 builder.AppendLine("Некорректный номер группы");
             }
-            if (name.Split(' ')[0].Length < 2) 
+            if (name.Split(' ')[0].Trim().Length < 2)
             {
                 builder.AppendLine("Фамилия должна содержать как минимум две буквы");
             }
-            if (name.Split(' ')[1].Length < 2)
+            if (name.Split(' ')[1].Trim().Length < 2)
             {
-                builder.Append("Имя должно содержать как минимум две буквы");
+                builder.AppendLine("Имя должно содержать как минимум две буквы");
             }
-            if (name.Any(c => "0123456789~!@#$%^&*()_+{}:\"|?><`-=[]\\;',./№".Contains(c)))
+            if (name.Any(c => "0123456789~!@#$%^&*()_+{}:\"|?><`=[]\\;',./№".Contains(c)))
             {
                 builder.AppendLine("Имя и фамилия не должны содержать цифр и специальных символов");
             }
@@ -47,9 +52,43 @@ namespace LabsQueueBot
             }
             Course = course;
             Group = group;
+            int first = name.IndexOf("👑");
+            if (first != -1)
+                name = name.Remove(first);
+            first = name.IndexOf("Ватага");
+            if (first != -1)
+            {
+                name = name[..first];
+                name += "👑";
+            }
+            //"🌈";
             Name = name;
             ID = id;
         }      
         public User(long id) => ID = id;
+        public User(string name, long id)
+        {
+            StringBuilder builder = new StringBuilder();
+            if (name.Split(' ')[0].Length < 2)
+            {
+                builder.AppendLine("Фамилия должна содержать как минимум две буквы");
+            }
+            if (name.Split(' ')[1].Length < 2)
+            {
+                builder.Append("Имя должно содержать как минимум две буквы");
+            }
+            if (name.Any(c => "0123456789~!@#$%^&*()_+{}:\"|?><`=[]\\;',./№".Contains(c)))
+            {
+                builder.AppendLine("Имя и фамилия не должны содержать цифр и специальных символов");
+            }
+            if (builder.Length != 0)
+            {
+                throw new ArgumentException(builder.ToString());
+            }
+            Course = 0;
+            Group = 0;
+            Name = name;
+            ID = id;
+        }
     }
 }
