@@ -52,13 +52,36 @@ namespace LabsQueueBot
             return true;
         }
 
+        // зависит от Position()
         public bool AddStudent(long id, string subject)
         {
-            if (_subjects[subject].Position(id) != -1)
+            if (_subjects[subject].Position(id) != 0)
                 return false;
             _subjects[subject].Add(Users.At(id));
             return true;
         }
+
+        //random_queue_update
+        //ДОБАВИЛ
+        // НОВЫЙ метод Group для передачи сообщения про место user'а в очереди на уровень выше
+        public string FindPosition(long id, string subject)
+        {
+            StringBuilder builder = new StringBuilder();
+            if (_subjects.ContainsKey(subject))
+            {
+                int position = _subjects[subject].Position(id);
+                if (position > 0)
+                    builder.Append($"Твой номер в очереди — {position}");
+                if (position < 0)
+                    builder.Append("Ваше место в очереди не определено\nОжидайте..");
+                if (position == 0)
+                    builder.Append("Вас нет в очереди");
+            }
+            else
+                builder.Append("Группа не содержит такого предмета");
+            return builder.ToString();
+        }
+        //
 
         public void RemoveStudent(long id)
         {

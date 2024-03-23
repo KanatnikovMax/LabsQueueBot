@@ -49,7 +49,7 @@ namespace LabsQueueBot
             {User.UserState.Rename, new RenameApplier() }
         };
 
-        static ITelegramBotClient bot = new TelegramBotClient("7098667146:AAHlUf4Y-cmOtkOmCcvFDVnKFHbkVlCgpJE");
+        static ITelegramBotClient bot = new TelegramBotClient("6535106104:AAGsn1yLvHBBj0GD3Fc0kic67fao3JeFffo");
         public static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
             // Некоторые действия

@@ -444,7 +444,13 @@ namespace LabsQueueBot
                 group.AddSubject(subject);
                 
             if (group.AddStudent(id, subject))
-                return new SendMessageRequest(id, $"Твой номер в очереди — {group[subject].Position(id) + 1}");
+                //random_queue_update
+                // исправил, чтобы НОВЫЙ метод Group возвращал информацию о вступлении user'а в очередь
+                // 
+                //ДОБАВИЛ
+                return new SendMessageRequest(id, group.FindPosition(id, subject));
+                //ВМЕСТО
+                //return new SendMessageRequest(id, $"Твой номер в очереди — {group[subject].Position(id) + 1}");
             return new SendMessageRequest(id, "Ты уже записан в эту очередь");
         }
     }
@@ -599,6 +605,7 @@ namespace LabsQueueBot
 
 
     }
+
     internal class Mult : Command
     {
         public override string Definition { get => "/Mult - Смена фамилии и имени"; }

@@ -128,8 +128,8 @@ namespace LabsQueueBot
             StringBuilder builder = new StringBuilder();
             int number = 1;
 
-            foreach (var user in group[subject])
-                builder.AppendLine($"{number++}. {user.Name}");
+            foreach (var id in group[subject])
+                builder.AppendLine($"{number++}. {Users.At(id).Name}");
 
             if (builder.Equals(""))
                 builder.AppendLine("Эта очередь пуста");
@@ -149,8 +149,27 @@ namespace LabsQueueBot
             builder.AppendLine("Очереди твоего курса и твои номера в них:");
             foreach (var queue in group)
             {
-                var position = queue.Value.Position(id) + 1;
-                string text = position != 0 ? position.ToString() : "отсутствует";
+                //random_queue_update
+                //исправил так, чтобы возвращало сразу место в очереди
+                //ДОБАВИЛ
+                var position = queue.Value.Position(id);
+                //ВМЕСТО
+                //var position = queue.Value.Position(id) + 1;
+
+                //random_queue_update
+                //ДОБАВИЛ
+                //
+                string text;
+                if (position > 0)
+                    text = position.ToString();
+                else
+                    if (position == 0)
+                        text = "отсутствует";
+                    else
+                        text = "в ожидании";
+                //ВМЕСТО
+                //string text = position != 0 ? position.ToString() : "отсутствует";
+
                 builder.AppendLine($"{queue.Key} -> {text}");
                 //builder.AppendLine($"Предмет: {queue.Key}\nНомер в очереди: {text}");
             }
