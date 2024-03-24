@@ -60,10 +60,6 @@ namespace LabsQueueBot
             _subjects[subject].Add(Users.At(id));
             return true;
         }
-
-        //random_queue_update
-        //ДОБАВИЛ
-        // НОВЫЙ метод Group для передачи сообщения про место user'а в очереди на уровень выше
         public string FindPosition(long id, string subject)
         {
             StringBuilder builder = new StringBuilder();
@@ -81,7 +77,6 @@ namespace LabsQueueBot
                 builder.Append("Группа не содержит такого предмета");
             return builder.ToString();
         }
-        //
 
         public void RemoveStudent(long id)
         {

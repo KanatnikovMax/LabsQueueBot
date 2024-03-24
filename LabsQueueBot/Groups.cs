@@ -128,8 +128,8 @@ namespace LabsQueueBot
             StringBuilder builder = new StringBuilder();
             int number = 1;
 
-            foreach (var id in group[subject])
-                builder.AppendLine($"{number++}. {Users.At(id).Name}");
+            foreach (var userId in group[subject])
+                builder.AppendLine($"{number++}. {Users.At(userId).Name}");
 
             if (builder.Equals(""))
                 builder.AppendLine("Эта очередь пуста");
@@ -139,8 +139,6 @@ namespace LabsQueueBot
         public static string ShowSubjects(long id)
         {
             GroupKey key = new GroupKey(Users.At(id).Course, Users.At(id).Group);
-            //if (!groups.ContainsKey(key))
-            //    return "Вашей группы нет в списке\n/change_info чтобы изменить свои курс и группу";
             Group group = groups[key];
             StringBuilder builder = new StringBuilder();
             if (group.CountSubjects == 0)
@@ -149,16 +147,7 @@ namespace LabsQueueBot
             builder.AppendLine("Очереди твоего курса и твои номера в них:");
             foreach (var queue in group)
             {
-                //random_queue_update
-                //исправил так, чтобы возвращало сразу место в очереди
-                //ДОБАВИЛ
                 var position = queue.Value.Position(id);
-                //ВМЕСТО
-                //var position = queue.Value.Position(id) + 1;
-
-                //random_queue_update
-                //ДОБАВИЛ
-                //
                 string text;
                 if (position > 0)
                     text = position.ToString();
@@ -167,11 +156,8 @@ namespace LabsQueueBot
                         text = "отсутствует";
                     else
                         text = "в ожидании";
-                //ВМЕСТО
-                //string text = position != 0 ? position.ToString() : "отсутствует";
 
                 builder.AppendLine($"{queue.Key} -> {text}");
-                //builder.AppendLine($"Предмет: {queue.Key}\nНомер в очереди: {text}");
             }
             return builder.ToString();
         }

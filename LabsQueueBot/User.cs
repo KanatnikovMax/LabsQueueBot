@@ -61,7 +61,6 @@ namespace LabsQueueBot
                 name = name[..first];
                 name += "👑";
             }
-            //"🌈";
             Name = name;
             ID = id;
         }      
