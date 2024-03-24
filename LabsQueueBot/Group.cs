@@ -51,13 +51,13 @@ namespace LabsQueueBot
             StudentsCount++;
             return true;
         }
-
-        public bool AddStudent(long id, string subject)
+        // -1, если не нашли студента, -2, если нашли в списке ожидающих, >0, если уже в очереди
+        public int AddStudent(long id, string subject)
         {
-            if (_subjects[subject].Position(id) != -1)
-                return false;
-            _subjects[subject].Add(Users.At(id));
-            return true;
+            int position = _subjects[subject].Position(id);
+            if (position == -1)
+                _subjects[subject].Add(Users.At(id));
+            return position;
         }
 
         public void RemoveStudent(long id)
@@ -104,6 +104,11 @@ namespace LabsQueueBot
             get => _subjects[key];
         }
 
+        public void Union()
+        {
+            foreach(var queue in _subjects.Values)
+                queue.Union();
+        }
         public Dictionary<string, Queue>.KeyCollection Keys { get => _subjects.Keys; }
     }
 }

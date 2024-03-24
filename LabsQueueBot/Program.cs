@@ -246,8 +246,11 @@ namespace LabsQueueBot
             //TimerCallback tm = new TimerCallback(RemoveInactiveUsers);
             //Timer timer = new Timer(tm, null, 0, 5000);
             //RemoveUsersTimer();
-
-            Console.ReadLine();
+            while (true)
+            {
+                Console.ReadLine();
+                Groups.Union();
+            }
         }
     }
 }

@@ -442,10 +442,13 @@ namespace LabsQueueBot
             }
             if (!group.ContainsKey(subject))
                 group.AddSubject(subject);
-                
-            if (group.AddStudent(id, subject))
-                return new SendMessageRequest(id, $"Твой номер в очереди — {group[subject].Position(id) + 1}");
-            return new SendMessageRequest(id, "Ты уже записан в эту очередь");
+            int position = group.AddStudent(id, subject);
+            if (position == -1)
+                return new SendMessageRequest(id, $"Ты добавлен в список ожидания");
+            //return new SendMessageRequest(id, $"Твой номер в очереди — {group[subject].Position(id) + 1}");
+            if (position == -2)
+                return new SendMessageRequest(id, "Ты находишься в списке ожидания");
+            return new SendMessageRequest(id, $"Ты уже записан в эту очередь\nТвой номер в очереди — {group[subject].Position(id) + 1}");
         }
     }
 

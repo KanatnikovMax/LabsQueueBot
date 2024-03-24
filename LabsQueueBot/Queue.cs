@@ -10,47 +10,65 @@ namespace LabsQueueBot
 {
     internal class Queue : IEnumerable<User>
     {
-        private readonly List<User> _data = new();
+        private readonly List<User> _data = new(30);
+        private readonly List<User> _waiting = new(30);
 
         public User First { get => _data[0]; }
-        public int Count { get => _data.Count; }
-        public int Position(long id) => _data.FindIndex(0, Count, val => val.ID == id);
+        public int Count { get => _data.Count + _waiting.Count; }
+        /// <summary>
+        /// ищет индекс студента в очереди
+        /// </summary>
+        /// <returns>положительный индекс, если нашёл; 
+        /// -1, если не нашёл нигде; 
+        /// -2, если находится в состоянии ожидания</returns>
+        public int Position(long id)
+        {
+            var index = _data.FindIndex(0, _data.Count, val => val.ID == id);
+            return index >= 0 ? index : (_waiting.FindIndex(0, _waiting.Count, val => val.ID == id) >= 0 ? -2 : -1);
+        }
         //TODO: сделать доп хранилище и добавлять туда
-        public void Add(User user) => _data.Add(user);
-        public void Clear() => _data.Clear();
+        public void Add(User user) => _waiting.Add(user);
+        public void Clear()
+        {
+            _data.Clear();
+            _waiting.Clear();
+        }
         public bool Remove(long id)
         {
             var index = Position(id);
-            if (index < 0)
-                return false;
-            _data.RemoveAt(index);
-            return true;
-        }
-        public void Pop()
-        {
-            if (Count > 0)
+            if (index >= 0)
             {
-                _data.RemoveAt(0);
+                _data.RemoveAt(index);
+                return true;
             }
+            else
+            {
+                index = _waiting.FindIndex(0, _waiting.Count, val => val.ID == id);
+                if (index >= 0)
+                {
+                    _waiting.RemoveAt(index);
+                    return true;
+                }
+            }
+            return false;
         }
-
-        public IEnumerator<User> GetEnumerator() => _data.GetEnumerator();
-        
+        public void Union()
+        {
+            _data.AddRange(_waiting);
+            _waiting.Clear();
+        }
+        public IEnumerator<User> GetEnumerator() => _data.GetEnumerator();      
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-        public User this[int position]
-        {
-            get => _data[position];
-            private set => _data[position] = value;
-        }
 
         public void Skip(long id)
         {
             var index = Position(id);
-            if (index < 0)
+            if (index == -1)
                 throw new InvalidOperationException("Тебя тут нет, кого ты пропускаешь?");
-            if (index == Count - 1)
+            if (index == -2)
+                throw new InvalidOperationException("Ты в списке ожидания, так чего не ждётся?");
+            if (index == _data.Count - 1)
                 throw new InvalidOperationException("Ты уже итак в конце очереди, ожидай своего часа :)");
             (_data[index], _data[index + 1]) = (_data[index + 1], _data[index]);
         }

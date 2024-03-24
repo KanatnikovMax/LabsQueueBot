@@ -139,8 +139,6 @@ namespace LabsQueueBot
         public static string ShowSubjects(long id)
         {
             GroupKey key = new GroupKey(Users.At(id).Course, Users.At(id).Group);
-            //if (!groups.ContainsKey(key))
-            //    return "Вашей группы нет в списке\n/change_info чтобы изменить свои курс и группу";
             Group group = groups[key];
             StringBuilder builder = new StringBuilder();
             if (group.CountSubjects == 0)
@@ -150,11 +148,16 @@ namespace LabsQueueBot
             foreach (var queue in group)
             {
                 var position = queue.Value.Position(id) + 1;
-                string text = position != 0 ? position.ToString() : "отсутствует";
+                string text = position > 0 ? position.ToString() : (position == 0 ? "отсутствует" : "в ожидании");
                 builder.AppendLine($"{queue.Key} -> {text}");
-                //builder.AppendLine($"Предмет: {queue.Key}\nНомер в очереди: {text}");
             }
             return builder.ToString();
+        }
+
+        public static void Union()
+        {
+            foreach(var group in groups.Values)
+                group.Union();
         }
         public static Dictionary<GroupKey, Group>.KeyCollection Keys => groups.Keys;
     }
