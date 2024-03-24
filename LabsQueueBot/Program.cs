@@ -52,13 +52,8 @@ namespace LabsQueueBot
         static ITelegramBotClient bot = new TelegramBotClient("7098667146:AAHlUf4Y-cmOtkOmCcvFDVnKFHbkVlCgpJE");
         public static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
-            // Некоторые действия
-            //return;
             Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
 
-
-            //RemoveInactiveUsers(null);
-            //update.ChatMember.
             long id = 0;
             Message message;
             switch (update.Type)
@@ -73,12 +68,6 @@ namespace LabsQueueBot
 
                     message = update.Message;
                     id = message.Chat.Id;
-                    //if (message.Type == Telegram.Bot.Types.Enums.MessageType.ChatMemberLeft)
-                    //{
-                    //    //await bot.Del
-                    //    new Stop().Run(update);
-                    //    return;
-                    //}
                     if (update.Message.Type != Telegram.Bot.Types.Enums.MessageType.Text)
                     {
                         string request;
@@ -104,22 +93,6 @@ namespace LabsQueueBot
                 default:                    
                     return;
             }
-
-            
-            ///карантин---------------------------
-            //if (update.MyChatMember != null && (update.MyChatMember.OldChatMember.Status == Telegram.Bot.Types.Enums.ChatMemberStatus.Kicked
-            //    || update.MyChatMember.OldChatMember.Status == Telegram.Bot.Types.Enums.ChatMemberStatus.Left))
-            //{
-            //    try
-            //    {
-            //        await
-            //    }
-
-            //    new Stop().Run(update);
-            //    return;
-            //}
-            ///карантин---------------------------
-
 
             if (Users.Contains(id) && Users.At(id).State != User.UserState.Unregistred && Users.At(id).State != User.UserState.None
                 && Users.At(id).State != User.UserState.AddGroup && Users.At(id).State != User.UserState.AddSubject
@@ -182,50 +155,8 @@ namespace LabsQueueBot
 
         public static async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
-            // Некоторые действия
             Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(exception));
-        }
-
-        private async static Task CheckUserStatus(long id)
-        {
-            try
-            {
-                await bot.SendTextMessageAsync(id, "оаоаоао таймер");
-                //ChatMember chatMember = await bot.GetChatMemberAsync(id, id);
-                //bot. 
-                //if()
-                //{
-                //    Console.WriteLine("оаоаоао оно сработало");
-                //}
-                //chatMember.User.
-                //var status = chatMember.Status;
-                //if (chatMember.Status == Telegram.Bot.Types.Enums.ChatMemberStatus.Kicked )
-            }
-            catch (ApiRequestException ex)
-            {
-                if (ex.Message.Contains("Forbidden: bot was blocked by the user"))
-                {
-                    Groups.Remove(id);
-                    Users.Remove(id);
-                }
-            }
-        }
-
-        private static void RemoveInactiveUsers(object obj)
-        {
-            lock (new object())
-            {
-                foreach (long id in Users.Keys)
-                    CheckUserStatus(id);
-            }
-        }
-
-        private static void RemoveUsersTimer()
-        {
-            TimerCallback tm = new TimerCallback(RemoveInactiveUsers);
-            Timer timer = new Timer(tm, null, 0, 5000);
-        }
-
+        }        
 
         static void Main(string[] args)
         {
@@ -235,7 +166,7 @@ namespace LabsQueueBot
             var cancellationToken = cts.Token;
             var receiverOptions = new ReceiverOptions
             {
-                AllowedUpdates = { }, // receive all update types
+                AllowedUpdates = { },
             };
             bot.StartReceiving(
                 HandleUpdateAsync,
@@ -243,14 +174,9 @@ namespace LabsQueueBot
                 receiverOptions,
                 cancellationToken
             );
-            //TimerCallback tm = new TimerCallback(RemoveInactiveUsers);
-            //Timer timer = new Timer(tm, null, 0, 5000);
-            //RemoveUsersTimer();
-            while (true)
-            {
-                Console.ReadLine();
-                Groups.Union();
-            }
+
+            Console.ReadLine();
+            
         }
     }
 }

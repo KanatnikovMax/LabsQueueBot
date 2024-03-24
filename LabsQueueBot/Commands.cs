@@ -103,8 +103,7 @@ namespace LabsQueueBot
 
             StringBuilder builder = new StringBuilder();
 
-            builder.AppendLine("\n(Описание блока с /help)");
-            builder.AppendLine(new Help().Definition);
+            builder.AppendLine($"\n{new Help().Definition}");
 
             builder.AppendLine("\nДействия с очередями");
             builder.AppendLine(new Subjects().Definition);
@@ -117,8 +116,7 @@ namespace LabsQueueBot
             builder.AppendLine(new Rename().Definition);
             builder.AppendLine(new SetGroup().Definition);
 
-            builder.AppendLine("(Описание блока с /stop)");
-            builder.AppendLine(new Stop().Definition);
+            builder.AppendLine($"\n{new Stop().Definition}");
 
             return new SendMessageRequest(id, builder.ToString());
         }
@@ -370,8 +368,8 @@ namespace LabsQueueBot
                 Users.Add(new User(course, group, Users.At(id).Name, id));
                 Users.At(id).State = User.UserState.None;
                 Groups.At(new GroupKey(course, group)).AddStudent();
-
-                builder.AppendLine($"Вы были добавлены в {course} курс {group} группу");
+                var str = new Help().Run(update).Text;
+                builder.AppendLine($"Вы были добавлены в {course} курс {group} группу\n{str}");
             }
             catch (ArgumentException exception)
             {
@@ -385,7 +383,8 @@ namespace LabsQueueBot
                 Groups.At(new GroupKey(course, group)).AddStudent();
 
                 builder.AppendLine(exception.Message);
-                builder.AppendLine($"Вы были добавлены в {course} курс {group} группу");
+                var str = new Help().Run(update).Text;
+                builder.AppendLine($"Вы были добавлены в {course} курс {group} группу\n{str}");
             }
             catch (InvalidOperationException exception)
             {

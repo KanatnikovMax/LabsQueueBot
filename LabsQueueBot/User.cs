@@ -17,7 +17,6 @@ namespace LabsQueueBot
             //
             Join, Quit, Skip, AddGroup, AddSubject, Rename, ChangeData
         }
-        //TODO: сделать состояния для очереди (ожидает/уже в очереди типа того)
         public byte Group { get; set; }
         public byte Course { get; set; }
         public string Name { get; set; }
@@ -61,7 +60,6 @@ namespace LabsQueueBot
                 name = name[..first];
                 name += "👑";
             }
-            //"🌈";
             Name = name;
             ID = id;
         }      

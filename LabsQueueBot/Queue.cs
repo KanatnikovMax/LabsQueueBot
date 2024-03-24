@@ -26,7 +26,6 @@ namespace LabsQueueBot
             var index = _data.FindIndex(0, _data.Count, val => val.ID == id);
             return index >= 0 ? index : (_waiting.FindIndex(0, _waiting.Count, val => val.ID == id) >= 0 ? -2 : -1);
         }
-        //TODO: сделать доп хранилище и добавлять туда
         public void Add(User user) => _waiting.Add(user);
         public void Clear()
         {
