@@ -174,8 +174,11 @@ namespace LabsQueueBot
                 receiverOptions,
                 cancellationToken
             );
-
-            Console.ReadLine();
+            while (true)
+            {
+                Console.ReadLine();
+                Groups.Union();
+            }
             
         }
     }
