@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Security.Cryptography;
 
 namespace LabsQueueBot
 {
@@ -53,8 +54,12 @@ namespace LabsQueueBot
         }
         public void Union()
         {
-            _data.AddRange(_waiting);
-            _waiting.Clear();
+            while (_waiting.Count > 0)
+            {
+                int index = RandomNumberGenerator.GetInt32(0, _waiting.Count);
+                _data.Add(_waiting[index]);
+                _waiting.RemoveAt(index);
+            }
         }
         public IEnumerator<User> GetEnumerator() => _data.GetEnumerator();      
 
