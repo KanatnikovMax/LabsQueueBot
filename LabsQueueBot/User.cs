@@ -20,7 +20,7 @@ namespace LabsQueueBot
         public byte Group { get; set; }
         public byte Course { get; set; }
         public string Name { get; set; }
-        public readonly long ID;
+        public long Id { get; init; }
         public UserState State { get; set; } = UserState.None;
         public User(byte course, byte group, string name, long id)
         {
@@ -61,9 +61,9 @@ namespace LabsQueueBot
                 name += "👑";
             }
             Name = name;
-            ID = id;
+            Id = id;
         }      
-        public User(long id) => ID = id;
+        public User(long id) => Id = id;
         public User(string name, long id)
         {
             StringBuilder builder = new StringBuilder();
@@ -86,7 +86,7 @@ namespace LabsQueueBot
             Course = 0;
             Group = 0;
             Name = name;
-            ID = id;
+            Id = id;
         }
     }
 }
