@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -8,7 +8,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="C:\Users\Home\.nuget\packages\nlog.config\4.7.15\contentFiles\any\any\NLog.config" />
+    <None Remove="NLog.config" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="NLog.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="NLog" Version="5.2.8" />
+    <PackageReference Include="NLog.Config" Version="4.7.15" />
     <PackageReference Include="Telegram.Bot" Version="19.0.0" />
     <PackageReference Include="Telegram.Bots.Extensions.Polling" Version="5.9.0" />
   </ItemGroup>

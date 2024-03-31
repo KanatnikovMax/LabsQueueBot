@@ -79,7 +79,7 @@ namespace LabsQueueBot
                 Users.Remove(id);
                 return new SendMessageRequest(update.Message.Chat.Id, exception.Message);
             }
-            return new SendMessageRequest(id, "Выберете свои курс и группу:");
+            return new SendMessageRequest(id, "Выберите свои курс и группу:");
         }
     }
 
@@ -155,7 +155,7 @@ namespace LabsQueueBot
         {
             long id = update.Message.Chat.Id;
             Users.At(id).State = User.UserState.Skip;
-            return new SendMessageRequest(id, "Выберете предмет");
+            return new SendMessageRequest(id, "Выберите предмет:");
         }
     }
 
@@ -172,6 +172,8 @@ namespace LabsQueueBot
         {
             var subject = update.CallbackQuery.Data;
             var id = update.CallbackQuery.Message.Chat.Id;
+            if (update.CallbackQuery.Message.Text != "Выберите предмет:")
+                throw new InvalidOperationException();
 
             if (subject == "Назад")
                 return new SendMessageRequest(id, subject);
@@ -223,6 +225,9 @@ namespace LabsQueueBot
         {
             var subject = update.CallbackQuery.Data;
             var id = update.CallbackQuery.Message.Chat.Id;
+
+            if (update.CallbackQuery.Message.Text != "Выберите предмет:")
+                throw new InvalidOperationException();
 
             if (subject == "Назад")
                 return new SendMessageRequest(id, subject);
@@ -277,7 +282,7 @@ namespace LabsQueueBot
         public override SendMessageRequest Run(Update update)
         {
             long id = update.Message.Chat.Id;
-            return new SendMessageRequest(id, "Выберете свои курс и группу:");
+            return new SendMessageRequest(id, "Выберите свои курс и группу:");
         }
     }
 
@@ -294,6 +299,10 @@ namespace LabsQueueBot
         {
             var text = update.CallbackQuery.Data;
             var id = update.CallbackQuery.Message.Chat.Id;
+
+            if (update.CallbackQuery.Message.Text != "Выберите свои курс и группу:")
+                throw new InvalidOperationException();
+
             if (text == "Назад")
                 return new SendMessageRequest(id, text);
             if (text != "Добавить")
@@ -411,7 +420,7 @@ namespace LabsQueueBot
         {
             long id = update.Message.Chat.Id;
             Users.At(id).State = User.UserState.Join;
-            return new SendMessageRequest(id, "Выберете предмет");
+            return new SendMessageRequest(id, "Выберите предмет:");
         }
     }
 
@@ -428,6 +437,9 @@ namespace LabsQueueBot
             var subject = update.CallbackQuery.Data;
             var id = update.CallbackQuery.Message.Chat.Id;
 
+            if (update.CallbackQuery.Message.Text != "Выберите предмет:")
+                throw new InvalidOperationException();
+
             if (subject == "Назад")
                 return new SendMessageRequest(id, subject);
 
@@ -437,7 +449,7 @@ namespace LabsQueueBot
             if (subject == "Добавить")
             {
                 user.State = User.UserState.AddSubject;
-                return new SendMessageRequest(id, "Введите название нового предмета");
+                return new SendMessageRequest(id, "Введите название нового предмета:");
             }
             if (!group.ContainsKey(subject))
                 group.AddSubject(subject);
@@ -517,7 +529,7 @@ namespace LabsQueueBot
         {
             long id = update.Message.Chat.Id;
             Users.At(id).State = User.UserState.ShowQueue;
-            return new SendMessageRequest(id, "Выберете предмет:");
+            return new SendMessageRequest(id, "Выберите предмет:");
         }
     }
 
@@ -534,6 +546,8 @@ namespace LabsQueueBot
         {
             var subject = update.CallbackQuery.Data;
             var id = update.CallbackQuery.Message.Chat.Id;
+            if (update.CallbackQuery.Message.Text != "Выберите предмет:")
+                throw new InvalidOperationException();
 
             if (subject == "Назад")
                 return new SendMessageRequest(id, subject);
