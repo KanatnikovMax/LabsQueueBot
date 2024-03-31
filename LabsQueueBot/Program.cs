@@ -12,12 +12,15 @@ using System.Diagnostics.Contracts;
 using Telegram.Bot.Types.ReplyMarkups;
 using Telegram.Bots.Http;
 using System.Security.Cryptography;
+using NLog;
+using NLog.Config;
 
 namespace LabsQueueBot
 {
-    //TODO: подключить б/д и продумать логирование
+    //TODO: подключить б/д
     class Program
     {
+        private static Logger logger = LogManager.GetCurrentClassLogger();
         internal static readonly Dictionary<string, Command> commands = new()
         {
             {"/start", new Start() },
@@ -37,31 +40,51 @@ namespace LabsQueueBot
 
         internal static readonly Dictionary<User.UserState, Command> actions = new()
         {
-            {User.UserState.Unregistred, new StartApplier() },
+            {User.UserState.Unregistred, new StartApplier() },//
             {User.UserState.UnsetStudentData, new SetGroupApplier() },
-            {User.UserState.ChangeData, new SetGroupApplier() },
-            {User.UserState.Join, new JoinApplier() },
-            {User.UserState.Quit, new QuitApplier() },
-            {User.UserState.Skip, new SkipApplier() },
-            {User.UserState.ShowQueue, new ShowQueueApplier() },
-            {User.UserState.AddSubject, new AddSubjectApplier() },
-            {User.UserState.AddGroup, new AddGroupApplier() },
-            {User.UserState.Rename, new RenameApplier() }
+            {User.UserState.ChangeData, new SetGroupApplier() }, //
+            {User.UserState.Join, new JoinApplier() }, //
+            {User.UserState.Quit, new QuitApplier() }, //
+            {User.UserState.Skip, new SkipApplier() }, //
+            {User.UserState.ShowQueue, new ShowQueueApplier() }, //
+            {User.UserState.AddSubject, new AddSubjectApplier() }, //
+            {User.UserState.AddGroup, new AddGroupApplier() }, //
+            {User.UserState.Rename, new RenameApplier() } //
         };
 
         static ITelegramBotClient bot = new TelegramBotClient("7098667146:AAHlUf4Y-cmOtkOmCcvFDVnKFHbkVlCgpJE");
         public static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
-            Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
-
+            //using (var sw = new StreamWriter("file.txt", true, Encoding.UTF8)) 
+            //{
+            //    sw.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
+            //}
+            logger.Info(Newtonsoft.Json.JsonConvert.SerializeObject(update).ToString());
             long id = 0;
             Message message;
+            
             switch (update.Type)
             {
                 case Telegram.Bot.Types.Enums.UpdateType.CallbackQuery:
 
                     message = update.CallbackQuery.Message;
                     id = message.Chat.Id;
+
+                    if (Users.Contains(id) && Users.At(id).State == User.UserState.None)
+                    {
+                        await bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
+                            cancellationToken: cancellationToken);
+                        await botClient.SendTextMessageAsync(message.Chat, "Введи команду, ящур");
+                        return;
+                    }
+
+                    if (!Users.Contains(id))
+                    {
+                        await bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
+                            cancellationToken: cancellationToken);
+                        await botClient.SendTextMessageAsync(message.Chat, "Вы не зарегистрированы!\n/start для регистрации");
+                        return;
+                    }
                     break;
 
                 case Telegram.Bot.Types.Enums.UpdateType.Message:
@@ -94,21 +117,39 @@ namespace LabsQueueBot
                     return;
             }
 
+            if (Users.Contains(id) && Users.At(id).State == User.UserState.None
+                && !Groups.ContainsKey(new GroupKey(Users.At(id).Course, Users.At(id).Group)))
+            {
+                Users.Remove(id);
+                await botClient.SendTextMessageAsync(message.Chat, "Вы не зарегистрированы!\n/start для регистрации");
+                return;
+            }
+
             if (Users.Contains(id) && Users.At(id).State != User.UserState.Unregistred && Users.At(id).State != User.UserState.None
                 && Users.At(id).State != User.UserState.AddGroup && Users.At(id).State != User.UserState.AddSubject
                 && Users.At(id).State != User.UserState.Rename)
             {
                 if (update.Type == Telegram.Bot.Types.Enums.UpdateType.CallbackQuery)
                 {
-                    var request = actions[Users.At(id).State].Run(update);
+                    try
+                    {
+                        var request = actions[Users.At(id).State].Run(update);
 
-                    await bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
-                        cancellationToken: cancellationToken);
+                        await bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
+                            cancellationToken: cancellationToken);
 
-                    if (request.Text != "Назад")
-                        await botClient.SendTextMessageAsync(message.Chat, request.Text);
-                    if (Users.At(id).State != User.UserState.AddSubject && Users.At(id).State != User.UserState.AddGroup)
-                        Users.At(id).State = User.UserState.None;
+                        if (request.Text != "Назад")
+                            await botClient.SendTextMessageAsync(message.Chat, request.Text);
+
+                        if (Users.At(id).State != User.UserState.AddSubject && Users.At(id).State != User.UserState.AddGroup)
+                            Users.At(id).State = User.UserState.None;
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        await bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
+                            cancellationToken: cancellationToken);
+                        await botClient.SendTextMessageAsync(message.Chat, "Нажми на нужную табличку");
+                    }
                 }
                 else
                 {
@@ -121,8 +162,6 @@ namespace LabsQueueBot
 
             if (update.Type == Telegram.Bot.Types.Enums.UpdateType.Message)
             {
-
-
                 if (!Users.Contains(id) && message.Text != "/start")
                 {
                     await botClient.SendTextMessageAsync(message.Chat, "Вы не зарегистрированы!\n/start для регистрации");
@@ -155,13 +194,22 @@ namespace LabsQueueBot
 
         public static async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
+            
             Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(exception));
+            logger.Error(exception);
+            List<Update> lastUpdates = bot.GetUpdatesAsync(10, 10, null, null, cancellationToken).Result.ToList();
+            foreach (var update in lastUpdates)
+                if (update.Type == Telegram.Bot.Types.Enums.UpdateType.CallbackQuery)
+                    logger.Error(Newtonsoft.Json.JsonConvert.SerializeObject(update).ToString());
         }        
 
+        public static async void MassSendler(long id)
+        {
+            await bot.SendTextMessageAsync(id, Groups.ShowSubjects(id));
+        }
         static void Main(string[] args)
         {
             Console.WriteLine("Запущен бот " + bot.GetMeAsync().Result.FirstName);
-
             var cts = new CancellationTokenSource();
             var cancellationToken = cts.Token;
             var receiverOptions = new ReceiverOptions
@@ -178,6 +226,8 @@ namespace LabsQueueBot
             {
                 Console.ReadLine();
                 Groups.Union();
+                foreach(var id in Users.Keys.Where(x => (Users.At(x).State == User.UserState.None)))
+                    MassSendler(id);
             }
             
         }

@@ -14,7 +14,6 @@ namespace LabsQueueBot
         private readonly List<User> _data = new(30);
         private readonly List<User> _waiting = new(30);
 
-        public User First { get => _data[0]; }
         public int Count { get => _data.Count + _waiting.Count; }
         /// <summary>
         /// ищет индекс студента в очереди
