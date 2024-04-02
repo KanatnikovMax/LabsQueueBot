@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,6 +21,7 @@ namespace LabsQueueBot
         public byte Group { get; set; }
         public byte Course { get; set; }
         public string Name { get; set; }
+        [JsonProperty("Id")]
         public readonly long ID;
         public UserState State { get; set; } = UserState.None;
         public User(byte course, byte group, string name, long id)

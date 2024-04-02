@@ -6,15 +6,22 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Security.Cryptography;
+using Newtonsoft.Json;
 
 namespace LabsQueueBot
 {
-    internal class Queue : IEnumerable<User>
+    internal class Queue : IEnumerable<long>, ICollection<long>
     {
-        private readonly List<User> _data = new(30);
-        private readonly List<User> _waiting = new(30);
-
+        [JsonProperty]
+        private List<long> _data = new(30);
+        [JsonProperty]
+        private List<long> _waiting = new(30);
+        [JsonIgnore]
         public int Count { get => _data.Count + _waiting.Count; }
+        [JsonIgnore]
+
+        public bool IsReadOnly => true;
+
         /// <summary>
         /// ищет индекс студента в очереди
         /// </summary>
@@ -23,10 +30,10 @@ namespace LabsQueueBot
         /// -2, если находится в состоянии ожидания</returns>
         public int Position(long id)
         {
-            var index = _data.FindIndex(0, _data.Count, val => val.ID == id);
-            return index >= 0 ? index : (_waiting.FindIndex(0, _waiting.Count, val => val.ID == id) >= 0 ? -2 : -1);
+            var index = _data.FindIndex(0, _data.Count, val => val == id);
+            return index >= 0 ? index : (_waiting.FindIndex(0, _waiting.Count, val => val == id) >= 0 ? -2 : -1);
         }
-        public void Add(User user) => _waiting.Add(user);
+        public void Add(User user) => _waiting.Add(user.ID);
         public void Clear()
         {
             _data.Clear();
@@ -42,7 +49,7 @@ namespace LabsQueueBot
             }
             else
             {
-                index = _waiting.FindIndex(0, _waiting.Count, val => val.ID == id);
+                index = _waiting.FindIndex(0, _waiting.Count, val => val == id);
                 if (index >= 0)
                 {
                     _waiting.RemoveAt(index);
@@ -60,7 +67,7 @@ namespace LabsQueueBot
                 _waiting.RemoveAt(index);
             }
         }
-        public IEnumerator<User> GetEnumerator() => _data.GetEnumerator();      
+        public IEnumerator<long> GetEnumerator() => _data.GetEnumerator();      
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -74,6 +81,21 @@ namespace LabsQueueBot
             if (index == _data.Count - 1)
                 throw new InvalidOperationException("Ты уже итак в конце очереди, ожидай своего часа :)");
             (_data[index], _data[index + 1]) = (_data[index + 1], _data[index]);
+        }
+
+        public void Add(long item)
+        {
+            _data.Add(item);
+        }
+
+        public bool Contains(long item)
+        {
+            return _data.Contains(item);
+        }
+
+        public void CopyTo(long[] array, int arrayIndex)
+        {
+            _data.CopyTo(array, arrayIndex);
         }
     }
 }

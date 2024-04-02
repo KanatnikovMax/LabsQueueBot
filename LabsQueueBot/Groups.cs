@@ -1,4 +1,8 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
+using NLog.Targets;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -11,7 +15,7 @@ namespace LabsQueueBot
     {
         public byte Course { get; init; }
         public byte Number { get; init; }
-
+        public GroupKey() { }
         public GroupKey(byte course, byte number)
         {
             Course = course;
@@ -53,7 +57,13 @@ namespace LabsQueueBot
         {
             return gk1 < gk2 || gk1 == gk2;
         }
-
+        public static implicit operator GroupKey(string str)
+        {
+            var line = str.Split(' ');
+            byte course = Convert.ToByte(line[0]);
+            byte group = Convert.ToByte(line[2]);
+            return new GroupKey(course, group);
+        }
         public bool Equals(GroupKey other) => other == this;
 
         public override int GetHashCode() => HashCode.Combine(Number,Course);
@@ -68,10 +78,30 @@ namespace LabsQueueBot
             return 0;
         }
     }
+    class GroupKeyConverter : JsonConverter<GroupKey>
+    {
+
+        public override GroupKey ReadJson(JsonReader reader, Type objectType, GroupKey existingValue, bool hasExistingValue, JsonSerializer serializer)
+        {
+            JObject jo = JObject.Load(reader);
+            byte course = jo["Курс"].Value<byte>();
+            byte group = jo["Группа"].Value<byte>();
+            return new GroupKey { Course = course, Number = group };
+        }
+
+        public override void WriteJson(JsonWriter writer, GroupKey value, JsonSerializer serializer)
+        {
+            GroupKey groupKey = (GroupKey)value;
+            JObject jo = new JObject();
+            jo.Add("Курс", groupKey.Course);
+            jo.Add("Группа", groupKey.Number);
+            jo.WriteTo(writer);
+        }
+    }
 
     internal static class Groups
     {
-        internal static readonly Dictionary<GroupKey, Group> groups = new();
+        private static Dictionary<GroupKey, Group> groups = new();
 
         private static int _groupsCount;
         public static int GroupsCount
@@ -128,8 +158,8 @@ namespace LabsQueueBot
             StringBuilder builder = new StringBuilder();
             int number = 1;
 
-            foreach (var user in group[subject])
-                builder.AppendLine($"{number++}. {user.Name}");
+            foreach (var userId in group[subject])
+                builder.AppendLine($"{number++}. {Users.At(userId)}");
 
             if (builder.Equals(""))
                 builder.AppendLine("Эта очередь пуста");
@@ -160,5 +190,38 @@ namespace LabsQueueBot
                 group.Union();
         }
         public static Dictionary<GroupKey, Group>.KeyCollection Keys => groups.Keys;
+        public static void Serialize()
+        {
+            //StringBuilder builder = new();
+            //foreach (var group in groups.Values)
+            //    builder.AppendLine(JsonConvert.SerializeObject(group));
+            //string filename = "Groups.json";
+            //File.WriteAllText(filename, builder.ToString());
+
+
+            DefaultContractResolver contractResolver = new DefaultContractResolver
+            {
+                NamingStrategy = new CamelCaseNamingStrategy()
+                {
+                    ProcessDictionaryKeys = true
+                }
+            };
+            var settings = new JsonSerializerSettings
+            {
+                ContractResolver = contractResolver,
+                Formatting = Formatting.Indented
+            };
+            string filename = "Groups.json";
+            File.WriteAllText(filename, JsonConvert.SerializeObject(groups.ToArray(), settings));
+        }
+        public static void Deserialize()
+        {
+            using var sr = new StreamReader("Groups.json");
+            var aaa = JsonConvert.DeserializeObject<KeyValuePair<GroupKey, Group>[]>(sr.ReadToEnd());
+            var gr = JsonConvert.DeserializeObject<KeyValuePair<GroupKey, Group>[]>(
+                sr.ReadToEnd())?.ToDictionary(x => x.Key, x => x.Value);
+            if (gr is not null)
+                groups = gr;
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,10 +8,9 @@ using System.Threading.Tasks;
 
 namespace LabsQueueBot
 {
-    internal class Group : IEnumerable<KeyValuePair<string, Queue>>
+    internal class Group : IEnumerable<KeyValuePair<string, Queue>>, ICollection<KeyValuePair<string, Queue>>
     {
-        // название дисциплины : очередь по дисциплине
-        private readonly Dictionary<string, Queue> _subjects;
+        
 
         private byte _course;
         public byte Course
@@ -23,8 +23,13 @@ namespace LabsQueueBot
             }
         }
         public byte StudentsCount { get; private set; }
-        public int CountSubjects { get => _subjects.Count; }
         public byte Number { get; set; }
+        [JsonIgnore]
+        public int CountSubjects { get => _subjects.Count; }
+        
+        // название дисциплины : очередь по дисциплине
+        [JsonProperty]
+        private Dictionary<string, Queue> _subjects;
         public void AddSubject(string subject)
         {
             if (_subjects.ContainsKey(subject))
@@ -37,6 +42,8 @@ namespace LabsQueueBot
         {
             return _subjects.Remove(subject);
         }
+        public Group() { }
+        
         public Group(byte course, byte number)
         {
             _course = course;
@@ -109,6 +116,38 @@ namespace LabsQueueBot
             foreach(var queue in _subjects.Values)
                 queue.Union();
         }
+
+        public void Add(KeyValuePair<string, Queue> item)
+        {
+            _subjects.Add(item.Key, item.Value);
+        }
+
+        public void Clear()
+        {
+            _subjects.Clear();
+        }
+
+        public bool Contains(KeyValuePair<string, Queue> item)
+        {
+            return _subjects.Contains(item);
+        }
+
+        public void CopyTo(KeyValuePair<string, Queue>[] array, int arrayIndex)
+        {
+            Array.Copy(_subjects.ToArray(), array, arrayIndex);
+        }
+
+        public bool Remove(KeyValuePair<string, Queue> item)
+        {
+            return _subjects.Remove(item.Key);
+        }
+
+        [JsonIgnore]
         public Dictionary<string, Queue>.KeyCollection Keys { get => _subjects.Keys; }
+
+        [JsonIgnore]
+        public int Count => _subjects.Count;
+        [JsonIgnore]
+        public bool IsReadOnly => true;
     }
 }

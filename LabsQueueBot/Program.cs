@@ -14,6 +14,7 @@ using Telegram.Bots.Http;
 using System.Security.Cryptography;
 using NLog;
 using NLog.Config;
+using Newtonsoft.Json;
 
 namespace LabsQueueBot
 {
@@ -59,7 +60,7 @@ namespace LabsQueueBot
             //{
             //    sw.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
             //}
-            logger.Info(Newtonsoft.Json.JsonConvert.SerializeObject(update).ToString());
+            logger.Info(JsonConvert.SerializeObject(update).ToString());
             long id = 0;
             Message message;
             
@@ -195,12 +196,12 @@ namespace LabsQueueBot
         public static async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
         {
             
-            Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(exception));
+            Console.WriteLine(JsonConvert.SerializeObject(exception));
             logger.Error(exception);
             List<Update> lastUpdates = bot.GetUpdatesAsync(10, 10, null, null, cancellationToken).Result.ToList();
             foreach (var update in lastUpdates)
                 if (update.Type == Telegram.Bot.Types.Enums.UpdateType.CallbackQuery)
-                    logger.Error(Newtonsoft.Json.JsonConvert.SerializeObject(update).ToString());
+                    logger.Error(JsonConvert.SerializeObject(update).ToString());
         }        
 
         public static async void MassSendler(long id)
@@ -210,6 +211,7 @@ namespace LabsQueueBot
         static void Main(string[] args)
         {
             Console.WriteLine("Запущен бот " + bot.GetMeAsync().Result.FirstName);
+            Groups.Deserialize();
             var cts = new CancellationTokenSource();
             var cancellationToken = cts.Token;
             var receiverOptions = new ReceiverOptions
@@ -225,8 +227,11 @@ namespace LabsQueueBot
             while (true)
             {
                 Console.ReadLine();
+                
                 Groups.Union();
-                foreach(var id in Users.Keys.Where(x => (Users.At(x).State == User.UserState.None)))
+                Groups.Serialize();
+
+                foreach (var id in Users.Keys.Where(x => (Users.At(x).State == User.UserState.None)))
                     MassSendler(id);
             }
             
