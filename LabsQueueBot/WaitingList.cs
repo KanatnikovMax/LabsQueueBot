@@ -4,7 +4,7 @@ public class WaitingList
 {
 	public WaitingList()
 	{
-        public readonly List<User> _data = new(30);
+        public List<User> _data = new(30);
 		
 		public int Count { get => _data.Count; }
 		public int FindIndex(long id) => _data.FindIndex(id);
