@@ -1,19 +1,7 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Telegram.Bot;
-using Telegram.Bots.Extensions.Polling;
+﻿using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
-using System.Text;
-using Telegram.Bot.Requests;
-using System.Diagnostics.Contracts;
-using Telegram.Bot.Types.ReplyMarkups;
-using Telegram.Bots.Http;
-using System.Security.Cryptography;
 using NLog;
-using NLog.Config;
 
 namespace LabsQueueBot
 {

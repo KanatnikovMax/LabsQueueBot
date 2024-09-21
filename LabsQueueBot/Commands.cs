@@ -1,18 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
 using Telegram.Bot.Requests;
 using Telegram.Bot.Types;
-using Telegram.Bots.Http;
-using System.Threading;
-using Telegram.Bot;
-using Telegram.Bots.Extensions.Polling;
-using Telegram.Bot.Exceptions;
-using Telegram.Bot.Polling;
 using Telegram.Bot.Types.ReplyMarkups;
-using System.Linq.Expressions;
 
 
 namespace LabsQueueBot
