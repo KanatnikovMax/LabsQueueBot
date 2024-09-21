@@ -12,9 +12,11 @@ namespace LabsQueueBot
         /// <summary>
         /// ищет индекс студента в очереди
         /// </summary>
-        /// <returns>положительный индекс, если нашёл; 
+        /// <returns>
+        /// положительный индекс, если нашёл; 
         /// -1, если не нашёл нигде; 
-        /// -2, если находится в состоянии ожидания</returns>
+        /// -2, если находится в состоянии ожидания
+        /// </returns>
         public int Position(long id)
         {
             var index = _data.FindIndex(0, _data.Count, val => val.ID == id);

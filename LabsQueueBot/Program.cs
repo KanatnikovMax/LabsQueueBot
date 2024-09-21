@@ -1,14 +1,12 @@
 ﻿using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Polling;
-using NLog;
 
 namespace LabsQueueBot
 {
     //TODO: подключить б/д
     class Program
     {
-        private static Logger logger = LogManager.GetCurrentClassLogger();
         internal static readonly Dictionary<string, Command> commands = new()
         {
             {"/start", new Start() },
@@ -47,7 +45,6 @@ namespace LabsQueueBot
             //{
             //    sw.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
             //}
-            logger.Info(Newtonsoft.Json.JsonConvert.SerializeObject(update).ToString());
             long id = 0;
             Message message;
             
@@ -184,11 +181,10 @@ namespace LabsQueueBot
         {
             
             Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(exception));
-            logger.Error(exception);
             List<Update> lastUpdates = bot.GetUpdatesAsync(10, 10, null, null, cancellationToken).Result.ToList();
             foreach (var update in lastUpdates)
                 if (update.Type == Telegram.Bot.Types.Enums.UpdateType.CallbackQuery)
-                    logger.Error(Newtonsoft.Json.JsonConvert.SerializeObject(update).ToString());
+                    Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
         }        
 
         public static async void MassSendler(long id)
