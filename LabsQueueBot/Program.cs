@@ -191,7 +191,7 @@ namespace LabsQueueBot
         {
             await bot.SendTextMessageAsync(id, Groups.ShowSubjects(id));
         }
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             Console.WriteLine("Запущен бот " + bot.GetMeAsync().Result.FirstName);
             var cts = new CancellationTokenSource();
@@ -206,14 +206,14 @@ namespace LabsQueueBot
                 receiverOptions,
                 cancellationToken
             );
-            while (true)
-            {
-                Console.ReadLine();
-                Groups.Union();
-                foreach(var id in Users.Keys.Where(x => (Users.At(x).State == User.UserState.None)))
-                    MassSendler(id);
-            }
-            
+            await Task.Delay(-1);
+            // while (true)
+            // {
+            //     Console.ReadLine();
+            //     Groups.Union();
+            //     foreach(var id in Users.Keys.Where(x => (Users.At(x).State == User.UserState.None)))
+            //         MassSendler(id);
+            // }
         }
     }
 }
