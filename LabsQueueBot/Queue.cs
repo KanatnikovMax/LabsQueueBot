@@ -3,10 +3,10 @@ using System.Security.Cryptography;
 
 namespace LabsQueueBot
 {
-    internal class Queue : IEnumerable<User>
+    internal class Queue : IEnumerable<long>
     {
-        private readonly List<User> _data = new(30);
-        private readonly List<User> _waiting = new(30);
+        private readonly List<long> _data = new(30);
+        private readonly List<long> _waiting = new(30);
 
         public int Count { get => _data.Count + _waiting.Count; }
         /// <summary>
@@ -19,10 +19,10 @@ namespace LabsQueueBot
         /// </returns>
         public int Position(long id)
         {
-            var index = _data.FindIndex(0, _data.Count, val => val.Id == id);
-            return index >= 0 ? index : (_waiting.FindIndex(0, _waiting.Count, val => val.Id == id) >= 0 ? -2 : -1);
+            var index = _data.FindIndex(0, _data.Count, val => val == id);
+            return index >= 0 ? index : (_waiting.FindIndex(0, _waiting.Count, val => val == id) >= 0 ? -2 : -1);
         }
-        public void Add(User user) => _waiting.Add(user);
+        public void Add(User user) => _waiting.Add(user.Id);
         public void Clear()
         {
             _data.Clear();
@@ -38,7 +38,7 @@ namespace LabsQueueBot
             }
             else
             {
-                index = _waiting.FindIndex(0, _waiting.Count, val => val.Id == id);
+                index = _waiting.FindIndex(0, _waiting.Count, val => val == id);
                 if (index >= 0)
                 {
                     _waiting.RemoveAt(index);
@@ -56,7 +56,7 @@ namespace LabsQueueBot
                 _waiting.RemoveAt(index);
             }
         }
-        public IEnumerator<User> GetEnumerator() => _data.GetEnumerator();      
+        public IEnumerator<long> GetEnumerator() => _data.GetEnumerator();      
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 

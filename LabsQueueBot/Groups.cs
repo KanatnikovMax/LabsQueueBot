@@ -4,10 +4,10 @@ namespace LabsQueueBot
 {
     struct GroupKey : IComparable<GroupKey>
     {
-        public byte Course { get; init; }
-        public byte Number { get; init; }
+        public byte? Course { get; init; }
+        public byte? Number { get; init; }
 
-        public GroupKey(byte course, byte number)
+        public GroupKey(byte? course, byte? number)
         {
             Course = course;
             Number = number;
@@ -79,7 +79,7 @@ namespace LabsQueueBot
         //сделал удаление группы если удалили последнего ее студента
         public static bool Remove(long id)
         {
-            GroupKey key = new GroupKey(Users.At(id).Course, Users.At(id).Group);
+            GroupKey key = new GroupKey(Users.At(id).CourseNumber, Users.At(id).GroupNumber);
             if (!groups.ContainsKey(key))
                 return false;
             groups[key].RemoveStudent(id);
@@ -112,7 +112,7 @@ namespace LabsQueueBot
 
         public static string ShowQueue(long id, string subject)
         {
-            GroupKey key = new GroupKey(Users.At(id).Course, Users.At(id).Group);
+            GroupKey key = new GroupKey(Users.At(id).CourseNumber, Users.At(id).GroupNumber);
             if (!groups.ContainsKey(key))
                 return $"Не существует {key.ToString()}";
 
@@ -123,8 +123,8 @@ namespace LabsQueueBot
             StringBuilder builder = new StringBuilder();
             int number = 1;
 
-            foreach (var user in group[subject])
-                builder.AppendLine($"{number++}. {user.Name}");
+            foreach (var userId in group[subject])
+                builder.AppendLine($"{number++}. {Users.At(userId).Name}");
 
             if (builder.Equals(""))
                 builder.AppendLine("Эта очередь пуста");
@@ -133,7 +133,7 @@ namespace LabsQueueBot
 
         public static string ShowSubjects(long id)
         {
-            GroupKey key = new GroupKey(Users.At(id).Course, Users.At(id).Group);
+            GroupKey key = new GroupKey(Users.At(id).CourseNumber, Users.At(id).GroupNumber);
             Group group = groups[key];
             StringBuilder builder = new StringBuilder();
             if (group.CountSubjects == 0)

@@ -2,21 +2,19 @@
 
 namespace LabsQueueBot
 { 
-    internal class User
+    public class User
     {
         public enum UserState
         {
-            //
-            None, ShowQueue,
-            //
-            Unregistred, UnsetStudentData,
-            //
+            
+            None, ShowQueue,           
+            Unregistred, UnsetStudentData,            
             Join, Quit, Skip, AddGroup, AddSubject, Rename, ChangeData
         }
-        public long Id { get; set; }
-        public string Name { get; set; }
-        public byte Course { get; set; }
-        public byte Group { get; set; }     
+        public long Id { get; set; } = 0;
+        public string Name { get; set; } = String.Empty;
+        public byte CourseNumber { get; set; } = 0;
+        public byte GroupNumber { get; set; } = 0;     
         public UserState State { get; set; } = UserState.None;
         public User(byte course, byte group, string name, long id)
         {
@@ -45,8 +43,8 @@ namespace LabsQueueBot
             {
                 throw new ArgumentException(builder.ToString());
             }
-            Course = course;
-            Group = group;
+            CourseNumber = course;
+            GroupNumber = group;
             int first = name.IndexOf("👑");
             if (first != -1)
                 name = name.Remove(first);
@@ -79,8 +77,8 @@ namespace LabsQueueBot
             {
                 throw new ArgumentException(builder.ToString());
             }
-            Course = 0;
-            Group = 0;
+            CourseNumber = 0;
+            GroupNumber = 0;
             Name = name;
             Id = id;
         }

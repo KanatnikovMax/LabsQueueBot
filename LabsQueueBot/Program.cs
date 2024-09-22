@@ -45,6 +45,7 @@ namespace LabsQueueBot
             //{
             //    sw.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
             //}
+            //return;
             long id = 0;
             Message message;
             
@@ -103,7 +104,7 @@ namespace LabsQueueBot
             }
 
             if (Users.Contains(id) && Users.At(id).State == User.UserState.None
-                && !Groups.ContainsKey(new GroupKey(Users.At(id).Course, Users.At(id).Group)))
+                && !Groups.ContainsKey(new GroupKey(Users.At(id).CourseNumber, Users.At(id).GroupNumber)))
             {
                 Users.Remove(id);
                 await botClient.SendTextMessageAsync(message.Chat, "Вы не зарегистрированы!\n/start для регистрации");
@@ -193,6 +194,8 @@ namespace LabsQueueBot
         }
         static async Task Main(string[] args)
         {
+            //return;
+            
             Console.WriteLine("Запущен бот " + bot.GetMeAsync().Result.FirstName);
             var cts = new CancellationTokenSource();
             var cancellationToken = cts.Token;
