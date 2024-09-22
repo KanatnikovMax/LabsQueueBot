@@ -14,14 +14,14 @@
         public static void Add(long id, string name) 
         {
             User user = new (name, id);
-            _users.Remove(user.ID);
-            _users.Add(user.ID, user);
+            _users.Remove(user.Id);
+            _users.Add(user.Id, user);
         }
 
         public static void Add(User user)
         {
-            _users.Remove(user.ID);
-            _users.Add(user.ID, user);
+            _users.Remove(user.Id);
+            _users.Add(user.Id, user);
         }
 
         public static bool Remove(long id)

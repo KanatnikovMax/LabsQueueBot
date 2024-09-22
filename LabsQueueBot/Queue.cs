@@ -19,8 +19,8 @@ namespace LabsQueueBot
         /// </returns>
         public int Position(long id)
         {
-            var index = _data.FindIndex(0, _data.Count, val => val.ID == id);
-            return index >= 0 ? index : (_waiting.FindIndex(0, _waiting.Count, val => val.ID == id) >= 0 ? -2 : -1);
+            var index = _data.FindIndex(0, _data.Count, val => val.Id == id);
+            return index >= 0 ? index : (_waiting.FindIndex(0, _waiting.Count, val => val.Id == id) >= 0 ? -2 : -1);
         }
         public void Add(User user) => _waiting.Add(user);
         public void Clear()
@@ -38,7 +38,7 @@ namespace LabsQueueBot
             }
             else
             {
-                index = _waiting.FindIndex(0, _waiting.Count, val => val.ID == id);
+                index = _waiting.FindIndex(0, _waiting.Count, val => val.Id == id);
                 if (index >= 0)
                 {
                     _waiting.RemoveAt(index);

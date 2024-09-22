@@ -14,7 +14,7 @@ namespace LabsQueueBot
             set
             {
                 _course = value;
-                ClearSubjects();
+                //ClearSubjects();
             }
         }
         public byte StudentsCount { get; private set; }
@@ -78,11 +78,11 @@ namespace LabsQueueBot
         }
         public bool ContainsKey(string key) => _subjects.ContainsKey(key);
 
-        public void ClearSubjects()
-        {
-            _subjects.Clear();
-            StudentsCount = 0;
-        }
+        //public void ClearSubjects()
+        //{
+        //    _subjects.Clear();
+        //    StudentsCount = 0;
+        //}
 
         public IEnumerator<KeyValuePair<string, Queue>> GetEnumerator()
         {
