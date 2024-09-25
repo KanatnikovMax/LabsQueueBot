@@ -11,7 +11,8 @@
             foreach (var user in db.UserRepository.ToList())
             {
                 _users[user.Id] = user;
-                if (!Groups.ContainsKey(new GroupKey(user.CourseNumber, user.GroupNumber)))
+                if (user.CourseNumber > 0 && user.GroupNumber > 0 
+                    && !Groups.ContainsKey(new GroupKey(user.CourseNumber, user.GroupNumber)))
                     Groups.Add(user.CourseNumber, user.GroupNumber);
             }
         }

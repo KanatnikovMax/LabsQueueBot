@@ -6,6 +6,8 @@ namespace LabsQueueBot
     {
         public DbSet<User> UserRepository { get; set; }
 
+        public DbSet<Subject> SubjectRepository { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseNpgsql(
