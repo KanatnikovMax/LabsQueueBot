@@ -3,22 +3,29 @@ using System.Security.Cryptography;
 
 namespace LabsQueueBot
 {
-    public class SerialNumber
-    {
-        public int Id { get; set; }
-        public long UserIndex { get; set; }
-    }
 
     public class Queue : IEnumerable<long>
     {
         public List<long> _queue = new(30);
         public List<long> _waiting = new(30);
+        private readonly int _subjectId;
         public Queue() { }
-        public Queue(byte courseNumber, byte groupNumber, string subjectName)
+        public Queue(byte courseNumber, byte groupNumber, string subjectName, int subjectId)
         {
             CourseNumber = courseNumber;
             GroupNumber = groupNumber;
             SubjectName = subjectName;
+            _subjectId = subjectId;
+            _indexLast = 0;
+            using (var db = new QueueBotContext())
+            {
+                var snq = db.SerialNumberRepository
+                    .Where(sn => sn.SubjectId == subjectId)
+                    .OrderBy(sn => sn.Id);
+                if (snq.Count() > 0 ) 
+                    _indexLast = snq.Last().Id;
+                _queue = snq.Select(sn => sn.UserIndex).ToList();
+            }
         }
 
         public string SubjectName { get; set; }
@@ -26,6 +33,8 @@ namespace LabsQueueBot
         public byte GroupNumber { get; set; }
 
         public int Count { get => _queue.Count + _waiting.Count; }
+
+        private int _indexLast;
 
         /// <summary>
         /// ищет индекс студента в очереди
@@ -72,12 +81,27 @@ namespace LabsQueueBot
 
         public void Union()
         {
+            using var db = new QueueBotContext();
+            var list = new List<SerialNumber>();
+            var subject = db.SubjectRepository.Find(_subjectId);
             while (_waiting.Count > 0)
             {
+                ++_indexLast;
                 int index = RandomNumberGenerator.GetInt32(0, _waiting.Count);
-                _queue.Add(_waiting[index]);
+                var userId = _waiting[index];
+                _queue.Add(userId);
+                var serialNumber = new SerialNumber()
+                {
+                    Id = _indexLast,
+                    UserIndex = userId,
+                    SubjectId = _subjectId,
+                    Subject = subject
+                };
+                list.Add(serialNumber);
                 _waiting.RemoveAt(index);
             }
+            db.SerialNumberRepository.AddRange(list);
+            db.SaveChanges();
         }
 
         public IEnumerator<long> GetEnumerator() => _queue.GetEnumerator();      

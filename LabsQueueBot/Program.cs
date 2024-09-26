@@ -209,14 +209,14 @@ namespace LabsQueueBot
                 receiverOptions,
                 cancellationToken
             );
-            await Task.Delay(-1);
-            // while (true)
-            // {
-            //     Console.ReadLine();
-            //     Groups.Union();
-            //     foreach(var id in Users.Keys.Where(x => (Users.At(x).State == User.UserState.None)))
-            //         MassSendler(id);
-            // }
+            //await Task.Delay(-1);
+            while (true)
+            {
+                Console.ReadLine();
+                Groups.Union();
+                foreach (var id in Users.Keys.Where(x => (Users.At(x).State == User.UserState.None)))
+                    MassSendler(id);
+            }
         }
     }
 }

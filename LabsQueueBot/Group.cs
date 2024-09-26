@@ -38,6 +38,7 @@ namespace LabsQueueBot
                 db.SaveChanges();
             }
         }
+
         public bool DeleteSubject(string subject)
         {
             if (_subjects.Remove(subject))
@@ -58,6 +59,7 @@ namespace LabsQueueBot
             }
             return false;
         }
+
         public Group(byte course, byte number)
         {
             _course = course;
@@ -70,7 +72,7 @@ namespace LabsQueueBot
                     .ToList();
                 foreach (var subject in collection)
                 {
-                    _subjects.Add(subject.SubjectName, new Queue(course, number, subject.SubjectName));
+                    _subjects.Add(subject.SubjectName, new Queue(course, number, subject.SubjectName, subject.Id));
                 }
             }
 
@@ -83,6 +85,7 @@ namespace LabsQueueBot
             StudentsCount++;
             return true;
         }
+
         // -1, если не нашли студента, -2, если нашли в списке ожидающих, >0, если уже в очереди
         public int AddStudent(long id, string subject)
         {
@@ -100,8 +103,9 @@ namespace LabsQueueBot
                 if (queue.Value.Count == 0)
                     DeleteSubject(queue.Key);
             }
-            StudentsCount -= 1;
+            StudentsCount--;
         }
+
         public bool RemoveStudentFromQueue(long id, string subject)
         {
             var queue = _subjects[subject];
@@ -113,6 +117,7 @@ namespace LabsQueueBot
             }
             return false;
         }
+
         public bool ContainsKey(string key) => _subjects.ContainsKey(key);
 
         public IEnumerator<KeyValuePair<string, Queue>> GetEnumerator()
