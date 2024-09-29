@@ -51,7 +51,10 @@ namespace LabsQueueBot
                 : (_waiting.FindIndex(0, _waiting.Count, val => val == id) >= 0 ? -2 : -1);
         }
 
-        public void Add(User user) => _waiting.Add(user.Id);
+        public void Add(User user)
+        {
+            _waiting.Add(user.Id);
+        }
 
         public void Clear()
         {
@@ -125,6 +128,17 @@ namespace LabsQueueBot
             if (index == _queue.Count - 1)
                 throw new InvalidOperationException("Ты уже итак в конце очереди, ожидай своего часа :)");
             (_queue[index], _queue[index + 1]) = (_queue[index + 1], _queue[index]);
+
+            using var db = new QueueBotContext();
+            var sn1 = db.SerialNumberRepository
+                .FirstOrDefault(sn => sn.TgUserIndex == _queue[index]
+                && sn.SubjectId == _subjectId);
+            var sn2 = db.SerialNumberRepository
+                .FirstOrDefault(sn => sn.TgUserIndex == _queue[index + 1]
+                && sn.SubjectId == _subjectId);
+            (sn1.QueueIndex, sn2.QueueIndex) = (sn2.QueueIndex, sn1.QueueIndex);
+            db.SerialNumberRepository.UpdateRange([sn1, sn2]);
+            db.SaveChanges();
         }
     }
 }
