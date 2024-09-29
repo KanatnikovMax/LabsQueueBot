@@ -22,9 +22,10 @@ namespace LabsQueueBot
                 var snq = db.SerialNumberRepository
                     .Where(sn => sn.SubjectId == subjectId)
                     .OrderBy(sn => sn.QueueIndex);
-                if (snq.Count() > 0 ) 
+                if (snq.Count() > 0)
                     _indexLast = snq.Last().QueueIndex;
-                _queue = snq.Select(sn => sn.TgUserIndex).ToList();
+                _queue = snq.Where(sn => sn.QueueIndex != -2).Select(sn => sn.TgUserIndex).ToList();
+                _waiting = snq.Where(sn => sn.QueueIndex == -2).Select(sn => sn.TgUserIndex).ToList();
             }
         }
 
@@ -54,6 +55,15 @@ namespace LabsQueueBot
         public void Add(User user)
         {
             _waiting.Add(user.Id);
+            using var db = new QueueBotContext();
+            var serialNumber = new SerialNumber()
+            {
+                QueueIndex = -2,
+                TgUserIndex = user.Id,
+                SubjectId = _subjectId,
+            };
+            db.SerialNumberRepository.Add(serialNumber);
+            db.SaveChanges();
         }
 
         public void Clear()
@@ -82,6 +92,14 @@ namespace LabsQueueBot
             index = _waiting.FindIndex(0, _waiting.Count, val => val == id);
             if (index >= 0)
             {
+                using (var db = new QueueBotContext())
+                {
+                    var sbToRemove = db.SerialNumberRepository
+                        .FirstOrDefault(s => s.TgUserIndex == id
+                        && s.SubjectId == _subjectId);
+                    db.SerialNumberRepository.Remove(sbToRemove);
+                    db.SaveChanges();
+                }
                 _waiting.RemoveAt(index);
                 return true;
             }
@@ -93,24 +111,26 @@ namespace LabsQueueBot
         {
             using var db = new QueueBotContext();
             var list = new List<SerialNumber>();
-            var subject = db.SubjectRepository.Find(_subjectId);
             while (_waiting.Count > 0)
             {
                 ++_indexLast;
                 int index = RandomNumberGenerator.GetInt32(0, _waiting.Count);
                 var userId = _waiting[index];
                 _queue.Add(userId);
-                var serialNumber = new SerialNumber()
-                {
-                    QueueIndex = _indexLast,
-                    TgUserIndex = userId,
-                    SubjectId = _subjectId,
-                    Subject = subject
-                };
+                //var serialNumber = new SerialNumber()
+                //{
+                //    QueueIndex = _indexLast,
+                //    TgUserIndex = userId,
+                //    SubjectId = _subjectId,
+                //};
+                var serialNumber = db.SerialNumberRepository
+                    .FirstOrDefault(sn => sn.TgUserIndex == userId
+                    && sn.SubjectId == _subjectId);
+                serialNumber.QueueIndex = _indexLast;
                 list.Add(serialNumber);
                 _waiting.RemoveAt(index);
             }
-            db.SerialNumberRepository.AddRange(list);
+            db.SerialNumberRepository.UpdateRange(list);
             db.SaveChanges();
         }
 
