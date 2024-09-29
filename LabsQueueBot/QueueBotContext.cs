@@ -18,13 +18,10 @@ namespace LabsQueueBot
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<SerialNumber>()
-                .HasOne(sn => sn.Subject)
-                .WithMany(sb => sb.SerialNumbers)
-                .HasForeignKey(sn => sn.SubjectId);
-
-            modelBuilder.Entity<SerialNumber>()
-                .HasKey(sn => new { sn.Id, sn.SubjectId });
+            //modelBuilder.Entity<SerialNumber>()
+            //    .HasOne(sn => sn.Subject)
+            //    .WithMany(sb => sb.SerialNumbers)
+            //    .HasForeignKey(sn => sn.SubjectId);
         }
     }
 }

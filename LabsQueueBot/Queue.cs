@@ -9,7 +9,7 @@ namespace LabsQueueBot
         public List<long> _queue = new(30);
         public List<long> _waiting = new(30);
         private readonly int _subjectId;
-        public Queue() { }
+        public Queue(int subjectId) => _subjectId = subjectId;
         public Queue(byte courseNumber, byte groupNumber, string subjectName, int subjectId)
         {
             CourseNumber = courseNumber;
@@ -21,10 +21,10 @@ namespace LabsQueueBot
             {
                 var snq = db.SerialNumberRepository
                     .Where(sn => sn.SubjectId == subjectId)
-                    .OrderBy(sn => sn.Id);
+                    .OrderBy(sn => sn.QueueIndex);
                 if (snq.Count() > 0 ) 
-                    _indexLast = snq.Last().Id;
-                _queue = snq.Select(sn => sn.UserIndex).ToList();
+                    _indexLast = snq.Last().QueueIndex;
+                _queue = snq.Select(sn => sn.TgUserIndex).ToList();
             }
         }
 
@@ -64,18 +64,25 @@ namespace LabsQueueBot
             var index = Position(id);
             if (index >= 0)
             {
+                using (var db = new QueueBotContext())
+                {
+                    var sbToRemove = db.SerialNumberRepository
+                        .FirstOrDefault(s => s.TgUserIndex == id
+                        && s.SubjectId == _subjectId);
+                    db.SerialNumberRepository.Remove(sbToRemove);
+                    db.SaveChanges();                   
+                }
                 _queue.RemoveAt(index);
                 return true;
             }
-            else
+            
+            index = _waiting.FindIndex(0, _waiting.Count, val => val == id);
+            if (index >= 0)
             {
-                index = _waiting.FindIndex(0, _waiting.Count, val => val == id);
-                if (index >= 0)
-                {
-                    _waiting.RemoveAt(index);
-                    return true;
-                }
+                _waiting.RemoveAt(index);
+                return true;
             }
+            
             return false;
         }
 
@@ -92,8 +99,8 @@ namespace LabsQueueBot
                 _queue.Add(userId);
                 var serialNumber = new SerialNumber()
                 {
-                    Id = _indexLast,
-                    UserIndex = userId,
+                    QueueIndex = _indexLast,
+                    TgUserIndex = userId,
                     SubjectId = _subjectId,
                     Subject = subject
                 };

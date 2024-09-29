@@ -11,8 +11,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LabsQueueBot.Migrations
 {
     [DbContext(typeof(QueueBotContext))]
-    [Migration("20240925192426_AddTableSubjectRepository")]
-    partial class AddTableSubjectRepository
+    [Migration("20240929101849_CreateQueueBotDatabase")]
+    partial class CreateQueueBotDatabase
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -23,6 +23,30 @@ namespace LabsQueueBot.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("LabsQueueBot.SerialNumber", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("QueueIndex")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SubjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("TgUserIndex")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubjectId");
+
+                    b.ToTable("SerialNumberRepository");
+                });
 
             modelBuilder.Entity("LabsQueueBot.Subject", b =>
                 {
@@ -71,6 +95,22 @@ namespace LabsQueueBot.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("UserRepository");
+                });
+
+            modelBuilder.Entity("LabsQueueBot.SerialNumber", b =>
+                {
+                    b.HasOne("LabsQueueBot.Subject", "Subject")
+                        .WithMany("SerialNumbers")
+                        .HasForeignKey("SubjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Subject");
+                });
+
+            modelBuilder.Entity("LabsQueueBot.Subject", b =>
+                {
+                    b.Navigation("SerialNumbers");
                 });
 #pragma warning restore 612, 618
         }

@@ -24,15 +24,21 @@ namespace LabsQueueBot.Migrations
             modelBuilder.Entity("LabsQueueBot.SerialNumber", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("QueueIndex")
                         .HasColumnType("integer");
 
                     b.Property<int>("SubjectId")
                         .HasColumnType("integer");
 
-                    b.Property<long>("UserIndex")
+                    b.Property<long>("TgUserIndex")
                         .HasColumnType("bigint");
 
-                    b.HasKey("Id", "SubjectId");
+                    b.HasKey("Id");
 
                     b.HasIndex("SubjectId");
 

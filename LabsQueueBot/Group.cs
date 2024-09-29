@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Conventions;
+using System.Collections;
 
 namespace LabsQueueBot
 {
@@ -25,7 +26,7 @@ namespace LabsQueueBot
                 throw new ArgumentException("Этот предмет уже есть в списке");
             if (CountSubjects == 20)
                 throw new InvalidOperationException("Очередей в этой группе слишком много");
-            _subjects.Add(subject, new Queue());
+            int subjectId;
             using (var db = new QueueBotContext())
             {
                 db.SubjectRepository.Add(
@@ -36,7 +37,13 @@ namespace LabsQueueBot
                         GroupNumber = GroupNumber
                     });
                 db.SaveChanges();
+                subjectId = db.SubjectRepository
+                    .FirstOrDefault(sb => sb.SubjectName == subject
+                    && sb.CourseNumber == CourseNumber
+                    && sb.GroupNumber == GroupNumber)
+                    .Id;
             }
+            _subjects.Add(subject, new Queue(subjectId));
         }
 
         public bool DeleteSubject(string subject)
