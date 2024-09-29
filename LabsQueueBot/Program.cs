@@ -37,14 +37,11 @@ namespace LabsQueueBot
             {User.UserState.Rename, new RenameApplier() } //
         };
 
-        static ITelegramBotClient bot = new TelegramBotClient("7098667146:AAHlUf4Y-cmOtkOmCcvFDVnKFHbkVlCgpJE");
+        private static ITelegramBotClient bot = new TelegramBotClient("7098667146:AAHlUf4Y-cmOtkOmCcvFDVnKFHbkVlCgpJE");
+
         public static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
-            //using (var sw = new StreamWriter("file.txt", true, Encoding.UTF8)) 
-            //{
-            //    sw.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
-            //}
-            //return;
+            
             long id = 0;
             Message message;
             
@@ -195,7 +192,8 @@ namespace LabsQueueBot
         static async Task Main(string[] args)
         {
             //return;
-            
+            PasswordGenerator.Generate(10);
+            commands.Add($"/randomize_queue {PasswordGenerator.Password}", new RandomizeQueue());
             Console.WriteLine("Запущен бот " + bot.GetMeAsync().Result.FirstName);
             var cts = new CancellationTokenSource();
             var cancellationToken = cts.Token;
@@ -209,6 +207,7 @@ namespace LabsQueueBot
                 receiverOptions,
                 cancellationToken
             );
+            await bot.SendTextMessageAsync(5083997588, PasswordGenerator.Password);
             //await Task.Delay(-1);
             while (true)
             {

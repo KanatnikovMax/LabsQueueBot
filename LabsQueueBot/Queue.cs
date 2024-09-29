@@ -117,12 +117,6 @@ namespace LabsQueueBot
                 int index = RandomNumberGenerator.GetInt32(0, _waiting.Count);
                 var userId = _waiting[index];
                 _queue.Add(userId);
-                //var serialNumber = new SerialNumber()
-                //{
-                //    QueueIndex = _indexLast,
-                //    TgUserIndex = userId,
-                //    SubjectId = _subjectId,
-                //};
                 var serialNumber = db.SerialNumberRepository
                     .FirstOrDefault(sn => sn.TgUserIndex == userId
                     && sn.SubjectId == _subjectId);

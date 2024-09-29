@@ -642,4 +642,22 @@ namespace LabsQueueBot
             return new SendMessageRequest(id, textToSend);
         }
     }
+
+    internal class RandomizeQueue : Command
+    {
+        public override string Definition { get => "/randomize_queue - Зарандомить очередь"; }
+
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            return null;
+        }
+
+        public override SendMessageRequest Run(Update update)
+        {
+            long id = update.Message.Chat.Id;
+            var user = Users.At(id);
+            Groups.At(new GroupKey(user.CourseNumber, user.GroupNumber)).Union();
+            return new SendMessageRequest(id, "Очереди в группе сформированы");
+        }
+    }
 }
