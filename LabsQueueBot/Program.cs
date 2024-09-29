@@ -4,7 +4,6 @@ using Telegram.Bot.Polling;
 
 namespace LabsQueueBot
 {
-    //TODO: подключить б/д
     class Program
     {
         internal static readonly Dictionary<string, Command> commands = new()
@@ -19,20 +18,20 @@ namespace LabsQueueBot
             {"/subjects", new Subjects() },
             {"/show", new Show() },
             {"/rename", new Rename() },
-            {"/mult", new Mult() }
+            {"/switch_notification", new SwitchNotification() }
         };
 
 
 
         internal static readonly Dictionary<User.UserState, Command> actions = new()
         {
-            {User.UserState.Unregistred, new StartApplier() },//
+            {User.UserState.Unregistred, new StartApplier() },
             {User.UserState.UnsetStudentData, new SetGroupApplier() },
-            {User.UserState.ChangeData, new SetGroupApplier() }, //
-            {User.UserState.Join, new JoinApplier() }, //
-            {User.UserState.Quit, new QuitApplier() }, //
-            {User.UserState.Skip, new SkipApplier() }, //
-            {User.UserState.ShowQueue, new ShowQueueApplier() }, //
+            {User.UserState.ChangeData, new SetGroupApplier() }, 
+            {User.UserState.Join, new JoinApplier() },
+            {User.UserState.Quit, new QuitApplier() },
+            {User.UserState.Skip, new SkipApplier() },
+            {User.UserState.ShowQueue, new ShowQueueApplier() },
             {User.UserState.AddSubject, new AddSubjectApplier() }, //
             {User.UserState.AddGroup, new AddGroupApplier() }, //
             {User.UserState.Rename, new RenameApplier() } //
@@ -48,6 +47,7 @@ namespace LabsQueueBot
             //return;
             long id = 0;
             Message message;
+            
             
             switch (update.Type)
             {
@@ -214,7 +214,9 @@ namespace LabsQueueBot
             {
                 Console.ReadLine();
                 Groups.Union();
-                foreach (var id in Users.Keys.Where(x => (Users.At(x).State == User.UserState.None)))
+                foreach (var id in Users.Keys
+                    .Where(x => Users.At(x).State == User.UserState.None
+                    && Users.At(x).IsNotifyNeeded))
                     MassSendler(id);
             }
         }

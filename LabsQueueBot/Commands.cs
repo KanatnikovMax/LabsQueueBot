@@ -97,6 +97,8 @@ namespace LabsQueueBot
 
             builder.AppendLine($"\n{new Help().Definition}");
 
+            builder.AppendLine($"\n{new SwitchNotification().Definition}\n");
+
             builder.AppendLine("\nДействия с очередями");
             builder.AppendLine(new Subjects().Definition);
             builder.AppendLine(new ShowQueue().Definition);
@@ -256,7 +258,7 @@ namespace LabsQueueBot
     //общий класс для изменения курса и группы
     internal class SetGroup : Command
     {
-        public override string Definition { get => "/change_info - Изменить номера курса и  группы"; }
+        public override string Definition { get => "/change_info - Изменить номера курса и группы"; }
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
@@ -602,9 +604,15 @@ namespace LabsQueueBot
             }
             try
             {
-                //Users.Add(id, $"{data[0]} {data[1]}");
-                Users.At(id).Name = $"{data[0]} {data[1]}";
-                //Users.At(id).State = User.UserState.None;
+                var name = $"{data[0]} {data[1]}";
+                Users.At(id).Name = name;
+                using (var db = new QueueBotContext())
+                {
+                    var user = db.UserRepository.FirstOrDefault(u =>  u.Id == id);
+                    user.Name = name;
+                    db.UserRepository.Update(user);
+                    db.SaveChanges();
+                }
             }
             catch (ArgumentException exception)
             {
@@ -615,9 +623,9 @@ namespace LabsQueueBot
 
 
     }
-    internal class Mult : Command
+    internal class SwitchNotification : Command
     {
-        public override string Definition { get => "/Mult - Смена фамилии и имени"; }
+        public override string Definition { get => "/switch_notification - Вкл/выкл ежедневное оповещение"; }
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
@@ -627,13 +635,11 @@ namespace LabsQueueBot
         public override SendMessageRequest Run(Update update)
         {
             long id = update.Message.Chat.Id;
-            Users.At(id).State = User.UserState.Rename;
-            return new SendMessageRequest(id, "wdaad");
+            var user = Users.At(id);
+            user.IsNotifyNeeded = !user.IsNotifyNeeded;
+            var textToSend = user.IsNotifyNeeded ? "Вы подписались на рассылку"
+                : "Вы отписались от рассылки";
+            return new SendMessageRequest(id, textToSend);
         }
-
-        //public override SendMessageRequest animation(Update update)
-        //{
-
-        //}
     }
 }

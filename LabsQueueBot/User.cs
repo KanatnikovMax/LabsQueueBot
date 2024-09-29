@@ -16,6 +16,7 @@ namespace LabsQueueBot
         public byte CourseNumber { get; set; } = 0;
         public byte GroupNumber { get; set; } = 0;     
         public UserState State { get; set; } = UserState.None;
+        public bool IsNotifyNeeded { get; set; } = true;
         public User(byte course, byte group, string name, long id)
         {
             StringBuilder builder = new StringBuilder();
