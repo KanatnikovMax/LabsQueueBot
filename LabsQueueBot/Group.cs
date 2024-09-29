@@ -1,42 +1,88 @@
-﻿using System.Collections;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Conventions;
+using System.Collections;
 
 namespace LabsQueueBot
 {
     internal class Group : IEnumerable<KeyValuePair<string, Queue>>
     {
         // название дисциплины : очередь по дисциплине
-        private readonly Dictionary<string, Queue> _subjects;
+        public Dictionary<string, Queue> _subjects;
 
         private byte _course;
-        public byte Course
+        public byte CourseNumber
         {
             get => _course;
             set
             {
                 _course = value;
-                ClearSubjects();
             }
         }
         public byte StudentsCount { get; private set; }
         public int CountSubjects { get => _subjects.Count; }
-        public byte Number { get; set; }
+        public byte GroupNumber { get; set; }
         public void AddSubject(string subject)
         {
             if (_subjects.ContainsKey(subject))
                 throw new ArgumentException("Этот предмет уже есть в списке");
             if (CountSubjects == 20)
                 throw new InvalidOperationException("Очередей в этой группе слишком много");
-            _subjects.Add(subject, new Queue());
+            int subjectId;
+            using (var db = new QueueBotContext())
+            {
+                db.SubjectRepository.Add(
+                    new Subject()
+                    {
+                        SubjectName = subject,
+                        CourseNumber = CourseNumber,
+                        GroupNumber = GroupNumber
+                    });
+                db.SaveChanges();
+                subjectId = db.SubjectRepository
+                    .FirstOrDefault(sb => sb.SubjectName == subject
+                    && sb.CourseNumber == CourseNumber
+                    && sb.GroupNumber == GroupNumber)
+                    .Id;
+            }
+            _subjects.Add(subject, new Queue(subjectId));
         }
+
         public bool DeleteSubject(string subject)
         {
-            return _subjects.Remove(subject);
+            if (_subjects.Remove(subject))
+            {
+                using (var db = new QueueBotContext())
+                {
+                    var subj = db.SubjectRepository.FirstOrDefault(
+                        x => x.SubjectName == subject
+                        && x.GroupNumber == GroupNumber
+                        && x.CourseNumber == CourseNumber);
+                    if (subj != null)
+                    {
+                        db.SubjectRepository.Remove(subj);
+                        db.SaveChanges();
+                    }
+                }
+                return true;
+            }
+            return false;
         }
+
         public Group(byte course, byte number)
         {
             _course = course;
-            Number = number;
+            GroupNumber = number;
             _subjects = new Dictionary<string, Queue>();
+            using (var db = new QueueBotContext())
+            {
+                var collection = db.SubjectRepository
+                    .Where(x => x.GroupNumber == number && x.CourseNumber == course)
+                    .ToList();
+                foreach (var subject in collection)
+                {
+                    _subjects.Add(subject.SubjectName, new Queue(course, number, subject.SubjectName, subject.Id));
+                }
+            }
+
         }
 
         public bool AddStudent()
@@ -46,6 +92,7 @@ namespace LabsQueueBot
             StudentsCount++;
             return true;
         }
+
         // -1, если не нашли студента, -2, если нашли в списке ожидающих, >0, если уже в очереди
         public int AddStudent(long id, string subject)
         {
@@ -63,8 +110,9 @@ namespace LabsQueueBot
                 if (queue.Value.Count == 0)
                     DeleteSubject(queue.Key);
             }
-            StudentsCount -= 1;
+            StudentsCount--;
         }
+
         public bool RemoveStudentFromQueue(long id, string subject)
         {
             var queue = _subjects[subject];
@@ -76,13 +124,8 @@ namespace LabsQueueBot
             }
             return false;
         }
-        public bool ContainsKey(string key) => _subjects.ContainsKey(key);
 
-        public void ClearSubjects()
-        {
-            _subjects.Clear();
-            StudentsCount = 0;
-        }
+        public bool ContainsKey(string key) => _subjects.ContainsKey(key);
 
         public IEnumerator<KeyValuePair<string, Queue>> GetEnumerator()
         {

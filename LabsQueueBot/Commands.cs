@@ -30,8 +30,11 @@ namespace LabsQueueBot
             {
                 return new SendMessageRequest(id, "Ты уже зареган\nИди отсюда, розбийник");
             }
-            Users.Add(new User(id));
-            Users.At(id).State = User.UserState.Unregistred;
+            var newUser = new User(id)
+            {
+                State = User.UserState.Unregistred
+            };
+            Users.Add(newUser);
             return new SendMessageRequest(id, "Кто ты, воин?\n\nВведи свои данные в формате\nФамилия Имя");
         }
     }
@@ -168,7 +171,7 @@ namespace LabsQueueBot
                 return new SendMessageRequest(id, subject);
 
             User user = Users.At(id);
-            Group group = Groups.At(new GroupKey(user.Course, user.Group));
+            Group group = Groups.At(new GroupKey(user.CourseNumber, user.GroupNumber));
             try
             {
                 if (!group.ContainsKey(subject))
@@ -222,7 +225,7 @@ namespace LabsQueueBot
                 return new SendMessageRequest(id, subject);
 
             User user = Users.At(id);
-            Group group = Groups.At(new GroupKey(user.Course, user.Group));
+            Group group = Groups.At(new GroupKey(user.CourseNumber, user.GroupNumber));
 
             if (group.ContainsKey(subject) && group.RemoveStudentFromQueue(id, subject))
                 return new SendMessageRequest(id, "Ты вышел из очереди");
@@ -310,8 +313,11 @@ namespace LabsQueueBot
                     {
                         throw new InvalidOperationException("Много студентов в группе");
                     }
-                    Users.Add(new User(course, group, Users.At(id).Name, id));
-                    Users.At(id).State = User.UserState.None;
+                    var newUser = new User(course, group, Users.At(id).Name, id)
+                    {
+                        State = User.UserState.None
+                    };
+                    Users.Add(newUser);
                     return new Help().Run(update);
                 }
                 catch (ArgumentException exception)
@@ -353,7 +359,7 @@ namespace LabsQueueBot
             if (text.Length != 2 || !Byte.TryParse(text[0], out course) || !Byte.TryParse(text[1], out group))
                 return new SendMessageRequest(id, "Некорректные данные\nПовторите ввод");
 
-            if (course == Users.At(id).Course && group == Users.At(id).Group)
+            if (course == Users.At(id).CourseNumber && group == Users.At(id).GroupNumber)
                 return new SendMessageRequest(id, "Ты итак в этой группе, дурачок\nПовтори ввод");
 
             StringBuilder builder = new StringBuilder();
@@ -362,9 +368,11 @@ namespace LabsQueueBot
             {
                 Groups.Remove(id);
                 Groups.Add(course, group);
-
-                Users.Add(new User(course, group, Users.At(id).Name, id));
-                Users.At(id).State = User.UserState.None;
+                var newUser = new User(course, group, Users.At(id).Name, id)
+                {
+                    State = User.UserState.None
+                };
+                Users.Add(newUser);
                 Groups.At(new GroupKey(course, group)).AddStudent();
                 var str = new Help().Run(update).Text;
                 builder.AppendLine($"Вы были добавлены в {course} курс {group} группу\n{str}");
@@ -376,8 +384,11 @@ namespace LabsQueueBot
             }
             catch (InvalidDataException exception)
             {
-                Users.Add(new User(course, group, Users.At(id).Name, id));
-                Users.At(id).State = User.UserState.None;
+                var newUser = new User(course, group, Users.At(id).Name, id)
+                {
+                    State = User.UserState.None
+                };
+                Users.Add(newUser);
                 Groups.At(new GroupKey(course, group)).AddStudent();
 
                 builder.AppendLine(exception.Message);
@@ -433,7 +444,7 @@ namespace LabsQueueBot
                 return new SendMessageRequest(id, subject);
 
             User user = Users.At(id);
-            Group group = Groups.At(new GroupKey(user.Course, user.Group));
+            Group group = Groups.At(new GroupKey(user.CourseNumber, user.GroupNumber));
 
             if (subject == "Добавить")
             {
@@ -466,7 +477,7 @@ namespace LabsQueueBot
             long id = update.Message.Chat.Id;
             string subject = update.Message.Text.Trim();
             User user = Users.At(id);
-            Group group = Groups.At(new GroupKey(user.Course, user.Group));
+            Group group = Groups.At(new GroupKey(user.CourseNumber, user.GroupNumber));
             user.State = User.UserState.None;
             try
             {
@@ -490,7 +501,7 @@ namespace LabsQueueBot
         {
             long id = update.Message.Chat.Id;
             User user = Users.At(update.Message.Chat.Id);
-            List<string> subjects = Groups.groups[new GroupKey(user.Course, user.Group)].Keys.ToList();
+            List<string> subjects = Groups.groups[new GroupKey(user.CourseNumber, user.GroupNumber)].Keys.ToList();
             bool addFlag = Users.At(id).State == User.UserState.Join;
             return KeyboardCreator.ListToKeyboard(subjects, addFlag, true, 1);
         }
@@ -548,7 +559,7 @@ namespace LabsQueueBot
                 return new SendMessageRequest(id, "Введите название нового предмета:");
             }
 
-            Group group = Groups.At(new GroupKey(user.Course, user.Group));
+            Group group = Groups.At(new GroupKey(user.CourseNumber, user.GroupNumber));
             
             return new SendMessageRequest(id, Groups.ShowQueue(id, subject));
         }
