@@ -1,26 +1,12 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Telegram.Bot;
-using Telegram.Bots.Extensions.Polling;
+﻿using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
-using System.Text;
-using Telegram.Bot.Requests;
-using System.Diagnostics.Contracts;
-using Telegram.Bot.Types.ReplyMarkups;
-using Telegram.Bots.Http;
-using System.Security.Cryptography;
-using NLog;
-using NLog.Config;
 
 namespace LabsQueueBot
 {
     //TODO: подключить б/д
     class Program
     {
-        private static Logger logger = LogManager.GetCurrentClassLogger();
         internal static readonly Dictionary<string, Command> commands = new()
         {
             {"/start", new Start() },
@@ -59,7 +45,7 @@ namespace LabsQueueBot
             //{
             //    sw.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
             //}
-            logger.Info(Newtonsoft.Json.JsonConvert.SerializeObject(update).ToString());
+            //return;
             long id = 0;
             Message message;
             
@@ -118,7 +104,7 @@ namespace LabsQueueBot
             }
 
             if (Users.Contains(id) && Users.At(id).State == User.UserState.None
-                && !Groups.ContainsKey(new GroupKey(Users.At(id).Course, Users.At(id).Group)))
+                && !Groups.ContainsKey(new GroupKey(Users.At(id).CourseNumber, Users.At(id).GroupNumber)))
             {
                 Users.Remove(id);
                 await botClient.SendTextMessageAsync(message.Chat, "Вы не зарегистрированы!\n/start для регистрации");
@@ -196,19 +182,20 @@ namespace LabsQueueBot
         {
             
             Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(exception));
-            logger.Error(exception);
             List<Update> lastUpdates = bot.GetUpdatesAsync(10, 10, null, null, cancellationToken).Result.ToList();
             foreach (var update in lastUpdates)
                 if (update.Type == Telegram.Bot.Types.Enums.UpdateType.CallbackQuery)
-                    logger.Error(Newtonsoft.Json.JsonConvert.SerializeObject(update).ToString());
+                    Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
         }        
 
         public static async void MassSendler(long id)
         {
             await bot.SendTextMessageAsync(id, Groups.ShowSubjects(id));
         }
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
+            //return;
+            
             Console.WriteLine("Запущен бот " + bot.GetMeAsync().Result.FirstName);
             var cts = new CancellationTokenSource();
             var cancellationToken = cts.Token;
@@ -222,14 +209,14 @@ namespace LabsQueueBot
                 receiverOptions,
                 cancellationToken
             );
+            //await Task.Delay(-1);
             while (true)
             {
                 Console.ReadLine();
                 Groups.Union();
-                foreach(var id in Users.Keys.Where(x => (Users.At(x).State == User.UserState.None)))
+                foreach (var id in Users.Keys.Where(x => (Users.At(x).State == User.UserState.None)))
                     MassSendler(id);
             }
-            
         }
     }
 }
