@@ -2,7 +2,7 @@
 
 namespace LabsQueueBot
 {
-    static internal class KeyboardCreator
+    static public class KeyboardCreator
     {
         public static InlineKeyboardMarkup ListToKeyboard(List<string> list, bool isNeedAdd, bool isNeedBack, int collumnsCount)
         {

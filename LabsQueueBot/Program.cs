@@ -1,12 +1,13 @@
 ﻿using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Polling;
+using System.Timers;
 
 namespace LabsQueueBot
 {
     class Program
     {
-        internal static readonly Dictionary<string, Command> commands = new()
+        public static readonly Dictionary<string, Command> commands = new()
         {
             {"/start", new Start() },
             {"/stop", new Stop() },
@@ -23,7 +24,7 @@ namespace LabsQueueBot
 
 
 
-        internal static readonly Dictionary<User.UserState, Command> actions = new()
+        public static readonly Dictionary<User.UserState, Command> actions = new()
         {
             {User.UserState.Unregistred, new StartApplier() },
             {User.UserState.UnsetStudentData, new SetGroupApplier() },
@@ -38,6 +39,8 @@ namespace LabsQueueBot
         };
 
         private static ITelegramBotClient bot = new TelegramBotClient("7098667146:AAHlUf4Y-cmOtkOmCcvFDVnKFHbkVlCgpJE");
+
+        private static System.Timers.Timer _timer;
 
         public static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
@@ -185,10 +188,42 @@ namespace LabsQueueBot
                     Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
         }        
 
-        public static async void MassSendler(long id)
+        private static async void MassSendler(long id)
         {
             await bot.SendTextMessageAsync(id, Groups.ShowSubjects(id));
         }
+
+        private static void UnionAndSend(object s, ElapsedEventArgs e)
+        {
+            Groups.Union();
+            foreach (var id in Users.Keys
+                .Where(x => Users.At(x).State == User.UserState.None
+                && Users.At(x).IsNotifyNeeded))
+                MassSendler(id);
+        }
+
+        private static Task StartTimer()
+        {
+            var now = DateTime.Now;
+            var nextRun = now.Date.AddHours(19);
+            if (nextRun <= now)
+            {
+                nextRun = nextRun.AddDays(1);
+            }
+
+            double interval = (nextRun - now).TotalMilliseconds;
+
+
+            _timer = new System.Timers.Timer(interval);
+            _timer.Elapsed += UnionAndSend;
+            _timer.Elapsed += (_, _) => _timer.Interval = TimeSpan.FromDays(1).TotalMilliseconds;
+            _timer.AutoReset = true;
+            _timer.Enabled = true;
+
+            return Task.CompletedTask;
+
+        }
+
         static async Task Main(string[] args)
         {
             //return;
@@ -208,16 +243,8 @@ namespace LabsQueueBot
                 cancellationToken
             );
             await bot.SendTextMessageAsync(5083997588, PasswordGenerator.Password);
-            //await Task.Delay(-1);
-            while (true)
-            {
-                Console.ReadLine();
-                Groups.Union();
-                foreach (var id in Users.Keys
-                    .Where(x => Users.At(x).State == User.UserState.None
-                    && Users.At(x).IsNotifyNeeded))
-                    MassSendler(id);
-            }
+            await StartTimer();
+            await Task.Delay(-1);
         }
     }
 }

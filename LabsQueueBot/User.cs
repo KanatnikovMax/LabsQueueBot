@@ -5,11 +5,11 @@ namespace LabsQueueBot
     public class User
     {
         public enum UserState
-        {
-            
+        {           
             None, ShowQueue,           
             Unregistred, UnsetStudentData,            
-            Join, Quit, Skip, AddGroup, AddSubject, Rename, ChangeData
+            Join, Quit, Skip, AddGroup, 
+            AddSubject, Rename, ChangeData
         }
         public long Id { get; set; } = 0;
         public string Name { get; set; } = String.Empty;
@@ -17,6 +17,7 @@ namespace LabsQueueBot
         public byte GroupNumber { get; set; } = 0;     
         public UserState State { get; set; } = UserState.None;
         public bool IsNotifyNeeded { get; set; } = true;
+
         public User(byte course, byte group, string name, long id)
         {
             StringBuilder builder = new StringBuilder();
@@ -58,7 +59,9 @@ namespace LabsQueueBot
             Name = name;
             Id = id;
         }      
+
         public User(long id) => Id = id;
+
         public User(string name, long id)
         {
             StringBuilder builder = new StringBuilder();

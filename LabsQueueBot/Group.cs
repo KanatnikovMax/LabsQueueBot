@@ -1,22 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Conventions;
-using System.Collections;
+﻿using System.Collections;
 
 namespace LabsQueueBot
 {
-    internal class Group : IEnumerable<KeyValuePair<string, Queue>>
+    public class Group : IEnumerable<KeyValuePair<string, Queue>>
     {
         // название дисциплины : очередь по дисциплине
         public Dictionary<string, Queue> _subjects;
 
-        private byte _course;
-        public byte CourseNumber
-        {
-            get => _course;
-            set
-            {
-                _course = value;
-            }
-        }
+        public byte CourseNumber { get; set; }
         public byte StudentsCount { get; private set; }
         public int CountSubjects { get => _subjects.Count; }
         public byte GroupNumber { get; set; }
@@ -69,7 +60,7 @@ namespace LabsQueueBot
 
         public Group(byte course, byte number)
         {
-            _course = course;
+            CourseNumber = course;
             GroupNumber = number;
             _subjects = new Dictionary<string, Queue>();
             using (var db = new QueueBotContext())

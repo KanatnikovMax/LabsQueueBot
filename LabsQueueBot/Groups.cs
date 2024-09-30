@@ -2,7 +2,7 @@
 
 namespace LabsQueueBot
 {
-    struct GroupKey : IComparable<GroupKey>
+    public struct GroupKey : IComparable<GroupKey>
     {
         public byte? Course { get; init; }
         public byte? Number { get; init; }
@@ -64,9 +64,9 @@ namespace LabsQueueBot
         }
     }
 
-    internal static class Groups
+    public static class Groups
     {
-        internal static readonly Dictionary<GroupKey, Group> groups = new();
+        public static readonly Dictionary<GroupKey, Group> groups = new();
 
         private static int _groupsCount;
         public static int GroupsCount
@@ -76,7 +76,6 @@ namespace LabsQueueBot
         }
         public static bool ContainsKey(GroupKey key) => groups.ContainsKey(key);
 
-        //сделал удаление группы если удалили последнего ее студента
         public static bool Remove(long id)
         {
             GroupKey key = new GroupKey(Users.At(id).CourseNumber, Users.At(id).GroupNumber);
@@ -90,7 +89,7 @@ namespace LabsQueueBot
 
         public static void Add(byte course, byte group) 
         {
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
             if (course > 6 || course < 1)
                 builder.AppendLine("Некорректный номер курса");
             if (group > 99 || group < 1)
@@ -98,7 +97,7 @@ namespace LabsQueueBot
             if (builder.Length != 0)
                 throw new ArgumentException(builder.ToString());
 
-            GroupKey key = new GroupKey(course, group);
+            var key = new GroupKey(course, group);
             if (groups.ContainsKey(key))
                 throw new InvalidDataException("Такая группа уже существует");
 
@@ -112,15 +111,15 @@ namespace LabsQueueBot
 
         public static string ShowQueue(long id, string subject)
         {
-            GroupKey key = new GroupKey(Users.At(id).CourseNumber, Users.At(id).GroupNumber);
+            var key = new GroupKey(Users.At(id).CourseNumber, Users.At(id).GroupNumber);
             if (!groups.ContainsKey(key))
                 return $"Не существует {key.ToString()}";
 
-            Group group = groups[key];
+            var group = groups[key];
             if (!group.ContainsKey(subject))
                 return "Эта очередь пуста";
 
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
             int number = 1;
 
             foreach (var userId in group[subject])
@@ -133,9 +132,9 @@ namespace LabsQueueBot
 
         public static string ShowSubjects(long id)
         {
-            GroupKey key = new GroupKey(Users.At(id).CourseNumber, Users.At(id).GroupNumber);
-            Group group = groups[key];
-            StringBuilder builder = new StringBuilder();
+            var key = new GroupKey(Users.At(id).CourseNumber, Users.At(id).GroupNumber);
+            var group = groups[key];
+            var builder = new StringBuilder();
             if (group.CountSubjects == 0)
                 return "В вашей группе не открыто ни одной очереди\n"
                     + "/join чтобы создать очередь";
