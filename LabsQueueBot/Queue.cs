@@ -3,13 +3,13 @@ using System.Security.Cryptography;
 
 namespace LabsQueueBot
 {
-
     public class Queue : IEnumerable<long>
     {
         public List<long> _queue = new(30);
         public List<long> _waiting = new(30);
         private readonly int _subjectId;
         public Queue(int subjectId) => _subjectId = subjectId;
+
         public Queue(byte courseNumber, byte groupNumber, string subjectName, int subjectId)
         {
             CourseNumber = courseNumber;
@@ -33,7 +33,7 @@ namespace LabsQueueBot
         public byte CourseNumber { get; set; }
         public byte GroupNumber { get; set; }
 
-        public int Count { get => _queue.Count + _waiting.Count; }
+        public int Count => _queue.Count + _waiting.Count;
 
         private int _indexLast;
 
@@ -117,12 +117,6 @@ namespace LabsQueueBot
                 int index = RandomNumberGenerator.GetInt32(0, _waiting.Count);
                 var userId = _waiting[index];
                 _queue.Add(userId);
-                //var serialNumber = new SerialNumber()
-                //{
-                //    QueueIndex = _indexLast,
-                //    TgUserIndex = userId,
-                //    SubjectId = _subjectId,
-                //};
                 var serialNumber = db.SerialNumberRepository
                     .FirstOrDefault(sn => sn.TgUserIndex == userId
                     && sn.SubjectId == _subjectId);

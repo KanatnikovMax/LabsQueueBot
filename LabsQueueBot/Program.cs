@@ -1,13 +1,13 @@
 ﻿using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Polling;
+using System.Timers;
 
 namespace LabsQueueBot
 {
-    //TODO: подключить б/д
     class Program
     {
-        internal static readonly Dictionary<string, Command> commands = new()
+        public static readonly Dictionary<string, Command> commands = new()
         {
             {"/start", new Start() },
             {"/stop", new Stop() },
@@ -19,35 +19,35 @@ namespace LabsQueueBot
             {"/subjects", new Subjects() },
             {"/show", new Show() },
             {"/rename", new Rename() },
-            {"/mult", new Mult() }
+            {"/switch_notification", new SwitchNotification() }
         };
 
 
 
-        internal static readonly Dictionary<User.UserState, Command> actions = new()
+        public static readonly Dictionary<User.UserState, Command> actions = new()
         {
-            {User.UserState.Unregistred, new StartApplier() },//
+            {User.UserState.Unregistred, new StartApplier() },
             {User.UserState.UnsetStudentData, new SetGroupApplier() },
-            {User.UserState.ChangeData, new SetGroupApplier() }, //
-            {User.UserState.Join, new JoinApplier() }, //
-            {User.UserState.Quit, new QuitApplier() }, //
-            {User.UserState.Skip, new SkipApplier() }, //
-            {User.UserState.ShowQueue, new ShowQueueApplier() }, //
+            {User.UserState.ChangeData, new SetGroupApplier() }, 
+            {User.UserState.Join, new JoinApplier() },
+            {User.UserState.Quit, new QuitApplier() },
+            {User.UserState.Skip, new SkipApplier() },
+            {User.UserState.ShowQueue, new ShowQueueApplier() },
             {User.UserState.AddSubject, new AddSubjectApplier() }, //
             {User.UserState.AddGroup, new AddGroupApplier() }, //
             {User.UserState.Rename, new RenameApplier() } //
         };
 
-        static ITelegramBotClient bot = new TelegramBotClient("7098667146:AAHlUf4Y-cmOtkOmCcvFDVnKFHbkVlCgpJE");
+        private static ITelegramBotClient bot = new TelegramBotClient("7098667146:AAHlUf4Y-cmOtkOmCcvFDVnKFHbkVlCgpJE");
+
+        private static System.Timers.Timer _timer;
+
         public static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
-            //using (var sw = new StreamWriter("file.txt", true, Encoding.UTF8)) 
-            //{
-            //    sw.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
-            //}
-            //return;
+            
             long id = 0;
             Message message;
+            
             
             switch (update.Type)
             {
@@ -188,14 +188,47 @@ namespace LabsQueueBot
                     Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
         }        
 
-        public static async void MassSendler(long id)
+        private static async void MassSendler(long id)
         {
             await bot.SendTextMessageAsync(id, Groups.ShowSubjects(id));
         }
+
+        private static void UnionAndSend(object s, ElapsedEventArgs e)
+        {
+            Groups.Union();
+            foreach (var id in Users.Keys
+                .Where(x => Users.At(x).State == User.UserState.None
+                && Users.At(x).IsNotifyNeeded))
+                MassSendler(id);
+        }
+
+        private static Task StartTimer()
+        {
+            var now = DateTime.Now;
+            var nextRun = now.Date.AddHours(19);
+            if (nextRun <= now)
+            {
+                nextRun = nextRun.AddDays(1);
+            }
+
+            double interval = (nextRun - now).TotalMilliseconds;
+
+
+            _timer = new System.Timers.Timer(interval);
+            _timer.Elapsed += UnionAndSend;
+            _timer.Elapsed += (_, _) => _timer.Interval = TimeSpan.FromDays(1).TotalMilliseconds;
+            _timer.AutoReset = true;
+            _timer.Enabled = true;
+
+            return Task.CompletedTask;
+
+        }
+
         static async Task Main(string[] args)
         {
             //return;
-            
+            PasswordGenerator.Generate(10);
+            commands.Add($"/randomize_queue {PasswordGenerator.Password}", new RandomizeQueue());
             Console.WriteLine("Запущен бот " + bot.GetMeAsync().Result.FirstName);
             var cts = new CancellationTokenSource();
             var cancellationToken = cts.Token;
@@ -209,14 +242,9 @@ namespace LabsQueueBot
                 receiverOptions,
                 cancellationToken
             );
-            //await Task.Delay(-1);
-            while (true)
-            {
-                Console.ReadLine();
-                Groups.Union();
-                foreach (var id in Users.Keys.Where(x => (Users.At(x).State == User.UserState.None)))
-                    MassSendler(id);
-            }
+            await bot.SendTextMessageAsync(5083997588, PasswordGenerator.Password);
+            await StartTimer();
+            await Task.Delay(-1);
         }
     }
 }

@@ -6,7 +6,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace LabsQueueBot
 {
-    internal abstract class Command
+    public abstract class Command
     {
         public abstract SendMessageRequest Run(Update update);
         public abstract InlineKeyboardMarkup? GetKeyboard(Update update);
@@ -14,9 +14,9 @@ namespace LabsQueueBot
     }
 
     //начать работу с ботом
-    internal class Start : Command
+    public class Start : Command
     {
-        public override string Definition { get => "/start"; }
+        public override string Definition => "/start";
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
@@ -39,10 +39,10 @@ namespace LabsQueueBot
         }
     }
 
-    //создание пользователя(id, name) в мапе
-    internal class StartApplier : Command
+    //создание пользователя(id, name) в словаре
+    public class StartApplier : Command
     {
-        public override string Definition { get => "/start_applier"; }
+        public override string Definition => "/start_applier";
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
@@ -74,11 +74,10 @@ namespace LabsQueueBot
             return new SendMessageRequest(id, "Выберите свои курс и группу:");
         }
     }
-
-    //очевидно, помощь
-    internal class Help : Command
+  
+    public class Help : Command
     {
-        public override string Definition { get => "/help - Список команд"; }
+        public override string Definition => "/help - Список команд";
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
@@ -93,9 +92,20 @@ namespace LabsQueueBot
             else
                 id = update.CallbackQuery.Message.Chat.Id;
 
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
 
+            builder.AppendLine("При добавлении в очередь пользователь записывается в список ожидающих. "
+                + "Каждый день в 19:00 список ожидающих случайным образом перемешивается и добавляется в конец"
+                + " соответствующей очереди, тем, кто подписан на рассылку, приходит уведомление с его местами в очередях, "
+                + "в которые он записан. Пользователи с админскими правами соответствующей командой "
+                + "могут вызвать генерацию очередей для своей группы в любой момент времени. "
+                + "Для получения админских прав староста группы (или другое ответственное лицо) должен написать админу "
+                + "бота в лс (ссылка на профиль админа в описании)\n");
+
+            // описание команд
             builder.AppendLine($"\n{new Help().Definition}");
+
+            builder.AppendLine($"\n{new SwitchNotification().Definition}");
 
             builder.AppendLine("\nДействия с очередями");
             builder.AppendLine(new Subjects().Definition);
@@ -115,9 +125,9 @@ namespace LabsQueueBot
     }
 
     //отписаться от бота
-    internal class Stop : Command
+    public class Stop : Command
     {
-        public override string Definition { get => "/stop - Отписаться"; }
+        public override string Definition => "/stop - Отписаться";
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
@@ -134,9 +144,9 @@ namespace LabsQueueBot
     }
 
     //пропустить человека вперед себя
-    internal class Skip : Command
+    public class Skip : Command
     {
-        public override string Definition { get => "/skip - Пропустить одного человека вперёд себя"; }
+        public override string Definition => "/skip - Пропустить одного человека вперёд себя";
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
@@ -151,7 +161,7 @@ namespace LabsQueueBot
         }
     }
 
-    internal class SkipApplier : Command
+    public class SkipApplier : Command
     {
         public override string Definition => "/skip_applier";
 
@@ -187,9 +197,9 @@ namespace LabsQueueBot
     } 
 
     //выйти из очереди
-    internal class Quit : Command
+    public class Quit : Command
     {
-        public override string Definition { get => "/quit - Выйти из очереди"; }
+        public override string Definition => "/quit - Выйти из очереди";
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
@@ -204,9 +214,9 @@ namespace LabsQueueBot
         }
     }
 
-    internal class QuitApplier : Command
+    public class QuitApplier : Command
     {
-        public override string Definition { get => "/quit_applier"; }
+        public override string Definition => "/quit_applier";
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
@@ -234,11 +244,10 @@ namespace LabsQueueBot
         }
     }
 
-
     //показывает предметы и номера в очереди по ним
-    internal class Subjects : Command
+    public class Subjects : Command
     {
-        public override string Definition { get => "/subjects - Список предметов и номера в очередях по ним"; }
+        public override string Definition => "/subjects - Список предметов и номера в очередях по ним";
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
@@ -254,9 +263,9 @@ namespace LabsQueueBot
     }
 
     //общий класс для изменения курса и группы
-    internal class SetGroup : Command
+    public class SetGroup : Command
     {
-        public override string Definition { get => "/change_info - Изменить номера курса и  группы"; }
+        public override string Definition => "/change_info - Изменить номера курса и группы";
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
@@ -278,7 +287,7 @@ namespace LabsQueueBot
         }
     }
 
-    internal class SetGroupApplier : Command
+    public class SetGroupApplier : Command
     {
         public override string Definition => "/set_group_applier";
 
@@ -339,7 +348,7 @@ namespace LabsQueueBot
         }
     }
 
-    internal class AddGroupApplier : Command
+    public class AddGroupApplier : Command
     {
         public override string Definition => "/add_group_applier";
 
@@ -407,9 +416,9 @@ namespace LabsQueueBot
 
 
     //встать в очередь
-    internal class Join : Command
+    public class Join : Command
     {
-        public override string Definition { get => "/join - Встать в очередь"; }
+        public override string Definition => "/join - Встать в очередь";
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
@@ -424,9 +433,9 @@ namespace LabsQueueBot
         }
     }
 
-    internal class JoinApplier : Command
+    public class JoinApplier : Command
     {
-        public override string Definition { get => "/join_applier"; }
+        public override string Definition => "/join_applier";
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
@@ -456,16 +465,15 @@ namespace LabsQueueBot
             int position = group.AddStudent(id, subject);
             if (position == -1)
                 return new SendMessageRequest(id, $"Ты добавлен в список ожидания");
-            //return new SendMessageRequest(id, $"Твой номер в очереди — {group[subject].Position(id) + 1}");
             if (position == -2)
                 return new SendMessageRequest(id, "Ты находишься в списке ожидания");
             return new SendMessageRequest(id, $"Ты уже записан в эту очередь\nТвой номер в очереди — {group[subject].Position(id) + 1}");
         }
     }
 
-    internal class AddSubjectApplier : Command
+    public class AddSubjectApplier : Command
     {
-        public override string Definition { get => "/add_subject_applier"; }
+        public override string Definition => "/add_subject_applier";
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
@@ -493,9 +501,9 @@ namespace LabsQueueBot
     }
 
     //показывает очереди по предметам
-    internal class Show : Command
+    public class Show : Command
     {
-        public override string Definition { get => "/show"; }
+        public override string Definition => "/show";
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
@@ -515,10 +523,9 @@ namespace LabsQueueBot
     }
 
     //вызывает меню с предметами
-
-    internal class ShowQueue : Command
+    public class ShowQueue : Command
     {
-        public override string Definition { get => "/show - Показать очередь полностью"; }
+        public override string Definition => "/show - Показать очередь полностью";
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
@@ -533,7 +540,7 @@ namespace LabsQueueBot
         }
     }
 
-    internal class ShowQueueApplier : Command
+    public class ShowQueueApplier : Command
     {
         public override string Definition => "/show_queue_applier";
 
@@ -565,9 +572,10 @@ namespace LabsQueueBot
         }
     }
 
-    internal class Rename : Command
+    // сменить имя пользователя
+    public class Rename : Command
     {
-        public override string Definition { get => "/rename - Смена фамилии и имени"; }
+        public override string Definition => "/rename - Смена фамилии и имени";
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
@@ -582,9 +590,9 @@ namespace LabsQueueBot
         }
     }
 
-    internal class RenameApplier : Command
+    public class RenameApplier : Command
     {
-        public override string Definition { get => "/rename_applier"; }
+        public override string Definition => "/rename_applier";
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
@@ -602,9 +610,15 @@ namespace LabsQueueBot
             }
             try
             {
-                //Users.Add(id, $"{data[0]} {data[1]}");
-                Users.At(id).Name = $"{data[0]} {data[1]}";
-                //Users.At(id).State = User.UserState.None;
+                var name = $"{data[0]} {data[1]}";
+                Users.At(id).Name = name;
+                using (var db = new QueueBotContext())
+                {
+                    var user = db.UserRepository.FirstOrDefault(u =>  u.Id == id);
+                    user.Name = name;
+                    db.UserRepository.Update(user);
+                    db.SaveChanges();
+                }
             }
             catch (ArgumentException exception)
             {
@@ -615,9 +629,11 @@ namespace LabsQueueBot
 
 
     }
-    internal class Mult : Command
+
+    // нужны ли уведомления
+    public class SwitchNotification : Command
     {
-        public override string Definition { get => "/Mult - Смена фамилии и имени"; }
+        public override string Definition => "/switch_notification - Вкл/выкл ежедневное оповещение";
 
         public override InlineKeyboardMarkup? GetKeyboard(Update update)
         {
@@ -627,13 +643,30 @@ namespace LabsQueueBot
         public override SendMessageRequest Run(Update update)
         {
             long id = update.Message.Chat.Id;
-            Users.At(id).State = User.UserState.Rename;
-            return new SendMessageRequest(id, "wdaad");
+            var user = Users.At(id);
+            user.IsNotifyNeeded = !user.IsNotifyNeeded;
+            var textToSend = user.IsNotifyNeeded ? "Вы подписались на рассылку"
+                : "Вы отписались от рассылки";
+            return new SendMessageRequest(id, textToSend);
+        }
+    }
+
+    // админская команда рандома очереди
+    public class RandomizeQueue : Command
+    {
+        public override string Definition => "/randomize_queue - Зарандомить очередь";
+
+        public override InlineKeyboardMarkup? GetKeyboard(Update update)
+        {
+            return null;
         }
 
-        //public override SendMessageRequest animation(Update update)
-        //{
-
-        //}
+        public override SendMessageRequest Run(Update update)
+        {
+            long id = update.Message.Chat.Id;
+            var user = Users.At(id);
+            Groups.At(new GroupKey(user.CourseNumber, user.GroupNumber)).Union();
+            return new SendMessageRequest(id, "Очереди в группе сформированы");
+        }
     }
 }

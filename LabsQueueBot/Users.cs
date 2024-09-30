@@ -1,6 +1,6 @@
 ﻿namespace LabsQueueBot
 {
-    internal static class Users
+    public static class Users
     {       
         // ID пользователя : Пользователь
         private static Dictionary<long, User> _users;
@@ -53,7 +53,6 @@
                 db.UserRepository.Remove(_users[id]);
                 db.SaveChanges();
             }
-            //удаление  студента из группы
             return _users.Remove(id);
         }
         public static User At(long id) => _users[id];
