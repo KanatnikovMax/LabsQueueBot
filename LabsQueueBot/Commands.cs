@@ -92,11 +92,20 @@ namespace LabsQueueBot
             else
                 id = update.CallbackQuery.Message.Chat.Id;
 
-            StringBuilder builder = new StringBuilder();
+            var builder = new StringBuilder();
 
+            builder.AppendLine("При добавлении в очередь пользователь записывается в список ожидающих. "
+                + "Каждый день в 19:00 список ожидающих случайным образом перемешивается и добавляется в конец"
+                + " соответствующей очереди, тем, кто подписан на рассылку, приходит уведомление с его местами в очередях, "
+                + "в которые он записан. Пользователи с админскими правами соответствующей командой "
+                + "могут вызвать генерацию очередей для своей группы в любой момент времени. "
+                + "Для получения админских прав староста группы (или другое ответственное лицо) должен написать админу "
+                + "бота в лс (ссылка на профиль админа в описании)\n");
+
+            // описание команд
             builder.AppendLine($"\n{new Help().Definition}");
 
-            builder.AppendLine($"\n{new SwitchNotification().Definition}\n");
+            builder.AppendLine($"\n{new SwitchNotification().Definition}");
 
             builder.AppendLine("\nДействия с очередями");
             builder.AppendLine(new Subjects().Definition);
