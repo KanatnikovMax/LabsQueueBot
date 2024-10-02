@@ -3,13 +3,40 @@ using System.Security.Cryptography;
 
 namespace LabsQueueBot
 {
+    /// <summary>
+    /// Очередь пользователей; <br/>
+    /// представляет из себя два списка: <br/>
+    /// - список ожидающих распределения пользователей; <br/>
+    /// - список распределенных в очереди пользователей
+    /// </summary>
     public class Queue : IEnumerable<long>
     {
+        /// <summary>
+        /// Список распределенных в очереди пользователей
+        /// </summary>
         public List<long> _queue = new(30);
+        /// <summary>
+        /// Список ожидающих распределения пользователей
+        /// </summary>
         public List<long> _waiting = new(30);
+        /// <summary>
+        /// Внешний ключ - Id сущности Subject <br/>
+        /// (для работы с БД)
+        /// </summary>
         private readonly int _subjectId;
+        /// <summary>
+        /// Конструктор класса Queue
+        /// </summary>
+        /// <param name="subjectId"> внешний ключ к сущности Subject </param>
         public Queue(int subjectId) => _subjectId = subjectId;
-
+        /// <summary>
+        /// Конструктор класса Queue; <br/>
+        /// синхронизирует данные очереди из БД
+        /// </summary>
+        /// <param name="courseNumber"> номер курса </param>
+        /// <param name="groupNumber"> номер группы </param>
+        /// <param name="subjectName"> название дисципллины </param>
+        /// <param name="subjectId"> внешний ключ к сущности Subject </param>
         public Queue(byte courseNumber, byte groupNumber, string subjectName, int subjectId)
         {
             CourseNumber = courseNumber;
@@ -30,20 +57,31 @@ namespace LabsQueueBot
         }
 
         public string SubjectName { get; set; }
+        /// <summary>
+        /// Номер курса
+        /// </summary>
         public byte CourseNumber { get; set; }
+        /// <summary>
+        /// Номер группы
+        /// </summary>
         public byte GroupNumber { get; set; }
-
+        /// <summary>
+        /// Количество пользователей в очереди и ожидающих распределения
+        /// </summary>
         public int Count => _queue.Count + _waiting.Count;
-
+        /// <summary>
+        /// Индекс последнего пользователя, добавленного в БД
+        /// </summary>
         private int _indexLast;
 
         /// <summary>
-        /// ищет индекс студента в очереди
+        /// Возвращает позицию пользователя в очереди
         /// </summary>
+        /// <param name="id"> Id пользователя </param>
         /// <returns>
-        /// положительный индекс, если нашёл; 
-        /// -1, если не нашёл нигде; 
-        /// -2, если находится в состоянии ожидания
+        /// позицию пользователя в очереди; <br/>
+        /// -1, если пользователь не найден в очереди и списке ожидания; <br/>
+        /// -2, если пользователь находится в списке ожидания
         /// </returns>
         public int Position(long id)
         {
@@ -51,27 +89,33 @@ namespace LabsQueueBot
             return index >= 0 ? index 
                 : (_waiting.FindIndex(0, _waiting.Count, val => val == id) >= 0 ? -2 : -1);
         }
-
-        public void Add(User user)
+        /// <summary>
+        /// Добавляет пользователя в список ожидания распределения в очередь; <br/>
+        /// обновляет БД
+        /// </summary>
+        /// <param name="id"> Id пользователя </param>
+        public void Add(long id)
         {
-            _waiting.Add(user.Id);
+            _waiting.Add(id);
             using var db = new QueueBotContext();
             var serialNumber = new SerialNumber()
             {
                 QueueIndex = -2,
-                TgUserIndex = user.Id,
+                TgUserIndex = id,
                 SubjectId = _subjectId,
             };
             db.SerialNumberRepository.Add(serialNumber);
             db.SaveChanges();
         }
-
-        public void Clear()
-        {
-            _queue.Clear();
-            _waiting.Clear();
-        }
-
+        /// <summary>
+        /// Удаляет пользователя из очереди или списка ожидания; <br/>
+        /// обновляет БД
+        /// </summary>
+        /// <param name="id"> Id пользователя </param>
+        /// <returns>
+        /// true, если пользователь был удален; <br/>
+        /// false, если пользователь не был удален
+        /// </returns>
         public bool Remove(long id)
         {
             var index = Position(id);
@@ -88,7 +132,6 @@ namespace LabsQueueBot
                 _queue.RemoveAt(index);
                 return true;
             }
-            
             index = _waiting.FindIndex(0, _waiting.Count, val => val == id);
             if (index >= 0)
             {
@@ -103,10 +146,14 @@ namespace LabsQueueBot
                 _waiting.RemoveAt(index);
                 return true;
             }
-            
             return false;
         }
-
+        /// <summary>
+        /// Объединяет очередь со списком ожидающих распределения; <br/>
+        /// распределяет пользователей из списка ожидания случайным образом
+        /// и добавляет их в конец текущей очереди; <br/>
+        /// обновляет БД
+        /// </summary>
         public void Union()
         {
             using var db = new QueueBotContext();
@@ -127,11 +174,22 @@ namespace LabsQueueBot
             db.SerialNumberRepository.UpdateRange(list);
             db.SaveChanges();
         }
-
+        /// <summary>
+        /// Реализация GetEnumerator для класса Queue
+        /// </summary>
         public IEnumerator<long> GetEnumerator() => _queue.GetEnumerator();      
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
+        /// <summary>
+        /// Меняет местами пользователей в очереди; <br/>
+        /// обновляет БД
+        /// </summary>
+        /// <param name="id"> Id пользователя </param>
+        /// <exception cref="InvalidOperationException"> <br/>
+        /// если пользователя нет в очереди и списке ожидания; <br/>
+        /// если пользователь в списке ожидания; <br/>
+        /// если пользователь последний в очереди
+        /// </exception>
         public void Skip(long id)
         {
             var index = Position(id);

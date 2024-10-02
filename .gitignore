@@ -362,5 +362,5 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-# JetBrains IDE's settings
+# JetBrains Rider's settings
 .idea
