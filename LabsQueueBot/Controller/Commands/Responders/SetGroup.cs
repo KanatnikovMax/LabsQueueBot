@@ -7,7 +7,7 @@ namespace LabsQueueBot;
 //общий класс для изменения курса и группы
 public class SetGroup : Command
 {
-    public override string Definition => "/change_info - Изменить номера курса и группы";
+    public override string Definition => "/change_group - Изменить номера курса и группы";
 
     public override InlineKeyboardMarkup? GetKeyboard(Update update)
     {

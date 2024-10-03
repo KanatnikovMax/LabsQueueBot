@@ -15,7 +15,7 @@ namespace LabsQueueBot
             {"/join", new Join() },
             {"/quit", new Quit() },
             {"/skip", new Skip() },
-            {"/change_info", new SetGroup() },
+            {"/change_group", new SetGroup() },
             {"/subjects", new Subjects() },
             {"/show", new Show() },
             {"/rename", new Rename() },
