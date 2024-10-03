@@ -118,8 +118,10 @@ namespace LabsQueueBot
                         db.SaveChanges();
                     }
                 }
+
                 return true;
             }
+
             return false;
         }
 

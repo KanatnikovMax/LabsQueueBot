@@ -67,6 +67,7 @@
                 db.UserRepository.Remove(tmpUser.First().Value);
                 _users.Remove(user.Id);
             }
+
             _users.Add(user.Id, user);
             db.UserRepository.Add(user);
             db.SaveChanges();
@@ -88,6 +89,7 @@
                 db.UserRepository.Remove(_users[id]);
                 db.SaveChanges();
             }
+
             return _users.Remove(id);
         }
 
@@ -95,9 +97,6 @@
         /// Реализует индексатор хранилища пользователей
         /// </summary>
         /// <param name="id"> Id пользователя </param>
-        /// <returns>
-        /// пользователь с указанным Id
-        /// </returns>
         public static User At(long id) => _users[id];
 
         /// <summary>

@@ -15,20 +15,24 @@ namespace LabsQueueBot
         /// Список распределенных в очереди пользователей
         /// </summary>
         public List<long> _queue = new(30);
+
         /// <summary>
         /// Список ожидающих распределения пользователей
         /// </summary>
         public List<long> _waiting = new(30);
+
         /// <summary>
         /// Внешний ключ - Id сущности Subject <br/>
         /// (для работы с БД)
         /// </summary>
         private readonly int _subjectId;
+
         /// <summary>
         /// Конструктор класса Queue
         /// </summary>
         /// <param name="subjectId"> внешний ключ к сущности Subject </param>
         public Queue(int subjectId) => _subjectId = subjectId;
+
         /// <summary>
         /// Конструктор класса Queue; <br/>
         /// синхронизирует данные очереди из БД
@@ -57,18 +61,22 @@ namespace LabsQueueBot
         }
 
         public string SubjectName { get; set; }
+
         /// <summary>
         /// Номер курса
         /// </summary>
         public byte CourseNumber { get; set; }
+
         /// <summary>
         /// Номер группы
         /// </summary>
         public byte GroupNumber { get; set; }
+
         /// <summary>
         /// Количество пользователей в очереди и ожидающих распределения
         /// </summary>
         public int Count => _queue.Count + _waiting.Count;
+
         /// <summary>
         /// Индекс последнего пользователя, добавленного в БД
         /// </summary>
@@ -86,9 +94,11 @@ namespace LabsQueueBot
         public int Position(long id)
         {
             var index = _queue.FindIndex(0, _queue.Count, val => val == id);
-            return index >= 0 ? index 
+            return index >= 0
+                ? index
                 : (_waiting.FindIndex(0, _waiting.Count, val => val == id) >= 0 ? -2 : -1);
         }
+
         /// <summary>
         /// Добавляет пользователя в список ожидания распределения в очередь; <br/>
         /// обновляет БД
@@ -107,6 +117,7 @@ namespace LabsQueueBot
             db.SerialNumberRepository.Add(serialNumber);
             db.SaveChanges();
         }
+
         /// <summary>
         /// Удаляет пользователя из очереди или списка ожидания; <br/>
         /// обновляет БД
@@ -125,13 +136,15 @@ namespace LabsQueueBot
                 {
                     var sbToRemove = db.SerialNumberRepository
                         .FirstOrDefault(s => s.TgUserIndex == id
-                        && s.SubjectId == _subjectId);
+                                             && s.SubjectId == _subjectId);
                     db.SerialNumberRepository.Remove(sbToRemove);
-                    db.SaveChanges();                   
+                    db.SaveChanges();
                 }
+
                 _queue.RemoveAt(index);
                 return true;
             }
+
             index = _waiting.FindIndex(0, _waiting.Count, val => val == id);
             if (index >= 0)
             {
@@ -139,15 +152,18 @@ namespace LabsQueueBot
                 {
                     var sbToRemove = db.SerialNumberRepository
                         .FirstOrDefault(s => s.TgUserIndex == id
-                        && s.SubjectId == _subjectId);
+                                             && s.SubjectId == _subjectId);
                     db.SerialNumberRepository.Remove(sbToRemove);
                     db.SaveChanges();
                 }
+
                 _waiting.RemoveAt(index);
                 return true;
             }
+
             return false;
         }
+
         /// <summary>
         /// Объединяет очередь со списком ожидающих распределения; <br/>
         /// распределяет пользователей из списка ожидания случайным образом
@@ -166,20 +182,23 @@ namespace LabsQueueBot
                 _queue.Add(userId);
                 var serialNumber = db.SerialNumberRepository
                     .FirstOrDefault(sn => sn.TgUserIndex == userId
-                    && sn.SubjectId == _subjectId);
+                                          && sn.SubjectId == _subjectId);
                 serialNumber.QueueIndex = _indexLast;
                 list.Add(serialNumber);
                 _waiting.RemoveAt(index);
             }
+
             db.SerialNumberRepository.UpdateRange(list);
             db.SaveChanges();
         }
+
         /// <summary>
-        /// Реализация GetEnumerator для класса Queue
+        /// Реализует GetEnumerator для класса Queue
         /// </summary>
-        public IEnumerator<long> GetEnumerator() => _queue.GetEnumerator();      
+        public IEnumerator<long> GetEnumerator() => _queue.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
         /// <summary>
         /// Меняет местами пользователей в очереди; <br/>
         /// обновляет БД
@@ -204,10 +223,10 @@ namespace LabsQueueBot
             using var db = new QueueBotContext();
             var sn1 = db.SerialNumberRepository
                 .FirstOrDefault(sn => sn.TgUserIndex == _queue[index]
-                && sn.SubjectId == _subjectId);
+                                      && sn.SubjectId == _subjectId);
             var sn2 = db.SerialNumberRepository
                 .FirstOrDefault(sn => sn.TgUserIndex == _queue[index + 1]
-                && sn.SubjectId == _subjectId);
+                                      && sn.SubjectId == _subjectId);
             (sn1.QueueIndex, sn2.QueueIndex) = (sn2.QueueIndex, sn1.QueueIndex);
             db.SerialNumberRepository.UpdateRange([sn1, sn2]);
             db.SaveChanges();
