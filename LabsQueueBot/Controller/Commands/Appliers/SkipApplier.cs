@@ -4,6 +4,9 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace LabsQueueBot;
 
+/// <summary>
+/// Реализует пропуск пользователем одного места в очереди
+/// </summary>
 public class SkipApplier : Command
 {
     public override string Definition => "/skip_applier";
@@ -17,6 +20,7 @@ public class SkipApplier : Command
     {
         var subject = update.CallbackQuery.Data;
         var id = update.CallbackQuery.Message.Chat.Id;
+
         if (update.CallbackQuery.Message.Text != "Выберите предмет:")
             throw new InvalidOperationException();
 
@@ -32,6 +36,7 @@ public class SkipApplier : Command
             group[subject].Skip(id);
             return new SendMessageRequest(id, "Это как шаг вперед, но назад");
         }
+        //если не получилось пропустить
         catch (InvalidOperationException exception)
         {
             return new SendMessageRequest(id, exception.Message);

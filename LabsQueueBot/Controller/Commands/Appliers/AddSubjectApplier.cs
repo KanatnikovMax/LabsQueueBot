@@ -4,6 +4,9 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace LabsQueueBot;
 
+/// <summary>
+/// Добавляет новую дисциплину в группу
+/// </summary>
 public class AddSubjectApplier : Command
 {
     public override string Definition => "/add_subject_applier";
@@ -23,12 +26,12 @@ public class AddSubjectApplier : Command
         try
         {
             group.AddSubject(subject);
-            return new SendMessageRequest(id, $"Очередь по предмету {subject} добавлена\nНажмите /join для добавления в очередь");
+            return new SendMessageRequest(id,
+                $"Очередь по предмету {subject} добавлена\nНажмите /join для добавления в очередь");
         }
         catch (Exception exception)
         {
             return new SendMessageRequest(id, exception.Message);
         }
-            
     }
 }

@@ -4,6 +4,9 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace LabsQueueBot;
 
+/// <summary>
+/// Удаляет пользователя из очереди или списка ожидания
+/// </summary>
 public class QuitApplier : Command
 {
     public override string Definition => "/quit_applier";
@@ -21,9 +24,11 @@ public class QuitApplier : Command
         if (update.CallbackQuery.Message.Text != "Выберите предмет:")
             throw new InvalidOperationException();
 
+        //отмена удаления
         if (subject == "Назад")
             return new SendMessageRequest(id, subject);
 
+        //удаление пользователя из очереди
         User user = Users.At(id);
         Group group = Groups.At(new GroupKey(user.CourseNumber, user.GroupNumber));
 

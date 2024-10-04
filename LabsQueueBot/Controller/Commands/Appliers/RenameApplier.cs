@@ -3,7 +3,10 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace LabsQueueBot;
-
+/// <summary>
+/// Изменяет личные данные пользователя (фамилию, имя);
+/// обновляет БД
+/// </summary>
 public class RenameApplier : Command
 {
     public override string Definition => "/rename_applier";
@@ -18,12 +21,14 @@ public class RenameApplier : Command
         long id = update.Message.Chat.Id;
         var data = update.Message.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToArray();
         Users.At(id).State = User.UserState.None;
-        if (data.Length != 2)
+        //проверка валидности
+        if (data.Length != 2 && data.Any(c => "0123456789~!@#$%^&*()_+{}:\"|?><`=[]\\;',./№".Contains(c)))
         {
             return new SendMessageRequest(id, "Смена личности не удалась");
         }
         try
         {
+            //обновление данных
             var name = $"{data[0]} {data[1]}";
             Users.At(id).Name = name;
             using (var db = new QueueBotContext())
