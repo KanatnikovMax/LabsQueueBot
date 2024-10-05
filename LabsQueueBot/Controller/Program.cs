@@ -37,9 +37,9 @@ namespace LabsQueueBot
             { User.UserState.Quit, new QuitApplier() },
             { User.UserState.Skip, new SkipApplier() },
             { User.UserState.ShowQueue, new ShowQueueApplier() },
-            { User.UserState.AddSubject, new AddSubjectApplier() }, //
-            { User.UserState.AddGroup, new AddGroupApplier() }, //
-            { User.UserState.Rename, new RenameApplier() } //
+            { User.UserState.AddSubject, new AddSubjectApplier() },
+            { User.UserState.AddGroup, new AddGroupApplier() },
+            { User.UserState.Rename, new RenameApplier() }
         };
 
         private static ITelegramBotClient bot = new TelegramBotClient("7098667146:AAHlUf4Y-cmOtkOmCcvFDVnKFHbkVlCgpJE");
@@ -89,6 +89,7 @@ namespace LabsQueueBot
                 {
                     message = update.Message;
                     id = message.Chat.Id;
+
                     //проверяется, что сообщение действительно является текстовым
                     if (update.Message.Type != Telegram.Bot.Types.Enums.MessageType.Text)
                     {
@@ -129,9 +130,11 @@ namespace LabsQueueBot
             }
 
             //проверяется, что запрос является ответом на вызванный ранее InlineKeyboardMarkup
-            if (Users.Contains(id) && Users.At(id).State != User.UserState.Unregistred &&
-                Users.At(id).State != User.UserState.None
-                && Users.At(id).State != User.UserState.AddGroup && Users.At(id).State != User.UserState.AddSubject
+            if (Users.Contains(id) 
+                && Users.At(id).State != User.UserState.Unregistred 
+                && Users.At(id).State != User.UserState.None
+                && Users.At(id).State != User.UserState.AddGroup 
+                && Users.At(id).State != User.UserState.AddSubject
                 && Users.At(id).State != User.UserState.Rename)
             {
                 //тип запроса - ответ на InlineKeyboardMarkup
@@ -273,6 +276,7 @@ namespace LabsQueueBot
 
         static async Task Main(string[] args)
         {
+            //Славянский ретёрн в мэйне
             //return;
 
             //генерация пароля
