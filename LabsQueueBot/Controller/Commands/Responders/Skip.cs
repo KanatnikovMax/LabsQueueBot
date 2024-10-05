@@ -4,7 +4,9 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace LabsQueueBot;
 
-//пропустить человека вперед себя
+/// <summary>
+/// Вызывает меню с дисциплинами, в очереди по которым можно пропустить пользователя вперед себя
+/// </summary>
 public class Skip : Command
 {
     public override string Definition => "/skip - Пропустить одного человека вперёд себя";

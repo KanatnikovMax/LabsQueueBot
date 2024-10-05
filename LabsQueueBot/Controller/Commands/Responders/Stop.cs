@@ -4,7 +4,9 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace LabsQueueBot;
 
-//отписаться от бота
+/// <summary>
+/// Отписывает пользователя от бота
+/// </summary>
 public class Stop : Command
 {
     public override string Definition => "/stop - Отписаться";

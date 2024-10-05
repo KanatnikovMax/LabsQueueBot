@@ -4,7 +4,9 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace LabsQueueBot;
 
-//общий класс для изменения курса и группы
+/// <summary>
+/// Класс для изменения курса и группы
+/// </summary>
 public class SetGroup : Command
 {
     public override string Definition => "/change_group - Изменить номера курса и группы";
@@ -16,7 +18,7 @@ public class SetGroup : Command
             return null;
         var list = Groups.Keys.Select(x => x.ToString()).Order().ToList();
         bool backFlag = Users.At(id).State != User.UserState.UnsetStudentData; // нужна ли кнопка "Назад"
-        if(backFlag)
+        if (backFlag)
             Users.At(id).State = User.UserState.ChangeData;
         bool addFlag = Groups.GroupsCount < 60;
         return KeyboardCreator.ListToKeyboard(list, addFlag, backFlag, 1);
