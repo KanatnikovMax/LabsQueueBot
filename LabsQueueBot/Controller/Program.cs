@@ -1,7 +1,12 @@
-﻿using Telegram.Bot;
-using Telegram.Bot.Types;
-using Telegram.Bot.Polling;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using System;
+using System.IO;
+using System.Text;
 using System.Timers;
+using Telegram.Bot;
+using Telegram.Bot.Polling;
+using Telegram.Bot.Types;
 
 namespace LabsQueueBot
 {
@@ -51,165 +56,192 @@ namespace LabsQueueBot
         public static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update,
             CancellationToken cancellationToken)
         {
-            long id = 0;
-            Message message;
-
-            //по типу запроса определяется, достоин ли он внимания
-            switch (update.Type)
+            //return;           
+                long id = 0;
+                Message message = null;
+            try
             {
-                //случай с клавиатурой
-                case Telegram.Bot.Types.Enums.UpdateType.CallbackQuery:
+                //по типу запроса определяется, достоин ли он внимания
+                switch (update.Type)
                 {
-                    message = update.CallbackQuery.Message;
-                    id = message.Chat.Id;
+                    //случай с клавиатурой
+                    case Telegram.Bot.Types.Enums.UpdateType.CallbackQuery:
+                        {
+                            message = update.CallbackQuery.Message;
+                            id = message.Chat.Id;
 
-                    //проверяется, что запрос был ответом на вызванный ранее InlineKeyboardMarkup
-                    if (Users.Contains(id) && Users.At(id).State == User.UserState.None)
-                    {
-                        await bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
-                            cancellationToken: cancellationToken);
-                        await botClient.SendTextMessageAsync(message.Chat, "Введи команду, ящур");
+                            //проверяется, что запрос был ответом на вызванный ранее InlineKeyboardMarkup
+                            if (Users.Contains(id) && Users.At(id).State == User.UserState.None)
+                            {
+                                await bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
+                                    cancellationToken: cancellationToken);
+                                await botClient.SendTextMessageAsync(message.Chat, "Введи команду, ящур");
+                                return;
+                            }
+
+                            //проверка регистрации
+                            if (!Users.Contains(id))
+                            {
+                                await bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
+                                    cancellationToken: cancellationToken);
+                                await botClient.SendTextMessageAsync(message.Chat,
+                                    "Вы не зарегистрированы!\n/start для регистрации");
+                                return;
+                            }
+
+                            break;
+                        }
+                    //случай с сообщением
+                    case Telegram.Bot.Types.Enums.UpdateType.Message:
+                        {
+                            message = update.Message;
+                            id = message.Chat.Id;
+
+                            //проверяется, что сообщение действительно является текстовым
+                            if (update.Message.Type != Telegram.Bot.Types.Enums.MessageType.Text)
+                            {
+                                string request;
+                                if (Users.Contains(id) && Users.At(id).State != User.UserState.None)
+                                    request = "Пришли данные текстом или нажми на кнопку (в зависимости от ситуации)";
+                                else
+                                    request = "Не принимаю данные такого типа";
+                                await botClient.SendTextMessageAsync(message.Chat, request);
+                                await botClient.DeleteMessageAsync(chatId: id, messageId: message.MessageId);
+                                return;
+                            }
+
+                            break;
+                        }
+                    //случай с отпиской от бота
+                    case Telegram.Bot.Types.Enums.UpdateType.MyChatMember:
+                        {
+                            id = update.MyChatMember.Chat.Id;
+                            message = null;
+                            if (Users.Contains(id))
+                                Groups.Remove(id);
+                            Users.Remove(id);
+                            return;
+                        }
+                    default:
                         return;
+                }
+
+                //проверяется регистрация пользователя
+                if (Users.Contains(id) && Users.At(id).State == User.UserState.None
+                                       && !Groups.ContainsKey(new GroupKey(Users.At(id).CourseNumber,
+                                           Users.At(id).GroupNumber)))
+                {
+                    Users.Remove(id);
+                    await botClient.SendTextMessageAsync(message.Chat, "Вы не зарегистрированы!\n/start для регистрации");
+                    return;
+                }
+
+                //проверяется, что запрос является ответом на вызванный ранее InlineKeyboardMarkup
+                if (Users.Contains(id)
+                    && Users.At(id).State != User.UserState.Unregistred
+                    && Users.At(id).State != User.UserState.None
+                    && Users.At(id).State != User.UserState.AddGroup
+                    && Users.At(id).State != User.UserState.AddSubject
+                    && Users.At(id).State != User.UserState.Rename)
+                {
+                    //тип запроса - ответ на InlineKeyboardMarkup
+                    if (update.Type == Telegram.Bot.Types.Enums.UpdateType.CallbackQuery)
+                    {
+                        try
+                        {
+                            //вызов соответствующего ответа на запрос
+                            var request = actions[Users.At(id).State].Run(update);
+
+                            //удаление InlineKeyboardMarkup
+                            await bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
+                                cancellationToken: cancellationToken);
+
+                            if (request.Text != "Назад")
+                                await botClient.SendTextMessageAsync(message.Chat, request.Text);
+
+                            if (Users.At(id).State != User.UserState.AddSubject
+                                && Users.At(id).State != User.UserState.AddGroup)
+                            {
+                                Users.At(id).State = User.UserState.None;
+                            }
+                        }
+                        //если запрос был ответом на неактуальный InlineKeyboardMarkup
+                        catch (InvalidOperationException)
+                        {
+                            await bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
+                                cancellationToken: cancellationToken);
+                            await botClient.SendTextMessageAsync(message.Chat, "Нажми на нужную табличку");
+                        }
+                    }
+                    //иначе удаление запроса пользователя
+                    else
+                    {
+                        await bot.DeleteMessageAsync(chatId: message.Chat.Id,
+                            messageId: message.MessageId,
+                            cancellationToken: cancellationToken);
                     }
 
+                    return;
+                }
+
+                //тип запроса - текстовое сообщение
+                if (update.Type == Telegram.Bot.Types.Enums.UpdateType.Message)
+                {
                     //проверка регистрации
-                    if (!Users.Contains(id))
+                    if (!Users.Contains(id) && message.Text != "/start")
                     {
-                        await bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
-                            cancellationToken: cancellationToken);
                         await botClient.SendTextMessageAsync(message.Chat,
                             "Вы не зарегистрированы!\n/start для регистрации");
                         return;
                     }
 
-                    break;
-                }
-                //случай с сообщением
-                case Telegram.Bot.Types.Enums.UpdateType.Message:
-                {
-                    message = update.Message;
-                    id = message.Chat.Id;
-
-                    //проверяется, что сообщение действительно является текстовым
-                    if (update.Message.Type != Telegram.Bot.Types.Enums.MessageType.Text)
+                    //вызов соответствующего ответа на существующий запрос
+                    if (Users.Contains(id) && Users.At(id).State != User.UserState.None)
                     {
-                        string request;
-                        if (Users.Contains(id) && Users.At(id).State != User.UserState.None)
-                            request = "Пришли данные текстом или нажми на кнопку (в зависимости от ситуации)";
-                        else
-                            request = "Не принимаю данные такого типа";
-                        await botClient.SendTextMessageAsync(message.Chat, request);
-                        await botClient.DeleteMessageAsync(chatId: id, messageId: message.MessageId);
+                        var action = actions[Users.At(id).State];
+                        await botClient.SendTextMessageAsync(chatId: message.Chat,
+                            text: action.Run(update).Text,
+                            replyMarkup: action.GetKeyboard(update));
                         return;
                     }
 
-                    break;
-                }
-                //случай с отпиской от бота
-                case Telegram.Bot.Types.Enums.UpdateType.MyChatMember:
-                {
-                    id = update.MyChatMember.Chat.Id;
-                    message = null;
-                    if (Users.Contains(id))
-                        Groups.Remove(id);
-                    Users.Remove(id);
-                    return;
-                }
-                default:
-                    return;
-            }
-
-            //проверяется регистрация пользователя
-            if (Users.Contains(id) && Users.At(id).State == User.UserState.None
-                                   && !Groups.ContainsKey(new GroupKey(Users.At(id).CourseNumber,
-                                       Users.At(id).GroupNumber)))
-            {
-                Users.Remove(id);
-                await botClient.SendTextMessageAsync(message.Chat, "Вы не зарегистрированы!\n/start для регистрации");
-                return;
-            }
-
-            //проверяется, что запрос является ответом на вызванный ранее InlineKeyboardMarkup
-            if (Users.Contains(id) 
-                && Users.At(id).State != User.UserState.Unregistred 
-                && Users.At(id).State != User.UserState.None
-                && Users.At(id).State != User.UserState.AddGroup 
-                && Users.At(id).State != User.UserState.AddSubject
-                && Users.At(id).State != User.UserState.Rename)
-            {
-                //тип запроса - ответ на InlineKeyboardMarkup
-                if (update.Type == Telegram.Bot.Types.Enums.UpdateType.CallbackQuery)
-                {
-                    try
+                    //вызов соответствующего ответа на запрос с командой
+                    if (commands.ContainsKey(message.Text))
                     {
-                        //вызов соответствующего ответа на запрос
-                        var request = actions[Users.At(id).State].Run(update);
-
-                        //удаление InlineKeyboardMarkup
-                        await bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
-                            cancellationToken: cancellationToken);
-
-                        if (request.Text != "Назад")
-                            await botClient.SendTextMessageAsync(message.Chat, request.Text);
-
-                        if (Users.At(id).State != User.UserState.AddSubject
-                            && Users.At(id).State != User.UserState.AddGroup)
-                        {
-                            Users.At(id).State = User.UserState.None;
-                        }
+                        var command = commands[message.Text];
+                        await botClient.SendTextMessageAsync(chatId: message.Chat,
+                            text: command.Run(update).Text,
+                            replyMarkup: command.GetKeyboard(update));
+                        return;
                     }
-                    //если запрос был ответом на неактуальный InlineKeyboardMarkup
-                    catch (InvalidOperationException)
-                    {
-                        await bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
-                            cancellationToken: cancellationToken);
-                        await botClient.SendTextMessageAsync(message.Chat, "Нажми на нужную табличку");
-                    }
-                }
-                //иначе удаление запроса пользователя
-                else
-                {
-                    await bot.DeleteMessageAsync(chatId: message.Chat.Id,
-                        messageId: message.MessageId,
-                        cancellationToken: cancellationToken);
-                }
 
-                return;
+                    //запрос не являлся валидным
+                    await botClient.SendTextMessageAsync(message.Chat, "Введи команду, ящур");
+                }
             }
-
-            //тип запроса - текстовое сообщение
-            if (update.Type == Telegram.Bot.Types.Enums.UpdateType.Message)
+            catch (Exception e)
             {
-                //проверка регистрации
-                if (!Users.Contains(id) && message.Text != "/start")
-                {
-                    await botClient.SendTextMessageAsync(message.Chat,
-                        "Вы не зарегистрированы!\n/start для регистрации");
-                    return;
+                var sb = new StringBuilder();
+                var lastUpdates = await bot.GetUpdatesAsync(limit: 10);
+                sb.AppendLine(e.Message);
+                sb.AppendLine("---");
+                sb.AppendLine(e.StackTrace);
+                sb.AppendLine("---");
+                sb.AppendLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
+                string path = "ErrorReason.txt";
+                await System.IO.File.WriteAllTextAsync(path, sb.ToString());
+
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read))
+                {                   
+                    await botClient.SendDocumentAsync(
+                        chatId: 5083997588,
+                        document: new InputFileStream(stream, path),
+                        caption: e is DbUpdateConcurrencyException or DbUpdateException ? "Database Error" : "User's Request Error"
+                    );
                 }
 
-                //вызов соответствующего ответа на существующий запрос
-                if (Users.Contains(id) && Users.At(id).State != User.UserState.None)
-                {
-                    var action = actions[Users.At(id).State];
-                    await botClient.SendTextMessageAsync(chatId: message.Chat,
-                        text: action.Run(update).Text,
-                        replyMarkup: action.GetKeyboard(update));
-                    return;
-                }
-
-                //вызов соответствующего ответа на запрос с командой
-                if (commands.ContainsKey(message.Text))
-                {
-                    var command = commands[message.Text];
-                    await botClient.SendTextMessageAsync(chatId: message.Chat,
-                        text: command.Run(update).Text,
-                        replyMarkup: command.GetKeyboard(update));
-                    return;
-                }
-
-                //запрос не являлся валидным
-                await botClient.SendTextMessageAsync(message.Chat, "Введи команду, ящур");
+                if (message is not null)
+                    await botClient.SendTextMessageAsync(message.Chat.Id, "Ошибка, попробуйте ещё раз позже");
             }
         }
 
@@ -284,13 +316,14 @@ namespace LabsQueueBot
             commands.Add($"/randomize_queue {PasswordGenerator.Password}", new RandomizeQueue());
             Console.WriteLine("Запущен бот " + bot.GetMeAsync().Result.FirstName);
 
-            //запуск бота
             var cts = new CancellationTokenSource();
             var cancellationToken = cts.Token;
             var receiverOptions = new ReceiverOptions
             {
                 AllowedUpdates = { },
             };
+
+            //запуск бота            
             bot.StartReceiving(
                 HandleUpdateAsync,
                 HandleErrorAsync,
@@ -302,6 +335,7 @@ namespace LabsQueueBot
             //запуск таймера для рассылки
             await StartTimer();
             await Task.Delay(-1);
+            
         }
     }
 }

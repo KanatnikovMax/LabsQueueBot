@@ -104,7 +104,7 @@ namespace LabsQueueBot
         /// </returns>
         public bool DeleteSubject(string subject)
         {
-            if (_subjects.Remove(subject))
+            if (_subjects.ContainsKey(subject))
             {
                 using (var db = new QueueBotContext())
                 {
@@ -112,13 +112,13 @@ namespace LabsQueueBot
                         x => x.SubjectName == subject
                              && x.GroupNumber == GroupNumber
                              && x.CourseNumber == CourseNumber);
-                    if (subj != null)
+                    if (subj is not null)
                     {
                         db.SubjectRepository.Remove(subj);
                         db.SaveChanges();
                     }
                 }
-
+                _subjects.Remove(subject);
                 return true;
             }
 

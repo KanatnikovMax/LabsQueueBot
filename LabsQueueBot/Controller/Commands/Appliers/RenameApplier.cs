@@ -29,8 +29,7 @@ public class RenameApplier : Command
         try
         {
             //обновление данных
-            var name = $"{data[0]} {data[1]}";
-            Users.At(id).Name = name;
+            var name = $"{data[0]} {data[1]}";          
             using (var db = new QueueBotContext())
             {
                 var user = db.UserRepository.FirstOrDefault(u =>  u.Id == id);
@@ -38,6 +37,7 @@ public class RenameApplier : Command
                 db.UserRepository.Update(user);
                 db.SaveChanges();
             }
+            Users.At(id).Name = name;
         }
         catch (ArgumentException exception)
         {
