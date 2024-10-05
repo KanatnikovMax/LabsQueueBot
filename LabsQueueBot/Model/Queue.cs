@@ -106,7 +106,6 @@ namespace LabsQueueBot
         /// <param name="id"> Id пользователя </param>
         public void Add(long id)
         {
-            _waiting.Add(id);
             using var db = new QueueBotContext();
             var serialNumber = new SerialNumber()
             {
@@ -116,6 +115,9 @@ namespace LabsQueueBot
             };
             db.SerialNumberRepository.Add(serialNumber);
             db.SaveChanges();
+
+            _waiting.Add(id);
+
         }
 
         /// <summary>
@@ -218,18 +220,22 @@ namespace LabsQueueBot
                 throw new InvalidOperationException("Ты в списке ожидания, так чего не ждётся?");
             if (index == _queue.Count - 1)
                 throw new InvalidOperationException("Ты уже итак в конце очереди, ожидай своего часа :)");
+
+            using (var db = new QueueBotContext())
+            {
+                var sn1 = db.SerialNumberRepository
+                    .FirstOrDefault(sn => sn.TgUserIndex == _queue[index]
+                                          && sn.SubjectId == _subjectId);
+                var sn2 = db.SerialNumberRepository
+                    .FirstOrDefault(sn => sn.TgUserIndex == _queue[index + 1]
+                                          && sn.SubjectId == _subjectId);
+                (sn1.QueueIndex, sn2.QueueIndex) = (sn2.QueueIndex, sn1.QueueIndex);
+                db.SerialNumberRepository.UpdateRange([sn1, sn2]);
+                db.SaveChanges();
+            }
+
             (_queue[index], _queue[index + 1]) = (_queue[index + 1], _queue[index]);
 
-            using var db = new QueueBotContext();
-            var sn1 = db.SerialNumberRepository
-                .FirstOrDefault(sn => sn.TgUserIndex == _queue[index]
-                                      && sn.SubjectId == _subjectId);
-            var sn2 = db.SerialNumberRepository
-                .FirstOrDefault(sn => sn.TgUserIndex == _queue[index + 1]
-                                      && sn.SubjectId == _subjectId);
-            (sn1.QueueIndex, sn2.QueueIndex) = (sn2.QueueIndex, sn1.QueueIndex);
-            db.SerialNumberRepository.UpdateRange([sn1, sn2]);
-            db.SaveChanges();
         }
     }
 }

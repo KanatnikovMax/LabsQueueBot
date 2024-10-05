@@ -19,8 +19,12 @@
         static Users()
         {
             _users = new Dictionary<long, User>();
-            using QueueBotContext db = new();
-            foreach (var user in db.UserRepository.ToList())
+            List<User> lst;
+            using (var db = new QueueBotContext())
+            {
+                lst = db.UserRepository.ToList();
+            }
+            foreach (var user in lst)
             {
                 _users[user.Id] = user;
                 if (user.CourseNumber > 0 && user.GroupNumber > 0
@@ -44,13 +48,18 @@
         /// <param name="name"> имя пользователя </param>
         public static void Add(long id, string name)
         {
-            using QueueBotContext db = new();
-            User user = new(name, id);
-            _users.Remove(user.Id);
-            db.UserRepository.Remove(new User(id));
+            User user;
+            using (var db = new QueueBotContext())
+            {
+                user = new(name, id);
+                db.UserRepository.Remove(new User(id));
+                db.UserRepository.Add(user);
+                db.SaveChanges();
+            }
+             
+            _users.Remove(user.Id);           
             _users.Add(user.Id, user);
-            db.UserRepository.Add(user);
-            db.SaveChanges();
+            
         }
 
         /// <summary>
@@ -60,17 +69,23 @@
         /// <param name="user"> сущность-пользователь </param>
         public static void Add(User user)
         {
-            using QueueBotContext db = new();
             var tmpUser = _users.Where(x => x.Key == user.Id);
-            if (tmpUser.Count() > 0)
+            using (var db = new QueueBotContext())
             {
-                db.UserRepository.Remove(tmpUser.First().Value);
-                _users.Remove(user.Id);
+                if (tmpUser.Count() > 0)
+                {
+                    db.UserRepository.Remove(tmpUser.First().Value);
+                }
+                db.UserRepository.Add(user);
+                db.SaveChanges();
             }
 
+            if (tmpUser.Count() > 0)
+            {
+                _users.Remove(user.Id);
+            }
             _users.Add(user.Id, user);
-            db.UserRepository.Add(user);
-            db.SaveChanges();
+            
         }
 
         /// <summary>
@@ -84,7 +99,7 @@
         /// </returns>
         public static bool Remove(long id)
         {
-            using (QueueBotContext db = new())
+            using (var db = new QueueBotContext())
             {
                 db.UserRepository.Remove(_users[id]);
                 db.SaveChanges();
