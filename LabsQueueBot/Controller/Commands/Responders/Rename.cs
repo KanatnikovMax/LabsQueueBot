@@ -4,7 +4,9 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace LabsQueueBot;
 
-// сменить имя пользователя
+/// <summary>
+/// Отвечает на запрос пользователя об изменении имени
+/// </summary>
 public class Rename : Command
 {
     public override string Definition => "/rename - Смена фамилии и имени";

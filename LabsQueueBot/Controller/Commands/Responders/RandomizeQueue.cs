@@ -4,7 +4,9 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace LabsQueueBot;
 
-// админская команда рандома очереди
+/// <summary>
+/// Отвечает на админскую команду: объединения очередей и списков ожидания
+/// </summary>
 public class RandomizeQueue : Command
 {
     public override string Definition => "/randomize_queue - Зарандомить очередь";

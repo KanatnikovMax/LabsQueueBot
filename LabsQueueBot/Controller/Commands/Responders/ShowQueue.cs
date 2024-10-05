@@ -4,7 +4,9 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace LabsQueueBot;
 
-//вызывает меню с предметами
+/// <summary>
+/// Вызывает меню с дисциплинами для показа очередей по ним
+/// </summary>
 public class ShowQueue : Command
 {
     public override string Definition => "/show - Показать очередь полностью";

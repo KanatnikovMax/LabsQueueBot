@@ -4,7 +4,9 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace LabsQueueBot;
 
-//встать в очередь
+/// <summary>
+/// Отправляет клавиатуру для выбора дисциплины, в очередь по которым можно встать
+/// </summary>
 public class Join : Command
 {
     public override string Definition => "/join - Встать в очередь";

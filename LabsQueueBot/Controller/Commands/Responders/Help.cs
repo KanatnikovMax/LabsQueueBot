@@ -5,6 +5,9 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace LabsQueueBot;
 
+/// <summary>
+/// Отправляет подсказку
+/// </summary>
 public class Help : Command
 {
     public override string Definition => "/help - Список команд";
@@ -24,6 +27,7 @@ public class Help : Command
 
         var builder = new StringBuilder();
 
+        //
         builder.AppendLine("При добавлении в очередь пользователь записывается в список ожидающих. "
                            + "Каждый день в 19:00 список ожидающих случайным образом перемешивается и добавляется в конец"
                            + " соответствующей очереди, тем, кто подписан на рассылку, приходит уведомление с его местами в очередях, "
@@ -32,7 +36,7 @@ public class Help : Command
                            + "Для получения админских прав староста группы (или другое ответственное лицо) должен написать админу "
                            + "бота в лс (ссылка на профиль админа в описании)\n");
 
-        // описание команд
+        //описание команд
         builder.AppendLine($"\n{new Help().Definition}");
 
         builder.AppendLine($"\n{new SwitchNotification().Definition}");

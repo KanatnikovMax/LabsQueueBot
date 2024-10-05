@@ -4,7 +4,9 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace LabsQueueBot;
 
-//начать работу с ботом
+/// <summary>
+/// Подписывает пользователя на бота
+/// </summary>
 public class Start : Command
 {
     public override string Definition => "/start";
@@ -21,6 +23,7 @@ public class Start : Command
         {
             return new SendMessageRequest(id, "Ты уже зареган\nИди отсюда, розбийник");
         }
+
         var newUser = new User(id)
         {
             State = User.UserState.Unregistred

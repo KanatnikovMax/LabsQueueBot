@@ -4,7 +4,9 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace LabsQueueBot;
 
-//выйти из очереди
+/// <summary>
+/// Отправляет клавиатуру для выбора дисциплины, из очереди по которой можно выйти
+/// </summary>
 public class Quit : Command
 {
     public override string Definition => "/quit - Выйти из очереди";

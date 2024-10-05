@@ -4,7 +4,9 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace LabsQueueBot;
 
-// нужны ли уведомления
+/// <summary>
+/// Подписывает или отписывает пользователя от рассылки
+/// </summary>
 public class SwitchNotification : Command
 {
     public override string Definition => "/switch_notification - Вкл/выкл ежедневное оповещение";
@@ -19,7 +21,8 @@ public class SwitchNotification : Command
         long id = update.Message.Chat.Id;
         var user = Users.At(id);
         user.IsNotifyNeeded = !user.IsNotifyNeeded;
-        var textToSend = user.IsNotifyNeeded ? "Вы подписались на рассылку"
+        var textToSend = user.IsNotifyNeeded
+            ? "Вы подписались на рассылку"
             : "Вы отписались от рассылки";
         return new SendMessageRequest(id, textToSend);
     }
