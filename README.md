@@ -6,6 +6,7 @@
 - Telegram API
 - Entity Framework Core
 - PostgreSQL
+- Docker
 ___
 
 ## Применение
