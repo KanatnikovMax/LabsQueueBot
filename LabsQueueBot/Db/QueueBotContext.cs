@@ -10,12 +10,17 @@ namespace LabsQueueBot
 
         public DbSet<SerialNumber> SerialNumberRepository { get; set; }
 
+        public QueueBotContext()
+        {
+            Database.EnsureCreated();
+        }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseNpgsql(
-                "Host=localhost;Port=5432;Database=QueueBotDB;Username=postgres;Password=postgres");
+                "Host=queue_bot_db;Port=5432;Database=queuebotdb;Username=queuebot;Password=postgres");
         }
-
+        
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             //modelBuilder.Entity<SerialNumber>()

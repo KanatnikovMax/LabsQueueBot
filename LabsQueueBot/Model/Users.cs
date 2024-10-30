@@ -10,7 +10,7 @@
         /// <summary>
         /// Словарь <br/> Id пользователя : Пользователь
         /// </summary>
-        private static Dictionary<long, User> _users;
+        private static Dictionary<long, User> _users = new Dictionary<long, User>();
 
         /// <summary>
         /// Конструктор статического класса Users <br/>

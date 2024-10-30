@@ -1,7 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
-using System;
-using System.IO;
 using System.Text;
 using System.Timers;
 using Telegram.Bot;
