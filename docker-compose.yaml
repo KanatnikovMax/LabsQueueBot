@@ -1,0 +1,57 @@
+﻿version: "3.9"
+
+networks:
+  queuebotnetwork:
+    driver: bridge
+    
+services:
+  queuebot:
+    container_name: queue_bot_app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:8080"
+    networks:
+      - queuebotnetwork
+    depends_on:
+      - queuebotdb
+
+  queuebotdb:
+    container_name: queue_bot_db
+    image: postgres:17.0-alpine3.20
+    environment:
+      POSTGRES_DB: "queuebotdb"
+      POSTGRES_USER: "queuebot"
+      POSTGRES_PASSWORD: "postgres"
+      PGDATA: "/var/lib/postgresql/data/queuebotdbdata"
+    ports:
+      - "2345:5432"
+    networks:
+      - queuebotnetwork
+    volumes:
+      - queuebotdb-data:/var/lib/postgresql/data
+  
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4:8.12
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "pgemail@pg.com"
+      PGADMIN_DEFAULT_PASSWORD: "postgres"
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    ports:
+      - "5050:80"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+    networks:
+      - queuebotnetwork
+
+volumes:
+  queuebotdb-data:
+  pgadmin-data:
