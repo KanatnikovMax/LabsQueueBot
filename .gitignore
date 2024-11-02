@@ -364,3 +364,6 @@ FodyWeavers.xsd
 
 # JetBrains Rider's settings
 .idea
+
+# Development appsettings
+appsettings.Development.json
