@@ -19,9 +19,10 @@ namespace LabsQueueBot
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             var configuration = new ConfigurationBuilder()
-                .AddJsonFile("appsettings.Development.json", optional: false)
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile("appsettings.Development.json", optional: false, reloadOnChange: true)
                 .Build();
-            string connectionString = configuration.GetValue<string>("HotelChainDbContext");
+            string connectionString = configuration.GetValue<string>("QueueBotDbContext");
             optionsBuilder.UseNpgsql(connectionString);
         }
     }

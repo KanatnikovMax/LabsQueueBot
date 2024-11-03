@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Text;
 using System.Timers;
+using LabsQueueBot.Settings;
 using Microsoft.Extensions.Configuration;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
@@ -11,11 +12,7 @@ namespace LabsQueueBot
 {
     class Program
     {
-
-        public static string botToken;
-        public static IEnumerable<long> adminChatTgIds;
-        public static IEnumerable<long> logChatTgIds;
-        public static string timeForNotification;
+        public static LabsQueueBotSettings BotSettings;
         /// <summary>
         /// По команде пользователя определяется, как необходимо отреагировать на запрос
         /// </summary>
@@ -51,7 +48,7 @@ namespace LabsQueueBot
             { User.UserState.Rename, new RenameApplier() }
         };
 
-        private static ITelegramBotClient bot = new TelegramBotClient(botToken);
+        private static ITelegramBotClient _bot;
         private static System.Timers.Timer _timer;
 
         /// <summary>
@@ -77,7 +74,7 @@ namespace LabsQueueBot
                             //проверяется, что запрос был ответом на вызванный ранее InlineKeyboardMarkup
                             if (Users.Contains(id) && Users.At(id).State == User.UserState.None)
                             {
-                                await bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
+                                await _bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
                                     cancellationToken: cancellationToken);
                                 await botClient.SendTextMessageAsync(message.Chat, "Введи команду, ящур");
                                 return;
@@ -86,7 +83,7 @@ namespace LabsQueueBot
                             //проверка регистрации
                             if (!Users.Contains(id))
                             {
-                                await bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
+                                await _bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
                                     cancellationToken: cancellationToken);
                                 await botClient.SendTextMessageAsync(message.Chat,
                                     "Вы не зарегистрированы!\n/start для регистрации");
@@ -157,7 +154,7 @@ namespace LabsQueueBot
                             var request = actions[Users.At(id).State].Run(update);
 
                             //удаление InlineKeyboardMarkup
-                            await bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
+                            await _bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
                                 cancellationToken: cancellationToken);
 
                             if (request.Text != "Назад")
@@ -172,7 +169,7 @@ namespace LabsQueueBot
                         //если запрос был ответом на неактуальный InlineKeyboardMarkup
                         catch (InvalidOperationException)
                         {
-                            await bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
+                            await _bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
                                 cancellationToken: cancellationToken);
                             await botClient.SendTextMessageAsync(message.Chat, "Нажми на нужную табличку");
                         }
@@ -180,7 +177,7 @@ namespace LabsQueueBot
                     //иначе удаление запроса пользователя
                     else
                     {
-                        await bot.DeleteMessageAsync(chatId: message.Chat.Id,
+                        await _bot.DeleteMessageAsync(chatId: message.Chat.Id,
                             messageId: message.MessageId,
                             cancellationToken: cancellationToken);
                     }
@@ -226,7 +223,7 @@ namespace LabsQueueBot
             catch (Exception e)
             {
                 var sb = new StringBuilder();
-                var lastUpdates = await bot.GetUpdatesAsync(limit: 10);
+                var lastUpdates = await _bot.GetUpdatesAsync(limit: 10);
                 sb.AppendLine(e.Message);
                 sb.AppendLine("---");
                 sb.AppendLine(e.StackTrace);
@@ -237,7 +234,7 @@ namespace LabsQueueBot
 
                 using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read))
                 {
-                    foreach (var logChatTgId in logChatTgIds)
+                    foreach (var logChatTgId in BotSettings.LogChatTgIds)
                     {
                         await botClient.SendDocumentAsync(
                             chatId: logChatTgId,
@@ -260,7 +257,7 @@ namespace LabsQueueBot
             CancellationToken cancellationToken)
         {
             Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(exception));
-            List<Update> lastUpdates = bot.GetUpdatesAsync(10, 10, null, null, cancellationToken).Result.ToList();
+            List<Update> lastUpdates = _bot.GetUpdatesAsync(10, 10, null, null, cancellationToken).Result.ToList();
             foreach (var update in lastUpdates)
                 if (update.Type == Telegram.Bot.Types.Enums.UpdateType.CallbackQuery)
                     Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
@@ -272,7 +269,7 @@ namespace LabsQueueBot
         /// <param name="id"> Id пользователя </param>
         private static async void MassSendler(long id)
         {
-            await bot.SendTextMessageAsync(id, Groups.ShowSubjects(id));
+            await _bot.SendTextMessageAsync(id, Groups.ShowSubjects(id));
         }
 
         /// <summary>
@@ -294,7 +291,11 @@ namespace LabsQueueBot
         /// </summary>
         private static Task StartTimer()
         {
-            DateTime notificationTime = DateTime.ParseExact(timeForNotification, "HH-mm-ss", CultureInfo.InvariantCulture);
+            DateTime notificationTime = DateTime.ParseExact(
+                BotSettings.TimeForNotification, 
+                "HH-mm-ss",
+                CultureInfo.InvariantCulture);
+            
             var now = DateTime.Now;
             var nextRun = now.Date
                 .AddHours(notificationTime.Hour)
@@ -322,17 +323,17 @@ namespace LabsQueueBot
 
             //конфигурация переменных окружения
             var configuration = new ConfigurationBuilder()
-                .AddJsonFile("appsettings.Development.json", optional: false)
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.Development.json", optional: false, reloadOnChange: true)
                 .Build();
-            botToken = configuration.GetValue<string>("BotToken");
-            adminChatTgIds = configuration.GetValue<IEnumerable<long>>("AdminChatTgIds");
-            logChatTgIds = configuration.GetValue<IEnumerable<long>>("LogChatTgIds");
-            timeForNotification = configuration.GetValue<string>("TimeForNotification");
+            BotSettings = LabsQueueBotSettingsReader.Read(configuration);
+            
+            _bot = new TelegramBotClient(BotSettings.BotToken);
             
             //генерация пароля
             PasswordGenerator.Generate(10);
             commands.Add($"/randomize_queue {PasswordGenerator.Password}", new RandomizeQueue());
-            Console.WriteLine("Запущен бот " + bot.GetMeAsync().Result.FirstName);
+            Console.WriteLine("Запущен бот " + _bot.GetMeAsync().Result.FirstName);
 
             var cts = new CancellationTokenSource();
             var cancellationToken = cts.Token;
@@ -342,21 +343,20 @@ namespace LabsQueueBot
             };
 
             //запуск бота            
-            bot.StartReceiving(
+            _bot.StartReceiving(
                 HandleUpdateAsync,
                 HandleErrorAsync,
                 receiverOptions,
                 cancellationToken
             );
-            foreach (var adminChatTgId in adminChatTgIds)
+            foreach (var adminChatTgId in BotSettings.AdminChatTgIds)
             {
-                await bot.SendTextMessageAsync(adminChatTgId, PasswordGenerator.Password);
+                await _bot.SendTextMessageAsync(adminChatTgId, PasswordGenerator.Password);
             }
 
             //запуск таймера для рассылки
             await StartTimer();
             await Task.Delay(-1);
-            
         }
     }
 }
