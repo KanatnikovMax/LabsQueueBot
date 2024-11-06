@@ -11,8 +11,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LabsQueueBot.Migrations
 {
     [DbContext(typeof(QueueBotContext))]
-    [Migration("20240929173818_AddIsNotificationNeededColumn")]
-    partial class AddIsNotificationNeededColumn
+    [Migration("20241005214350_queue_bot_db")]
+    partial class queue_bot_db
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

@@ -6,7 +6,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LabsQueueBot.Migrations
 {
     /// <inheritdoc />
-    public partial class CreateQueueBotDatabase : Migration
+    public partial class queue_bot_db : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -35,7 +35,8 @@ namespace LabsQueueBot.Migrations
                     Name = table.Column<string>(type: "text", nullable: false),
                     CourseNumber = table.Column<byte>(type: "smallint", nullable: false),
                     GroupNumber = table.Column<byte>(type: "smallint", nullable: false),
-                    State = table.Column<int>(type: "integer", nullable: false)
+                    State = table.Column<int>(type: "integer", nullable: false),
+                    IsNotifyNeeded = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
