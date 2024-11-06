@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace LabsQueueBot
 {
@@ -17,16 +18,13 @@ namespace LabsQueueBot
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseNpgsql(
-                "Host=queue_bot_db;Port=5432;Database=queuebotdb;Username=queuebot;Password=postgres");
-        }
-        
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            //modelBuilder.Entity<SerialNumber>()
-            //    .HasOne(sn => sn.Subject)
-            //    .WithMany(sb => sb.SerialNumbers)
-            //    .HasForeignKey(sn => sn.SubjectId);
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true)
+                .Build();
+            string connectionString = configuration.GetValue<string>("QueueBotDbContext");
+            optionsBuilder.UseNpgsql(connectionString);
         }
     }
 }
