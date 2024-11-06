@@ -19,10 +19,14 @@ public class RenameApplier : Command
     public override SendMessageRequest Run(Update update)
     {
         long id = update.Message.Chat.Id;
-        var data = update.Message.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToArray();
+        var data = update.Message.Text
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => x.Trim())
+            .ToArray();
         Users.At(id).State = User.UserState.None;
         //проверка валидности
-        if (data.Length != 2 || data.Any(c => "0123456789~!@#$%^&*()_+{}:\"|?><`=[]\\;',./№".Contains(c)))
+        if (data.Length != 2
+            || data.Any(s => s.Any(c => "0123456789~!@#$%^&*()_+{}:\"|?><`=[]\\;',./№".Contains(c))))
         {
             return new SendMessageRequest(id, "Смена личности не удалась");
         }

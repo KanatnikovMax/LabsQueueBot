@@ -20,7 +20,8 @@ namespace LabsQueueBot
         {
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
-                .AddJsonFile("appsettings.Development.json", optional: false, reloadOnChange: true)
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true)
                 .Build();
             string connectionString = configuration.GetValue<string>("QueueBotDbContext");
             optionsBuilder.UseNpgsql(connectionString);

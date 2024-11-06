@@ -322,7 +322,8 @@ namespace LabsQueueBot
             //конфигурация переменных окружения
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.Development.json", optional: false, reloadOnChange: true)
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true)
                 .Build();
             BotSettings = LabsQueueBotSettingsReader.Read(configuration);
             
