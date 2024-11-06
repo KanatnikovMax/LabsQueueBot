@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
+using System.IO;
 
 namespace LabsQueueBot
 {
@@ -231,17 +232,15 @@ namespace LabsQueueBot
                 sb.AppendLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
                 string path = "ErrorReason.txt";
                 await System.IO.File.WriteAllTextAsync(path, sb.ToString());
-
-                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read))
+                foreach (var logChatTgId in BotSettings.LogChatTgIds)
                 {
-                    foreach (var logChatTgId in BotSettings.LogChatTgIds)
-                    {
-                        await botClient.SendDocumentAsync(
+                    using var stream = new FileStream(path, FileMode.Open, FileAccess.Read);
+                    var doc = new InputFileStream(stream, path);
+                    await botClient.SendDocumentAsync(
                             chatId: logChatTgId,
-                            document: new InputFileStream(stream, path),
+                            document: doc,
                             caption: e is DbUpdateConcurrencyException or DbUpdateException ? "Database Error" : "User's Request Error"
                         );
-                    }
                 }
 
                 if (message is not null)

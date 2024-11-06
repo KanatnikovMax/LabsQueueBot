@@ -22,7 +22,7 @@ public class RenameApplier : Command
         var data = update.Message.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToArray();
         Users.At(id).State = User.UserState.None;
         //проверка валидности
-        if (data.Length != 2 && data.Any(c => "0123456789~!@#$%^&*()_+{}:\"|?><`=[]\\;',./№".Contains(c)))
+        if (data.Length != 2 || data.Any(c => "0123456789~!@#$%^&*()_+{}:\"|?><`=[]\\;',./№".Contains(c)))
         {
             return new SendMessageRequest(id, "Смена личности не удалась");
         }
