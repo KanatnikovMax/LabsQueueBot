@@ -111,7 +111,7 @@ namespace LabsQueueBot.Model
             return _users.Remove(id);
         }
 
-        public static User FindUser(int course, int group, string name)
+        public static long FindUser(int course, int group, string name)
         {
             var user = _users.Where(u =>
                 u.Value.CourseNumber == course
@@ -120,8 +120,8 @@ namespace LabsQueueBot.Model
             
             var keyValuePairs = user.ToList();
             return keyValuePairs.Any()
-                ? keyValuePairs.First().Value
-                : null;
+                ? keyValuePairs.First().Key
+                : -1;
         }
 
         /// <summary>

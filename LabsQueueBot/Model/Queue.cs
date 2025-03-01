@@ -16,12 +16,12 @@ namespace LabsQueueBot.Model
         /// <summary>
         /// Список распределенных в очереди пользователей
         /// </summary>
-        public List<long> _queue = new(30);
+        private readonly List<long> _queue = new(30);
 
         /// <summary>
         /// Список ожидающих распределения пользователей
         /// </summary>
-        public List<long> _waiting = new(30);
+        private readonly List<long> _waiting = new(30);
 
         /// <summary>
         /// Внешний ключ - Id сущности Subject <br/>
@@ -237,7 +237,6 @@ namespace LabsQueueBot.Model
             }
 
             (_queue[index], _queue[index + 1]) = (_queue[index + 1], _queue[index]);
-
         }
     }
 }

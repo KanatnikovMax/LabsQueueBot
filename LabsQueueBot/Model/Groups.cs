@@ -83,6 +83,8 @@ namespace LabsQueueBot.Model
 
         private static int _groupsCount;
 
+        public static readonly Dictionary<long, long> bans = new();
+
         /// <summary>
         /// Общее количество групп
         /// </summary>
@@ -222,6 +224,14 @@ namespace LabsQueueBot.Model
                 group.Union();
         }
 
+        /// <summary>
+        /// Добавляет пользователя в предварительный черный список
+        /// </summary>
+        public static void AddToBan(long adminId, long toBanId)
+        {
+            bans[adminId] = toBanId;
+        }
+        
         /// <summary>
         /// Реализует коллекцию ключей хранилища
         /// </summary>

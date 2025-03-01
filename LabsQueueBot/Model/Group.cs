@@ -15,7 +15,13 @@ namespace LabsQueueBot.Model
         /// Словарь <br/>
         /// Название дисциплины : Очередь по дисциплине 
         /// </summary>
-        public Dictionary<string, Queue> _subjects;
+        private readonly Dictionary<string, Queue> _subjects;
+
+        /// <summary>
+        /// Словарь <br/>
+        /// Id пользователя : Название дисциплины 
+        /// </summary>
+        private readonly Dictionary<long, List<string>> _blackList = new(30);
 
         /// <summary>
         /// Номер курса
@@ -224,8 +230,32 @@ namespace LabsQueueBot.Model
         /// </summary>
         public void Union()
         {
+            foreach (var elem in _blackList)
+            {
+                foreach (var subject in elem.Value)
+                {
+                    _subjects[subject].Remove(elem.Key);
+                }
+            }
+            
             foreach (var queue in _subjects.Values)
                 queue.Union();
+        }
+
+        /// <summary>
+        /// Добавляет пользователя в черный список по заданному предмету
+        /// </summary>
+        /// <param name="subject"> название дисциплины </param>
+        /// <param name="id"> id пользователя </param>
+        public void AddToBlackListBySubject(string subject, long id)
+        {
+            _subjects[subject].Remove(id);
+            
+            if (!_blackList.ContainsKey(id))
+            {
+                _blackList.Add(id, []);
+            }
+            _blackList[id].Add(subject);
         }
 
         /// <summary>
