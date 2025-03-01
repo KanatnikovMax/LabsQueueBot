@@ -1,7 +1,9 @@
 ﻿using System.Collections;
 using System.Security.Cryptography;
+using LabsQueueBot.Db;
+using LabsQueueBot.Db.Entities;
 
-namespace LabsQueueBot
+namespace LabsQueueBot.Model
 {
     /// <summary>
     /// Очередь пользователей; <br/>

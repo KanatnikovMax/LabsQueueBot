@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace LabsQueueBot
+namespace LabsQueueBot.Model
 {
     /// <summary>
     /// Пара курс-группа для однозначной идентификации группы пользователей;

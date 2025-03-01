@@ -1,4 +1,4 @@
-﻿namespace LabsQueueBot
+﻿namespace LabsQueueBot.Db.Entities
 {
     /// <summary>
     /// Сущность дисциплины для хранения в БД;

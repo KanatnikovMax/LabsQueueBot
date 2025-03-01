@@ -1,4 +1,5 @@
-﻿using Telegram.Bot.Requests;
+﻿using LabsQueueBot.Model;
+using Telegram.Bot.Requests;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 

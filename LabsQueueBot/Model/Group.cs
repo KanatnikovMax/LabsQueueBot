@@ -1,6 +1,8 @@
 ﻿using System.Collections;
+using LabsQueueBot.Db;
+using LabsQueueBot.Db.Entities;
 
-namespace LabsQueueBot
+namespace LabsQueueBot.Model
 {
     /// <summary>
     /// Группа - хранилище очередей; <br/>

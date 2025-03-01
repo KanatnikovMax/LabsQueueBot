@@ -1,4 +1,7 @@
-﻿namespace LabsQueueBot
+﻿using LabsQueueBot.Db;
+using LabsQueueBot.Db.Entities;
+
+namespace LabsQueueBot.Model
 {
     /// <summary>
     /// Хранилище пользователей; <br/>
@@ -106,6 +109,19 @@
             }
 
             return _users.Remove(id);
+        }
+
+        public static User FindUser(int course, int group, string name)
+        {
+            var user = _users.Where(u =>
+                u.Value.CourseNumber == course
+                && u.Value.GroupNumber == group
+                && u.Value.Name.Equals(name));
+            
+            var keyValuePairs = user.ToList();
+            return keyValuePairs.Any()
+                ? keyValuePairs.First().Value
+                : null;
         }
 
         /// <summary>

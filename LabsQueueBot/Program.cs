@@ -2,11 +2,13 @@
 using Microsoft.EntityFrameworkCore;
 using System.Text;
 using System.Timers;
+using LabsQueueBot.Model;
 using LabsQueueBot.Settings;
 using Microsoft.Extensions.Configuration;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
+using User = LabsQueueBot.Db.Entities.User;
 
 namespace LabsQueueBot
 {
@@ -28,7 +30,7 @@ namespace LabsQueueBot
             { "/subjects", new Subjects() },
             { "/show", new Show() },
             { "/rename", new Rename() },
-            { "/switch_notification", new SwitchNotification() }
+            { "/switch_notification", new SwitchNotification() },
         };
 
         /// <summary>

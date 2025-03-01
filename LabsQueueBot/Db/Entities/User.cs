@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace LabsQueueBot
+namespace LabsQueueBot.Db.Entities
 {
     /// <summary>
     /// Сущность пользователя для хранения в БД; <br/>
@@ -153,7 +153,7 @@ namespace LabsQueueBot
             }
 
             if (name.Any(c => "0123456789~!@#$%^&*()_+{}:\"|?><`=[]\\;',./№".Contains(c)))
-            {
+            { 
                 builder.AppendLine("Имя и фамилия не должны содержать цифр и специальных символов");
             }
 

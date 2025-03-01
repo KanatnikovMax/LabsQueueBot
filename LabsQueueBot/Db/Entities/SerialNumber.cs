@@ -1,4 +1,4 @@
-﻿namespace LabsQueueBot
+﻿namespace LabsQueueBot.Db.Entities
 {
     /// <summary>
     /// Сущность пользователя, находящегося в очереди по дисциплине; <br/>

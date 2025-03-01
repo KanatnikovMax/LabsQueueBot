@@ -1,6 +1,8 @@
-﻿using Telegram.Bot.Requests;
+﻿using LabsQueueBot.Model;
+using Telegram.Bot.Requests;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
+using User = LabsQueueBot.Db.Entities.User;
 
 namespace LabsQueueBot;
 

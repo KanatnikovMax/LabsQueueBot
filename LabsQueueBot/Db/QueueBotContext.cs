@@ -1,7 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using LabsQueueBot.Db.Entities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
-namespace LabsQueueBot
+namespace LabsQueueBot.Db
 {
     public class QueueBotContext : DbContext
     {
