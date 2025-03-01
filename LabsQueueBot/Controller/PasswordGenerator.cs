@@ -1,7 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 
-namespace LabsQueueBot
+namespace LabsQueueBot.Controller
 {
     /// <summary>
     /// Генератор случайной последовательности символов; <br/>

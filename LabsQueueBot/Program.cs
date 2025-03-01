@@ -2,6 +2,10 @@
 using Microsoft.EntityFrameworkCore;
 using System.Text;
 using System.Timers;
+using LabsQueueBot.Controller;
+using LabsQueueBot.Controller.Commands;
+using LabsQueueBot.Controller.Commands.Appliers;
+using LabsQueueBot.Controller.Commands.Responders;
 using LabsQueueBot.Model;
 using LabsQueueBot.Settings;
 using Microsoft.Extensions.Configuration;

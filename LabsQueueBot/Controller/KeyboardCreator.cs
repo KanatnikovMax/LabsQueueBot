@@ -1,6 +1,6 @@
 ﻿using Telegram.Bot.Types.ReplyMarkups;
 
-namespace LabsQueueBot
+namespace LabsQueueBot.Controller
 {
     /// <summary>
     /// Класс для создания ответов InlineKeyboardMarkup

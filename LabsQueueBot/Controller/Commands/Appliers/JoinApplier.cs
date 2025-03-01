@@ -4,7 +4,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 using User = LabsQueueBot.Db.Entities.User;
 
-namespace LabsQueueBot;
+namespace LabsQueueBot.Controller.Commands.Appliers;
 
 /// <summary>
 /// Добавляет пользователя в список ожидания по дисциплине

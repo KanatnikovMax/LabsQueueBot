@@ -4,7 +4,7 @@ using Telegram.Bot.Requests;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 
-namespace LabsQueueBot;
+namespace LabsQueueBot.Controller.Commands.Responders;
 
 /// <summary>
 /// Отправляет подсказку

@@ -2,8 +2,7 @@
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 
-
-namespace LabsQueueBot
+namespace LabsQueueBot.Controller.Commands
 {
     /// <summary>
     /// Общий класс для определения ответных действий на конкретный update пользователя
