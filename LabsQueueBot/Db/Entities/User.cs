@@ -24,7 +24,8 @@ namespace LabsQueueBot.Db.Entities
             AddGroup,
             AddSubject,
             Rename,
-            ChangeData
+            ChangeData,
+            Ban
         }
 
         /// <summary>

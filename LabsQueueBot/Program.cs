@@ -51,7 +51,8 @@ namespace LabsQueueBot
             { User.UserState.ShowQueue, new ShowQueueApplier() },
             { User.UserState.AddSubject, new AddSubjectApplier() },
             { User.UserState.AddGroup, new AddGroupApplier() },
-            { User.UserState.Rename, new RenameApplier() }
+            { User.UserState.Rename, new RenameApplier() },
+            { User.UserState.Ban, new BanApplier() }
         };
 
         private static ITelegramBotClient _bot;
@@ -212,10 +213,16 @@ namespace LabsQueueBot
                         return;
                     }
 
+                    //для обработки команды бана
+                    var splitMessage = message.Text.Split(' ');
+                    var commandFromMessage = splitMessage[0] + splitMessage[1];
+                    var isBanCommand = commands.ContainsKey(commandFromMessage);
                     //вызов соответствующего ответа на запрос с командой
-                    if (commands.ContainsKey(message.Text))
+                    if (commands.ContainsKey(message.Text) || isBanCommand)
                     {
-                        var command = commands[message.Text];
+                        var command = isBanCommand
+                            ? commands[commandFromMessage]
+                            : commands[message.Text];
                         await botClient.SendTextMessageAsync(chatId: message.Chat,
                             text: command.Run(update).Text,
                             replyMarkup: command.GetKeyboard(update));
@@ -338,6 +345,7 @@ namespace LabsQueueBot
             //генерация пароля
             PasswordGenerator.Generate(10);
             commands.Add($"/randomize_queue {PasswordGenerator.Password}", new RandomizeQueue());
+            commands.Add($"/ban_person {PasswordGenerator.Password}", new BanUserFromQueue());
             Console.WriteLine("Запущен бот " + _bot.GetMeAsync().Result.FirstName);
 
             var cts = new CancellationTokenSource();

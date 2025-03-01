@@ -2,6 +2,7 @@
 using Telegram.Bot.Requests;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
+using User = LabsQueueBot.Db.Entities.User;
 
 namespace LabsQueueBot.Controller.Commands.Responders;
 
@@ -16,11 +17,8 @@ public class BanUserFromQueue : Command
     
     public override SendMessageRequest Run(Update update)
     {
-        //commands.Add($"/ban_person {PasswordGenerator.Password}", new RandomizeQueue());
         long id = update.Message.Chat.Id;
         var user = Users.At(id);
-
-        var group = Groups.At(new GroupKey(user.CourseNumber, user.GroupNumber));
 
         var updateText = update.Message.Text.Split(' ');
         var userToRemoveName = updateText[2] + updateText[3];
@@ -30,7 +28,8 @@ public class BanUserFromQueue : Command
         {
             return new SendMessageRequest(id, "Пользователя с таким именем в вашей группе не существует");
         }
-        
+
+        Users.At(id).State = User.UserState.Ban;
         Groups.AddToBan(id, userToRemoveId);
         return new SendMessageRequest(id, "Выберите очередь по предмету, из которой необходимо забанить пользователя");
     }
