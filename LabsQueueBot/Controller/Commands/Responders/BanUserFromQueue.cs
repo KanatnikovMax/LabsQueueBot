@@ -20,8 +20,8 @@ public class BanUserFromQueue : Command
         long id = update.Message.Chat.Id;
         var user = Users.At(id);
 
-        var updateText = update.Message.Text.Split(' ');
-        var userToRemoveName = updateText[2] + updateText[3];
+        var updateText = update.Message.Text.Split('=');
+        var userToRemoveName = updateText[1];
 
         var userToRemoveId = Users.FindUser(user.CourseNumber, user.GroupNumber, userToRemoveName);
         if (userToRemoveId == -1)
@@ -31,6 +31,6 @@ public class BanUserFromQueue : Command
 
         Users.At(id).State = User.UserState.Ban;
         Groups.AddToBan(id, userToRemoveId);
-        return new SendMessageRequest(id, "Выберите очередь по предмету, из которой необходимо забанить пользователя");
+        return new SendMessageRequest(id, "Выберите очередь по предмету, из которой необходимо забанить пользователя:");
     }
 }

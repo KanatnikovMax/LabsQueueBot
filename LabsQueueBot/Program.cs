@@ -214,14 +214,14 @@ namespace LabsQueueBot
                     }
 
                     //для обработки команды бана
-                    var splitMessage = message.Text.Split(' ');
-                    var commandFromMessage = splitMessage[0] + splitMessage[1];
-                    var isBanCommand = commands.ContainsKey(commandFromMessage);
+                    var splitMessage = message.Text.Split('=');
+                    var isBanCommand = splitMessage.Length == 2
+                                       && commands.ContainsKey(splitMessage[0]);
                     //вызов соответствующего ответа на запрос с командой
                     if (commands.ContainsKey(message.Text) || isBanCommand)
                     {
                         var command = isBanCommand
-                            ? commands[commandFromMessage]
+                            ? commands[splitMessage[0]]
                             : commands[message.Text];
                         await botClient.SendTextMessageAsync(chatId: message.Chat,
                             text: command.Run(update).Text,

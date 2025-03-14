@@ -240,6 +240,8 @@ namespace LabsQueueBot.Model
             
             foreach (var queue in _subjects.Values)
                 queue.Union();
+            
+            _blackList.Clear();
         }
 
         /// <summary>

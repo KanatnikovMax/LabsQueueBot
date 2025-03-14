@@ -22,7 +22,7 @@ public class BanApplier : Command
         
         
 
-        if (update.CallbackQuery.Message.Text != "Выберите предмет:")
+        if (update.CallbackQuery.Message.Text != "Выберите очередь по предмету, из которой необходимо забанить пользователя:")
             throw new InvalidOperationException();
 
         //отмена бана
