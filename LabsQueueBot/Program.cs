@@ -52,7 +52,8 @@ namespace LabsQueueBot
             { User.UserState.AddSubject, new AddSubjectApplier() },
             { User.UserState.AddGroup, new AddGroupApplier() },
             { User.UserState.Rename, new RenameApplier() },
-            { User.UserState.Ban, new BanApplier() }
+            { User.UserState.Ban, new BanApplier() },
+            { User.UserState.Union, new RandomizeQueueApplier() }
         };
 
         private static ITelegramBotClient _bot;
@@ -167,6 +168,11 @@ namespace LabsQueueBot
                             if (request.Text != "Назад")
                                 await botClient.SendTextMessageAsync(message.Chat, request.Text);
 
+                            if (Users.At(id).State == User.UserState.Union)
+                            {
+                                NotifyGroup(id);
+                            }
+                            
                             if (Users.At(id).State != User.UserState.AddSubject
                                 && Users.At(id).State != User.UserState.AddGroup)
                             {
@@ -260,7 +266,6 @@ namespace LabsQueueBot
             }
         }
 
-
         /// <summary>
         /// Обработчик исключений
         /// </summary>
@@ -278,27 +283,44 @@ namespace LabsQueueBot
         /// Инициирует рассылку для пользователя
         /// </summary>
         /// <param name="id"> Id пользователя </param>
-        private static async void MassSendler(long id)
+        private static async void MassSender(long id)
         {
             await _bot.SendTextMessageAsync(id, Groups.ShowSubjects(id));
         }
 
         /// <summary>
-        /// Объединяет очереди и списки ожидания, запускает массовую рассылку об изменениях
+        /// Запускает массовую рассылку об изменениях для всех пользователей
         /// </summary>
-        private static void UnionAndSend(object s, ElapsedEventArgs e)
+        private static void Send(object? s, ElapsedEventArgs e)
         {
-            Groups.Union();
             foreach (var id in Users.Keys
                          .Where(x => Users.At(x).State == User.UserState.None
                                      && Users.At(x).IsNotifyNeeded))
             {
-                MassSendler(id);
+                MassSender(id);
+            }
+        }
+        
+        /// <summary>
+        /// Запускает массовую рассылку об изменениях для группы вызвавшего рассылку
+        /// </summary>
+        /// <param name="id"></param>
+        private static void NotifyGroup(long id)
+        {
+            var currentUser = Users.At(id);
+
+            foreach (var user in Users.Values
+                         .Where(user => user.State == User.UserState.None
+                                        && currentUser.CourseNumber == user.CourseNumber
+                                        && currentUser.GroupNumber == user.GroupNumber
+                                        && currentUser.IsNotifyNeeded))
+            {
+                MassSender(user.Id);
             }
         }
 
         /// <summary>
-        /// Запускает таймер, который инициирует объединение очередей и списков ожидания, а после - массовую отправку уведомлений об изменениях
+        /// Запускает таймер, который инициирует массовую отправку уведомлений об изменениях
         /// </summary>
         private static Task StartTimer()
         {
@@ -319,7 +341,7 @@ namespace LabsQueueBot
             
             double interval = (nextRun - now).TotalMilliseconds;
             _timer = new System.Timers.Timer(interval);
-            _timer.Elapsed += UnionAndSend;
+            _timer.Elapsed += Send;
             _timer.Elapsed += (_, _) => _timer.Interval = TimeSpan.FromDays(1).TotalMilliseconds;
             _timer.AutoReset = true;
             _timer.Enabled = true;
@@ -336,7 +358,7 @@ namespace LabsQueueBot
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true)
+                .AddJsonFile("appsettingsDevActive.json", optional: true, reloadOnChange: true)
                 .Build();
             BotSettings = LabsQueueBotSettingsReader.Read(configuration);
             
@@ -362,9 +384,18 @@ namespace LabsQueueBot
                 receiverOptions,
                 cancellationToken
             );
+            
+            Console.WriteLine($"Admin password: {PasswordGenerator.Password}");
             foreach (var adminChatTgId in BotSettings.AdminChatTgIds)
             {
-                await _bot.SendTextMessageAsync(adminChatTgId, PasswordGenerator.Password);
+                try
+                {
+                    await _bot.SendTextMessageAsync(adminChatTgId, PasswordGenerator.Password);
+                }
+                catch (Exception)
+                {
+                    // ignored
+                }
             }
 
             //запуск таймера для рассылки

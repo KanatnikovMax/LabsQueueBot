@@ -2,6 +2,7 @@
 using Telegram.Bot.Requests;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
+using User = LabsQueueBot.Db.Entities.User;
 
 namespace LabsQueueBot.Controller.Commands.Responders;
 
@@ -14,14 +15,13 @@ public class RandomizeQueue : Command
 
     public override InlineKeyboardMarkup? GetKeyboard(Update update)
     {
-        return null;
+        return new Show().GetKeyboard(update);
     }
 
     public override SendMessageRequest Run(Update update)
     {
         long id = update.Message.Chat.Id;
-        var user = Users.At(id);
-        Groups.At(new GroupKey(user.CourseNumber, user.GroupNumber)).Union();
-        return new SendMessageRequest(id, "Очереди в группе сформированы");
+        Users.At(id).State = User.UserState.Union;
+        return new SendMessageRequest(id, "Выберите предмет, очередь по которому необходимо сформировать:");
     }
 }

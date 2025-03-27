@@ -134,5 +134,10 @@ namespace LabsQueueBot.Model
         /// Реализует коллекцию ключей хранилища
         /// </summary>
         public static Dictionary<long, User>.KeyCollection Keys => _users.Keys;
+        
+        /// <summary>
+        /// Реализует коллекцию ключей хранилища
+        /// </summary>
+        public static Dictionary<long, User>.ValueCollection Values => _users.Values;
     }
 }
