@@ -29,6 +29,9 @@ namespace LabsQueueBot.Model
         /// </summary>
         private readonly int _subjectId;
 
+
+        public List<long> Waiting => _waiting;
+
         /// <summary>
         /// Конструктор класса Queue
         /// </summary>

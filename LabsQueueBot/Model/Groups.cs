@@ -166,7 +166,7 @@ namespace LabsQueueBot.Model
         /// <param name="id"> Id пользователя </param>
         /// <param name="subject"> название дисциплины </param>
         /// <returns>
-        /// строку, содержащую очередь по выбранной дисциплине группы, в которой находится выбранный пользователь
+        /// строка, содержащая очередь по выбранной дисциплине группы, в которой находится выбранный пользователь
         /// </returns>
         public static string ShowQueue(long id, string subject)
         {
@@ -186,6 +186,33 @@ namespace LabsQueueBot.Model
 
             if (builder.Equals(""))
                 builder.AppendLine("Эта очередь пуста");
+            return builder.ToString();
+        }
+
+        /// <summary>
+        /// Возвращает строку с очередью ожидания по дисциплине в группе пользователя
+        /// </summary>
+        /// <param name="id"> Id пользователя </param>
+        /// <param name="subject"> название дисциплины </param>
+        /// <returns>
+        /// строка, содержащая очередь ожидания по выбранной дисциплине группы, в которой находится выбранный пользователь
+        /// </returns>
+        public static string ShowWaiting(long id, string subject)
+        {
+            var key = new GroupKey(Users.At(id).CourseNumber, Users.At(id).GroupNumber);
+            if (!groups.ContainsKey(key))
+                return $"Не существует {key.ToString()}";
+
+            var group = groups[key];
+            if (!group.ContainsKey(subject))
+                return "Эта очередь ожидания пуста";
+
+            var builder = new StringBuilder();
+            foreach (var userId in group[subject].Waiting)
+                builder.AppendLine(Users.At(userId).Name);
+
+            if (builder.Equals(""))
+                builder.AppendLine("Эта очередь ожидания пуста");
             return builder.ToString();
         }
 

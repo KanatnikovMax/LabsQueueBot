@@ -36,10 +36,10 @@ public class Help : Command
         var builder = new StringBuilder();
         
         builder.AppendLine("При добавлении в очередь пользователь записывается в список ожидающих. "
-                           + $"Каждый день в {timingString} список ожидающих случайным образом перемешивается и добавляется в конец"
-                           + " соответствующей очереди, тем, кто подписан на рассылку, приходит уведомление с его местами в очередях, "
+                           + $"В установленный день в {timingString} список ожидающих случайным образом перемешивается и добавляется в конец "
+                           + "соответствующей очереди, тем, кто подписан на рассылку, приходит уведомление с его местами в очередях, "
                            + "в которые он записан. Пользователи с админскими правами соответствующей командой "
-                           + "могут вызвать генерацию очередей для своей группы в любой момент времени. "
+                           + "могут вызвать генерацию очередей для своей группы в любой момент времени и изменять расписание для генерации. "
                            + "Для получения админских прав староста группы (или другое ответственное лицо) должен написать админу "
                            + "бота в лс (ссылка на профиль админа в описании)\n");
 
@@ -50,7 +50,9 @@ public class Help : Command
 
         builder.AppendLine("\nДействия с очередями");
         builder.AppendLine(new Subjects().Definition);
+        builder.AppendLine(new ShowTimetable().Definition);
         builder.AppendLine(new ShowQueue().Definition);
+        builder.AppendLine(new ShowWaiting().Definition);
         builder.AppendLine(new Join().Definition);
         builder.AppendLine(new Quit().Definition);
         builder.AppendLine(new Skip().Definition);

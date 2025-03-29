@@ -19,7 +19,19 @@ namespace LabsQueueBot.Model
 
         /// <summary>
         /// Словарь <br/>
-        /// Id пользователя : Название дисциплины 
+        /// Название дисциплины : дни недели для формирования очереди
+        /// </summary>
+        public readonly Dictionary<string, List<DayOfWeek>> Timetable;
+        
+        /// <summary>
+        /// Словарь <br/>
+        /// Id пользователя : Название дисциплины для формирования расписания
+        /// </summary>
+        public readonly Dictionary<long, string> SubjectsToSetTimetable = [];
+
+        /// <summary>
+        /// Словарь <br/>
+        /// Id пользователя в блэк-листе : Названия дисциплин
         /// </summary>
         private readonly Dictionary<long, List<string>> _blackList = new(30);
 
@@ -57,6 +69,7 @@ namespace LabsQueueBot.Model
             CourseNumber = course;
             GroupNumber = number;
             _subjects = new Dictionary<string, Queue>();
+            Timetable = new Dictionary<string, List<DayOfWeek>>();
             using (var db = new QueueBotContext())
             {
                 var collection = db.SubjectRepository
@@ -99,6 +112,7 @@ namespace LabsQueueBot.Model
             }
 
             _subjects.Add(subject, new Queue(subjectId));
+            Timetable.Add(subject, [DayOfWeek.Sunday]);
         }
 
         /// <summary>
@@ -127,6 +141,7 @@ namespace LabsQueueBot.Model
                     }
                 }
                 _subjects.Remove(subject);
+                Timetable.Remove(subject);
                 return true;
             }
 

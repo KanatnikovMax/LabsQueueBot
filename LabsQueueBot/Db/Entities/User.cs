@@ -26,7 +26,10 @@ namespace LabsQueueBot.Db.Entities
             Rename,
             ChangeData,
             Ban,
-            Union
+            Union,
+            SetTimetable,
+            SetTimetableDays,
+            ShowWaiting
         }
 
         /// <summary>

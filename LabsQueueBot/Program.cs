@@ -9,20 +9,23 @@ using LabsQueueBot.Controller.Commands.Responders;
 using LabsQueueBot.Model;
 using LabsQueueBot.Settings;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using User = LabsQueueBot.Db.Entities.User;
 
 namespace LabsQueueBot
 {
-    class Program
+    internal static class Program
     {
-        public static LabsQueueBotSettings BotSettings;
+        private static LabsQueueBotSettings _botSettings;
+
         /// <summary>
         /// По команде пользователя определяется, как необходимо отреагировать на запрос
         /// </summary>
-        public static readonly Dictionary<string, Command> commands = new()
+        private static readonly Dictionary<string, Command> Commands = new()
         {
             { "/start", new Start() },
             { "/stop", new Stop() },
@@ -35,12 +38,14 @@ namespace LabsQueueBot
             { "/show", new Show() },
             { "/rename", new Rename() },
             { "/switch_notification", new SwitchNotification() },
+            { "/timetable", new ShowTimetable() },
+            { "/show_waiting", new ShowWaiting() }
         };
 
         /// <summary>
         /// По состоянию пользователя определяется, как необходимо отреагировать на запрос
         /// </summary>
-        public static readonly Dictionary<User.UserState, Command> actions = new()
+        private static readonly Dictionary<User.UserState, Command> Actions = new()
         {
             { User.UserState.Unregistred, new StartApplier() },
             { User.UserState.UnsetStudentData, new SetGroupApplier() },
@@ -53,7 +58,10 @@ namespace LabsQueueBot
             { User.UserState.AddGroup, new AddGroupApplier() },
             { User.UserState.Rename, new RenameApplier() },
             { User.UserState.Ban, new BanApplier() },
-            { User.UserState.Union, new RandomizeQueueApplier() }
+            { User.UserState.Union, new RandomizeQueueApplier() },
+            { User.UserState.SetTimetable, new SetTimetableApplier() },
+            { User.UserState.SetTimetableDays, new SetTimetableDaysApplier() },
+            { User.UserState.ShowWaiting, new ShowWaitingApplier() }
         };
 
         private static ITelegramBotClient _bot;
@@ -62,86 +70,112 @@ namespace LabsQueueBot
         /// <summary>
         /// Обработчик запросов
         /// </summary>
-        public static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update,
+        private static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update,
             CancellationToken cancellationToken)
         {
             //return;           
-                long id = 0;
-                Message message = null;
+            Message message = null;
             try
             {
                 //по типу запроса определяется, достоин ли он внимания
+                long id;
                 switch (update.Type)
                 {
                     //случай с клавиатурой
-                    case Telegram.Bot.Types.Enums.UpdateType.CallbackQuery:
+                    case UpdateType.CallbackQuery:
+                    {
+                        message = update.CallbackQuery.Message;
+                        id = message.Chat.Id;
+
+                        //проверяется, что запрос был ответом на вызванный ранее InlineKeyboardMarkup
+                        if (Users.Contains(id) && Users.At(id).State == User.UserState.None)
                         {
-                            message = update.CallbackQuery.Message;
-                            id = message.Chat.Id;
+                            await _bot.DeleteMessageAsync(
+                                chatId: message.Chat.Id,
+                                messageId: message.MessageId,
+                                cancellationToken: cancellationToken);
 
-                            //проверяется, что запрос был ответом на вызванный ранее InlineKeyboardMarkup
-                            if (Users.Contains(id) && Users.At(id).State == User.UserState.None)
-                            {
-                                await _bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
-                                    cancellationToken: cancellationToken);
-                                await botClient.SendTextMessageAsync(message.Chat, "Введи команду, ящур");
-                                return;
-                            }
-
-                            //проверка регистрации
-                            if (!Users.Contains(id))
-                            {
-                                await _bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
-                                    cancellationToken: cancellationToken);
-                                await botClient.SendTextMessageAsync(message.Chat,
-                                    "Вы не зарегистрированы!\n/start для регистрации");
-                                return;
-                            }
-
-                            break;
-                        }
-                    //случай с сообщением
-                    case Telegram.Bot.Types.Enums.UpdateType.Message:
-                        {
-                            message = update.Message;
-                            id = message.Chat.Id;
-
-                            //проверяется, что сообщение действительно является текстовым
-                            if (update.Message.Type != Telegram.Bot.Types.Enums.MessageType.Text)
-                            {
-                                string request;
-                                if (Users.Contains(id) && Users.At(id).State != User.UserState.None)
-                                    request = "Пришли данные текстом или нажми на кнопку (в зависимости от ситуации)";
-                                else
-                                    request = "Не принимаю данные такого типа";
-                                await botClient.SendTextMessageAsync(message.Chat, request);
-                                await botClient.DeleteMessageAsync(chatId: id, messageId: message.MessageId);
-                                return;
-                            }
-
-                            break;
-                        }
-                    //случай с отпиской от бота
-                    case Telegram.Bot.Types.Enums.UpdateType.MyChatMember:
-                        {
-                            id = update.MyChatMember.Chat.Id;
-                            message = null;
-                            if (Users.Contains(id))
-                                Groups.Remove(id);
-                            Users.Remove(id);
+                            await botClient.SendTextMessageAsync(
+                                chatId: message.Chat,
+                                "Введи команду, ящур",
+                                cancellationToken: cancellationToken);
                             return;
                         }
+
+                        //проверка регистрации
+                        if (!Users.Contains(id))
+                        {
+                            await _bot.DeleteMessageAsync(
+                                chatId: message.Chat.Id,
+                                messageId: message.MessageId,
+                                cancellationToken: cancellationToken);
+
+                            await botClient.SendTextMessageAsync(
+                                chatId: message.Chat,
+                                "Вы не зарегистрированы!\n/start для регистрации",
+                                cancellationToken: cancellationToken);
+                            return;
+                        }
+
+                        break;
+                    }
+                    //случай с сообщением
+                    case UpdateType.Message:
+                    {
+                        message = update.Message;
+                        id = message.Chat.Id;
+
+                        //проверяется, что сообщение действительно является текстовым
+                        if (update.Message.Type != Telegram.Bot.Types.Enums.MessageType.Text)
+                        {
+                            string request;
+                            if (Users.Contains(id) && Users.At(id).State != User.UserState.None)
+                            {
+                                request = "Пришли данные текстом или нажми на кнопку (в зависимости от ситуации)";
+                            }
+                            else
+                            {
+                                request = "Не принимаю данные такого типа";
+                            }
+
+                            await botClient.SendTextMessageAsync(
+                                chatId: message.Chat,
+                                text: request,
+                                cancellationToken: cancellationToken);
+
+                            await botClient.DeleteMessageAsync(
+                                chatId: id,
+                                messageId: message.MessageId,
+                                cancellationToken: cancellationToken);
+                            return;
+                        }
+
+                        break;
+                    }
+                    //случай с отпиской от бота
+                    case UpdateType.MyChatMember:
+                    {
+                        id = update.MyChatMember.Chat.Id;
+                        message = null;
+                        if (Users.Contains(id))
+                            Groups.Remove(id);
+                        Users.Remove(id);
+                        return;
+                    }
                     default:
                         return;
                 }
 
                 //проверяется регистрация пользователя
                 if (Users.Contains(id) && Users.At(id).State == User.UserState.None
-                                       && !Groups.ContainsKey(new GroupKey(Users.At(id).CourseNumber,
-                                           Users.At(id).GroupNumber)))
+                                       && !Groups.ContainsKey(
+                                           new GroupKey(Users.At(id).CourseNumber, Users.At(id).GroupNumber)))
                 {
                     Users.Remove(id);
-                    await botClient.SendTextMessageAsync(message.Chat, "Вы не зарегистрированы!\n/start для регистрации");
+                    await botClient.SendTextMessageAsync(
+                        chatId: message.Chat,
+                        text: "Вы не зарегистрированы!\n/start для регистрации",
+                        cancellationToken: cancellationToken);
                     return;
                 }
 
@@ -151,46 +185,59 @@ namespace LabsQueueBot
                     && Users.At(id).State != User.UserState.None
                     && Users.At(id).State != User.UserState.AddGroup
                     && Users.At(id).State != User.UserState.AddSubject
-                    && Users.At(id).State != User.UserState.Rename)
+                    && Users.At(id).State != User.UserState.Rename
+                    && Users.At(id).State != User.UserState.SetTimetableDays)
                 {
                     //тип запроса - ответ на InlineKeyboardMarkup
-                    if (update.Type == Telegram.Bot.Types.Enums.UpdateType.CallbackQuery)
+                    if (update.Type == UpdateType.CallbackQuery)
                     {
                         try
                         {
                             //вызов соответствующего ответа на запрос
-                            var request = actions[Users.At(id).State].Run(update);
+                            var request = Actions[Users.At(id).State].Run(update);
 
                             //удаление InlineKeyboardMarkup
-                            await _bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
+                            await _bot.DeleteMessageAsync(
+                                chatId: message.Chat.Id,
+                                messageId: message.MessageId,
                                 cancellationToken: cancellationToken);
 
                             if (request.Text != "Назад")
-                                await botClient.SendTextMessageAsync(message.Chat, request.Text);
+                                await botClient.SendTextMessageAsync(
+                                    chatId: message.Chat,
+                                    text: request.Text,
+                                    cancellationToken: cancellationToken);
 
                             if (Users.At(id).State == User.UserState.Union)
                             {
+                                Users.At(id).State = User.UserState.None;
                                 NotifyGroup(id);
                             }
-                            
+
                             if (Users.At(id).State != User.UserState.AddSubject
-                                && Users.At(id).State != User.UserState.AddGroup)
+                                && Users.At(id).State != User.UserState.AddGroup
+                                && Users.At(id).State != User.UserState.SetTimetableDays)
                             {
                                 Users.At(id).State = User.UserState.None;
                             }
                         }
-                        //если запрос был ответом на неактуальный InlineKeyboardMarkup
-                        catch (InvalidOperationException)
+                        catch (InvalidOperationException) //если запрос был ответом на неактуальный InlineKeyboardMarkup
                         {
-                            await _bot.DeleteMessageAsync(chatId: message.Chat.Id, messageId: message.MessageId,
+                            await _bot.DeleteMessageAsync(
+                                chatId: message.Chat.Id,
+                                messageId: message.MessageId,
                                 cancellationToken: cancellationToken);
-                            await botClient.SendTextMessageAsync(message.Chat, "Нажми на нужную табличку");
+
+                            await botClient.SendTextMessageAsync(
+                                chatId: message.Chat,
+                                text: "Нажми на нужную табличку",
+                                cancellationToken: cancellationToken);
                         }
                     }
-                    //иначе удаление запроса пользователя
-                    else
+                    else //иначе удаление запроса пользователя
                     {
-                        await _bot.DeleteMessageAsync(chatId: message.Chat.Id,
+                        await _bot.DeleteMessageAsync(
+                            chatId: message.Chat.Id,
                             messageId: message.MessageId,
                             cancellationToken: cancellationToken);
                     }
@@ -198,85 +245,111 @@ namespace LabsQueueBot
                     return;
                 }
 
-                //тип запроса - текстовое сообщение
-                if (update.Type == Telegram.Bot.Types.Enums.UpdateType.Message)
+                if (update.Type == UpdateType.Message) //тип запроса - текстовое сообщение
                 {
                     //проверка регистрации
                     if (!Users.Contains(id) && message.Text != "/start")
                     {
-                        await botClient.SendTextMessageAsync(message.Chat,
-                            "Вы не зарегистрированы!\n/start для регистрации");
+                        await botClient.SendTextMessageAsync(
+                            chatId: message.Chat,
+                            text: "Вы не зарегистрированы!\n/start для регистрации",
+                            cancellationToken: cancellationToken);
                         return;
                     }
 
                     //вызов соответствующего ответа на существующий запрос
                     if (Users.Contains(id) && Users.At(id).State != User.UserState.None)
                     {
-                        var action = actions[Users.At(id).State];
+                        var action = Actions[Users.At(id).State];
                         await botClient.SendTextMessageAsync(chatId: message.Chat,
                             text: action.Run(update).Text,
-                            replyMarkup: action.GetKeyboard(update));
+                            replyMarkup: action.GetKeyboard(update),
+                            cancellationToken: cancellationToken);
                         return;
                     }
 
                     //для обработки команды бана
-                    var splitMessage = message.Text.Split('=');
-                    var isBanCommand = splitMessage.Length == 2
-                                       && commands.ContainsKey(splitMessage[0]);
+                    var splitBanMessage = message.Text.Split('\n');
+                    var isBanCommand = splitBanMessage.Length == 2
+                                       && Commands.ContainsKey(splitBanMessage[0])
+                                       && Commands[splitBanMessage[0]].Definition.StartsWith("/ban_person");
+
                     //вызов соответствующего ответа на запрос с командой
-                    if (commands.ContainsKey(message.Text) || isBanCommand)
+                    if (Commands.ContainsKey(message.Text) || isBanCommand)
                     {
                         var command = isBanCommand
-                            ? commands[splitMessage[0]]
-                            : commands[message.Text];
-                        await botClient.SendTextMessageAsync(chatId: message.Chat,
+                            ? Commands[splitBanMessage[0]]
+                            : Commands[message.Text];
+
+                        await botClient.SendTextMessageAsync(
+                            chatId: message.Chat,
                             text: command.Run(update).Text,
-                            replyMarkup: command.GetKeyboard(update));
+                            replyMarkup: command.GetKeyboard(update),
+                            cancellationToken: cancellationToken);
+
                         return;
                     }
 
                     //запрос не являлся валидным
-                    await botClient.SendTextMessageAsync(message.Chat, "Введи команду, ящур");
+                    await botClient.SendTextMessageAsync(
+                        chatId: message.Chat,
+                        text: "Введи команду, ящур",
+                        cancellationToken: cancellationToken);
                 }
             }
             catch (Exception e)
             {
                 var sb = new StringBuilder();
-                var lastUpdates = await _bot.GetUpdatesAsync(limit: 10);
+                var lastUpdates = await _bot.GetUpdatesAsync(
+                    limit: 10,
+                    cancellationToken: cancellationToken);
                 sb.AppendLine(e.Message);
                 sb.AppendLine("---");
                 sb.AppendLine(e.StackTrace);
                 sb.AppendLine("---");
-                sb.AppendLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
-                string path = "ErrorReason.txt";
-                await System.IO.File.WriteAllTextAsync(path, sb.ToString());
-                foreach (var logChatTgId in BotSettings.LogChatTgIds)
+                sb.AppendLine(JsonConvert.SerializeObject(update));
+                sb.AppendLine("---");
+                sb.AppendLine(JsonConvert.SerializeObject(lastUpdates));
+                const string path = "ErrorReason.txt";
+                await System.IO.File.WriteAllTextAsync(path, sb.ToString(), cancellationToken);
+                foreach (var logChatTgId in _botSettings.LogChatTgIds)
                 {
-                    using var stream = new FileStream(path, FileMode.Open, FileAccess.Read);
+                    await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read);
                     var doc = new InputFileStream(stream, path);
                     await botClient.SendDocumentAsync(
                         chatId: logChatTgId,
                         document: doc,
-                        caption: e is DbUpdateConcurrencyException or DbUpdateException ? "Database Error" : "User's Request Error"
-                    );
+                        caption: e is DbUpdateConcurrencyException or DbUpdateException
+                            ? "Database Error"
+                            : "User's Request Error",
+                        cancellationToken: cancellationToken);
                 }
 
                 if (message is not null)
-                    await botClient.SendTextMessageAsync(message.Chat.Id, "Ошибка, попробуйте ещё раз позже");
+                    await botClient.SendTextMessageAsync(
+                        chatId: message.Chat.Id,
+                        text: "Ошибка, попробуйте ещё раз позже",
+                        cancellationToken: cancellationToken);
             }
         }
 
         /// <summary>
         /// Обработчик исключений
         /// </summary>
-        public static async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception,
+        private static async Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception,
             CancellationToken cancellationToken)
         {
-            Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(exception));
-            List<Update> lastUpdates = _bot.GetUpdatesAsync(10, 10, null, null, cancellationToken).Result.ToList();
-            foreach (var update in lastUpdates)
-                if (update.Type == Telegram.Bot.Types.Enums.UpdateType.CallbackQuery)
-                    Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(update));
+            Console.WriteLine(JsonConvert.SerializeObject(exception));
+            var lastUpdates = await _bot.GetUpdatesAsync(
+                offset: 10,
+                limit: 10,
+                cancellationToken: cancellationToken);
+            foreach (var update in lastUpdates
+                         .Where(update =>
+                             update.Type == UpdateType.CallbackQuery))
+            {
+                Console.WriteLine(JsonConvert.SerializeObject(update));
+            }
         }
 
         /// <summary>
@@ -285,7 +358,12 @@ namespace LabsQueueBot
         /// <param name="id"> Id пользователя </param>
         private static async void MassSender(long id)
         {
-            await _bot.SendTextMessageAsync(id, Groups.ShowSubjects(id));
+            var builder = new StringBuilder();
+            builder.AppendLine(Groups.ShowSubjects(id));
+            builder.AppendLine(new SwitchNotification().Definition);
+            await _bot.SendTextMessageAsync(
+                chatId: id,
+                text: builder.ToString());
         }
 
         /// <summary>
@@ -300,7 +378,24 @@ namespace LabsQueueBot
                 MassSender(id);
             }
         }
-        
+
+        /// <summary>
+        /// Формирует очереди в группах по предметам по заданным дням недели
+        /// </summary>
+        private static void UnionByDayOfWeek(object? s, ElapsedEventArgs e)
+        {
+            foreach (var group in Groups.groups)
+            {
+                foreach (var subject in group.Value.Timetable
+                             .Where(subject =>
+                                 group.Value.ContainsKey(subject.Key)
+                                 && subject.Value.Contains(DateTime.UtcNow.DayOfWeek)))
+                {
+                    group.Value[subject.Key].Union();
+                }
+            }
+        }
+
         /// <summary>
         /// Запускает массовую рассылку об изменениях для группы вызвавшего рассылку
         /// </summary>
@@ -320,36 +415,42 @@ namespace LabsQueueBot
         }
 
         /// <summary>
-        /// Запускает таймер, который инициирует массовую отправку уведомлений об изменениях
+        /// Запускает таймер, который в заданное время инициирует формирование очередей
+        /// и массовую отправку уведомлений об изменениях
         /// </summary>
         private static Task StartTimer()
         {
-            DateTime notificationTime = DateTime.ParseExact(
-                BotSettings.TimeForNotification, 
-                "HH-mm-ss",
-                CultureInfo.InvariantCulture);
-            
-            var now = DateTime.Now;
-            var nextRun = now.Date
-                .AddHours(notificationTime.Hour)
-                .AddMinutes(notificationTime.Minute)
-                .AddSeconds(notificationTime.Second);
-            if (nextRun <= now)
-            {
-                nextRun = nextRun.AddDays(1);
-            }
-            
-            double interval = (nextRun - now).TotalMilliseconds;
+            var interval = CalculateInterval(DateTime.UtcNow);
             _timer = new System.Timers.Timer(interval);
+            _timer.Elapsed += UnionByDayOfWeek;
             _timer.Elapsed += Send;
-            _timer.Elapsed += (_, _) => _timer.Interval = TimeSpan.FromDays(1).TotalMilliseconds;
+            _timer.Elapsed += (_, _) => _timer.Interval = CalculateInterval(DateTime.UtcNow);
             _timer.AutoReset = true;
             _timer.Enabled = true;
 
             return Task.CompletedTask;
+
+            double CalculateInterval(DateTime dateTimeNow)
+            {
+                var notificationTime = DateTime.ParseExact(
+                    _botSettings.TimeForNotification,
+                    "HH-mm-ss",
+                    CultureInfo.InvariantCulture).AddHours(-3);
+
+                var nextRun = dateTimeNow.Date
+                    .AddHours(notificationTime.Hour)
+                    .AddMinutes(notificationTime.Minute)
+                    .AddSeconds(notificationTime.Second);
+                if (nextRun <= dateTimeNow)
+                {
+                    nextRun = nextRun.AddDays(1);
+                }
+
+                return (nextRun - dateTimeNow).TotalMilliseconds;
+            }
         }
 
-        static async Task Main(string[] args)
+        private static async Task Main()
         {
             //Славянский ретёрн в мэйне
             //return;
@@ -358,16 +459,19 @@ namespace LabsQueueBot
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true)
                 .AddJsonFile("appsettingsDevActive.json", optional: true, reloadOnChange: true)
                 .Build();
-            BotSettings = LabsQueueBotSettingsReader.Read(configuration);
-            
-            _bot = new TelegramBotClient(BotSettings.BotToken);
-            
+            _botSettings = LabsQueueBotSettingsReader.Read(configuration);
+
+            _bot = new TelegramBotClient(_botSettings.BotToken);
+
             //генерация пароля
             PasswordGenerator.Generate(10);
-            commands.Add($"/randomize_queue {PasswordGenerator.Password}", new RandomizeQueue());
-            commands.Add($"/ban_person {PasswordGenerator.Password}", new BanUserFromQueue());
+            Commands.Add($"/randomize_queue {PasswordGenerator.Password}", new RandomizeQueue());
+            Commands.Add($"/ban_person {PasswordGenerator.Password}", new BanUserFromQueue());
+            Commands.Add($"/set_timetable {PasswordGenerator.Password}", new SetTimetable());
+
             Console.WriteLine("Запущен бот " + _bot.GetMeAsync().Result.FirstName);
 
             var cts = new CancellationTokenSource();
@@ -384,13 +488,16 @@ namespace LabsQueueBot
                 receiverOptions,
                 cancellationToken
             );
-            
+
             Console.WriteLine($"Admin password: {PasswordGenerator.Password}");
-            foreach (var adminChatTgId in BotSettings.AdminChatTgIds)
+            foreach (var adminChatTgId in _botSettings.AdminChatTgIds)
             {
                 try
                 {
-                    await _bot.SendTextMessageAsync(adminChatTgId, PasswordGenerator.Password);
+                    await _bot.SendTextMessageAsync(
+                        chatId: adminChatTgId,
+                        text: $"Password: {PasswordGenerator.Password}",
+                        cancellationToken: cancellationToken);
                 }
                 catch (Exception)
                 {
