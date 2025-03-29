@@ -460,7 +460,6 @@ namespace LabsQueueBot
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                 .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true)
-                .AddJsonFile("appsettingsDevActive.json", optional: true, reloadOnChange: true)
                 .Build();
             _botSettings = LabsQueueBotSettingsReader.Read(configuration);
 
