@@ -78,6 +78,7 @@ namespace LabsQueueBot.Model
                 foreach (var subject in collection)
                 {
                     _subjects.Add(subject.SubjectName, new Queue(course, number, subject.SubjectName, subject.Id));
+                    Timetable.Add(subject.SubjectName, [DayOfWeek.Sunday]);
                 }
             }
         }
@@ -249,7 +250,12 @@ namespace LabsQueueBot.Model
             {
                 foreach (var subject in elem.Value)
                 {
-                    _subjects[subject].Remove(elem.Key);
+                    if (_subjects.ContainsKey(subject))
+                    {
+                        _subjects[subject].Remove(elem.Key);
+                        if (_subjects[subject].Count == 0)
+                            DeleteSubject(subject);
+                    }
                 }
             }
             
@@ -267,6 +273,10 @@ namespace LabsQueueBot.Model
         public void AddToBlackListBySubject(string subject, long id)
         {
             _subjects[subject].Remove(id);
+            if (_subjects[subject].Count == 0)
+            {
+                DeleteSubject(subject);
+            }
             
             if (!_blackList.ContainsKey(id))
             {
