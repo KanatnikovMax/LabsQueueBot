@@ -389,7 +389,7 @@ namespace LabsQueueBot
                 foreach (var subject in group.Value.Timetable
                              .Where(subject =>
                                  group.Value.ContainsKey(subject.Key)
-                                 && subject.Value.Contains(DateTime.UtcNow.DayOfWeek)))
+                                 && subject.Value.Contains(DateTime.UtcNow.AddHours(3).DayOfWeek)))
                 {
                     group.Value[subject.Key].Union();
                 }
