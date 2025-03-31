@@ -5,111 +5,104 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using User = LabsQueueBot.Db.Entities.User;
+using ILogger = Serilog.ILogger;
 
 namespace LabsQueueBot.Bot;
 
-public class UpdateHandler : IUpdateHandler
+public class UpdateHandler(ILogger logger, CommandFactory commandFactory, IRepository<User> usersRepository)
+    : IUpdateHandler
 {
-    private readonly CommandFactory _commandFactory;
-    private readonly IRepository<User> _usersRepository;
+    private readonly ILogger _logger = logger;
 
-    public UpdateHandler(CommandFactory commandFactory, IRepository<User> usersRepository)
+    private const string WrongCommandRequestMessage = "Введи команду, ящур";
+
+    public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
-        _commandFactory = commandFactory;
-        _usersRepository = usersRepository;
-    }
-    
-    public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken stoppingToken)
-    {
-        var user = await _usersRepository.GetByIdAsync(update.Message.Chat.Id);
+        var user = await usersRepository.GetByIdAsync(update.Message.Chat.Id, cancellationToken);
         if (user is null)
         {
             await botClient.SendTextMessageAsync(
                 chatId: update.Message.Chat.Id,
                 text: "Вы не зарегистрированы!\n/start для регистрации",
-                cancellationToken: stoppingToken);
+                cancellationToken: cancellationToken);
+            return;
         }
-        
-        switch (update.Type)
+
+        if (update.Type != UpdateType.Message
+            && update.Type == UpdateType.Message && update.Message.Type != MessageType.Text
+            && update.Type != UpdateType.CallbackQuery
+            && update.Type != UpdateType.MyChatMember)
         {
-            case UpdateType.Message:
-                await HandleMessage(botClient, update, stoppingToken);
-                break;
-            
-            case UpdateType.CallbackQuery:
-                await HandleCallbackQuery(botClient, update, stoppingToken);
-                break;
-            
-            case UpdateType.MyChatMember:
-                await HandleMyChatMember(botClient, update, stoppingToken);
-                break;
-                
-            default:
-                await botClient.SendTextMessageAsync(
-                    chatId: update.Message.Chat.Id,
-                    text: "Введи команду, ящур",
-                    cancellationToken: stoppingToken);
-                break;
+            await botClient.DeleteMessageAsync(
+                chatId: update.Message.Chat.Id,
+                messageId: update.Message.MessageId,
+                cancellationToken: cancellationToken);
+
+            await botClient.SendTextMessageAsync(
+                chatId: update.Message.Chat.Id,
+                text: WrongCommandRequestMessage,
+                cancellationToken: cancellationToken);
+            return;
+        }
+
+        try
+        {
+            if (update.Type == UpdateType.MyChatMember)
+            {
+                await HandleMyChatMember(update, cancellationToken);
+            }
+            else
+            {
+                await HandleDefaultUpdate(botClient, update, cancellationToken);
+            }
+        }
+        catch (Exception e)
+        {
+            logger.Warning(e.Message);
         }
     }
 
-    public async Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken stoppingToken)
+    public async Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
-        Console.WriteLine(JsonConvert.SerializeObject(exception));
+        logger.Fatal(JsonConvert.SerializeObject(exception));
         var lastUpdates = await botClient.GetUpdatesAsync(
             offset: 10,
             limit: 10,
-            cancellationToken: stoppingToken);
+            cancellationToken: cancellationToken);
         foreach (var update in lastUpdates
                      .Where(update =>
                          update.Type == UpdateType.CallbackQuery))
         {
-            Console.WriteLine(JsonConvert.SerializeObject(update));
+            logger.Fatal(JsonConvert.SerializeObject(update));
         }
     }
     
-    private async Task HandleMessage(ITelegramBotClient botClient, Update update, CancellationToken stoppingToken)
+    private async Task HandleDefaultUpdate(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
         var id = update.Message.Chat.Id;
-        var user = await _usersRepository.GetByIdAsync(id);
-        
-        // Если есть активная команда - передаем управление ей
-        if (state.CurrentCommand != null)
+        var user = await usersRepository.GetByIdAsync(id, cancellationToken);
+
+        var command = user.State == User.UserState.None
+            ? commandFactory.GetCommand(update.Message.Text)
+            : commandFactory.GetCommand(user.State);
+
+        if (command is not null)
         {
-            var command = _commandFactory.GetCommand(state.CurrentCommand);
-            await command.Execute(botClient, update, stoppingToken);
+            await command.Execute(botClient, update, cancellationToken);
         }
         else
         {
-            // Обработка новых команд
-            var command = _commandFactory.GetCommand(update.Message.Text);
-            await command?.Execute(botClient, update, stoppingToken);
-        }
-    }
-    
-    private async Task HandleCallbackQuery(ITelegramBotClient botClient, Update update, CancellationToken stoppingToken)
-    {
-        var callbackQuery = update.CallbackQuery;
-        var state = _stateRepo.GetState(callbackQuery.Message.Chat.Id);
-        
-        if (state.CurrentCommand == nameof(ShowItemsCommand) && callbackQuery.Data.StartsWith("day_"))
-        {
-            var selectedDay = callbackQuery.Data.Split('_')[1];
-            var items = _shoppingService.GetItemsForDay(selectedDay);
-            
             await botClient.SendTextMessageAsync(
-                callbackQuery.Message.Chat.Id,
-                $"Список покупок на {selectedDay}:\n{string.Join("\n", items)}",
-                cancellationToken: stoppingToken);
-            
-            _stateRepo.ResetState(callbackQuery.Message.Chat.Id);
+                chatId: update.Message.Chat.Id,
+                text: WrongCommandRequestMessage,
+                cancellationToken: cancellationToken);
         }
     }
 
-    private async Task HandleMyChatMember(ITelegramBotClient botClient, Update update, CancellationToken stoppingToken)
+    private async Task HandleMyChatMember(Update update, CancellationToken cancellationToken)
     {
         var id = update.MyChatMember.Chat.Id;
-        var user = await _usersRepository.GetByIdAsync(id);
-        await _usersRepository.DeleteAsync(user);
+        var user = await usersRepository.GetByIdAsync(id, cancellationToken);
+        await usersRepository.DeleteAsync(user, cancellationToken);
     }
 }

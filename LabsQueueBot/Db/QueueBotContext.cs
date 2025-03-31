@@ -11,6 +11,8 @@ namespace LabsQueueBot.Db
         public DbSet<Subject> SubjectRepository { get; set; }
 
         public DbSet<SerialNumber> SerialNumberRepository { get; set; }
+        
+        public DbSet<UserRule> UserRuleRepository { get; set; }
 
         public QueueBotContext()
         {
@@ -26,6 +28,8 @@ namespace LabsQueueBot.Db
                 .Build();
             string connectionString = configuration.GetValue<string>("QueueBotDbContext");
             optionsBuilder.UseNpgsql(connectionString);
+            
+            //TODO реализовать добавление прав пользователям из конфигурации
         }
     }
 }

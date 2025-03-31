@@ -1,4 +1,6 @@
-﻿namespace LabsQueueBot.Commands;
+﻿using LabsQueueBot.Db.Entities;
+
+namespace LabsQueueBot.Commands;
 
 public class CommandFactory
 {
@@ -12,5 +14,10 @@ public class CommandFactory
     public ICommand? GetCommand(string message)
     {
         return _commands.FirstOrDefault(c => c.Name.Equals(message));
+    }
+
+    public ICommand? GetCommand(User.UserState state)
+    {
+        return _commands.FirstOrDefault(c => c.State.Equals(state));
     }
 }
