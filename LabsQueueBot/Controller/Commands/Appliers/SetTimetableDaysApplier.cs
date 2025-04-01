@@ -24,20 +24,26 @@ public class SetTimetableDaysApplier : Command
         var subject = group.SubjectsToSetTimetable[id];
         group.SubjectsToSetTimetable.Remove(id);
         user.State = User.UserState.None;
-        
+
+        const string invalidSubjectMessage = "Такого предмета не существует";
         if (!group.ContainsKey(subject))
-            return new SendMessageRequest(id, "Такого предмета уже не существует");
+            return new SendMessageRequest(id, invalidSubjectMessage);
 
         string message;
-        var days = update.Message.Text.Split(' ');
+        var rawDays = update.Message.Text.Split(' ');
         try
         {
-            group.Timetable.Add(subject, days.Select(ParseDayOfWeek).Distinct().ToList());
+            var days = rawDays.Select(ParseDayOfWeek).Distinct().ToList();
+            group.Timetable[subject] = days;
             message = $"Добавлено новое расписание для предмета {subject}";
         }
         catch (InvalidCastException e)
         {
             message = e.Message;
+        }
+        catch (KeyNotFoundException)
+        {
+            message = invalidSubjectMessage;
         }
 
         return new SendMessageRequest(id, message);
