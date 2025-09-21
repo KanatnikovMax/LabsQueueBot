@@ -2,7 +2,6 @@
 using LabsQueueBot.Core.Enums;
 using LabsQueueBot.Core.Settings;
 using LabsQueueBot.Core.Utils;
-using LabsQueueBot.DataAccess.Entities;
 using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Web.Helpers;
 using Telegram.Bot;
@@ -16,23 +15,22 @@ namespace LabsQueueBot.Web.Commands.Implements;
 public class JoinCommandExecutor(
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
-    ISerialNumberRepository serialNumberRepository,
     CommandsSettings commandsSettings,
-    ILogger logger) : ICommandExecutor // TODO проверить
+    ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";
     // private const string WrongCallbackQueryMessageRequest = "Не в той табличке ты тыкнул";
     private const string AddSubjectMessage = "Введите название дисциплины, которую хотите добавить";
     private const string SubjectNotFoundMessage = "Такой дисциплины не существует";
-    private const string UserAlreadyInQueueMessage = "Ты уже записан в эту очередь\nТвой номер в очереди —";
-    private const string UserAlreadyInWaitingMessage = "Ты находишься в списке ожидания";
-    private const string JoinCompleteMessage = "Вы добавлены в очередь ожидания по дисциплине ";
-    public string Type => commandsSettings.JoinCommand.Type;
-    public string Name => commandsSettings.JoinCommand.Name;
-    public IReadOnlyCollection<UserState> States => [UserState.Join];
-    public Role AcceptRole => Role.Default;
-    public string Definition => commandsSettings.JoinCommand.Definition;
-    public async Task Execute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
+    private const string UserAlreadyInQueueMessage = "Ты уже находишься в этой очереди. Твоё место в очереди: {0}";
+    private const string UserAlreadyInWaitingMessage = "Ты уже находишься в списке ожидания";
+    private const string JoinCompleteMessage = "Вы добавлены в список ожидания по дисциплине {0}";
+    public override string Type => commandsSettings.JoinCommand.Type;
+    public override string Name => commandsSettings.JoinCommand.Name;
+    public override IReadOnlyCollection<UserState> States => [UserState.Join];
+    public override Role AcceptRole => Role.Default;
+    public override string Definition => commandsSettings.JoinCommand.Definition;
+    protected override async Task InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
         switch (user.State)
         {
@@ -69,9 +67,6 @@ public class JoinCommandExecutor(
     private async Task SendSubjectsKeyboard(ITelegramBotClient botClient, User user, 
         CancellationToken cancellationToken)
     {
-        user.State = UserState.Join;
-        await userRepository.SaveAsync(user, cancellationToken);
-        
         var subjects = (await subjectsRepository.GetByConditionAsync(
                 s => s.CourseNumber == user.CourseNumber && s.GroupNumber == user.GroupNumber,
                 cancellationToken))
@@ -80,11 +75,15 @@ public class JoinCommandExecutor(
         
         var keyboard = InlineKeyboardHelper.ListToKeyboard(subjects, true, true, 1);
         
-        await botClient.SendTextMessageAsync(
+        var message = await botClient.SendTextMessageAsync(
             chatId: user.Id,
             text: SendSubjectsKeyboardMessage,
             replyMarkup: keyboard,
             cancellationToken: cancellationToken);
+        
+        user.State = UserState.Join;
+        user.LastCallbackableMessageId = message.MessageId;
+        await userRepository.SaveAsync(user, cancellationToken);
     }
 
     private async Task JoinUserIntoQueue(ITelegramBotClient botClient, Update update, User user,
@@ -96,18 +95,6 @@ public class JoinCommandExecutor(
             messageId: update.CallbackQuery!.Message!.MessageId,
             message: $"{SendSubjectsKeyboardMessage} {update.CallbackQuery.Data}",
             cancellationToken: cancellationToken);
-        
-        // if (update.CallbackQuery.Message.Text != SendSubjectsKeyboardMessage)
-        // {
-        //     user.State = UserState.None;
-        //     await userRepository.SaveAsync(user, cancellationToken);
-        //     
-        //     await botClient.SendTextMessageAsync(
-        //         chatId: user.Id,
-        //         text: WrongCallbackQueryMessageRequest,
-        //         cancellationToken: cancellationToken);
-        //     return;
-        // }
         
         var subjectName = update.CallbackQuery.Data;
         
@@ -121,7 +108,7 @@ public class JoinCommandExecutor(
         if (subjectName == InlineKeyboardHelper.AddMessage)
         {
             user.State = UserState.AddSubject;
-            await userRepository.SaveAsync(user, cancellationToken);;
+            await userRepository.SaveAsync(user, cancellationToken);
             
             await botClient.SendTextMessageAsync(
                 chatId: user.Id,
@@ -133,14 +120,12 @@ public class JoinCommandExecutor(
         user.State = UserState.None;
         await userRepository.SaveAsync(user, cancellationToken);
         
-        var subject = (await subjectsRepository.GetByConditionAsync(s =>
-                s.CourseNumber == user.CourseNumber
-                && s.GroupNumber == user.GroupNumber
-                && s.SubjectName == subjectName,
-            cancellationToken
-        )).FirstOrDefault();
+        var subject = (await subjectsRepository.GetByConditionAsync(
+                s => s.CourseNumber == user.CourseNumber && s.GroupNumber == user.GroupNumber && s.SubjectName == subjectName, 
+                cancellationToken))
+            .FirstOrDefault();
         
-        if (subject is null)
+        if (subject == null)
         {
             await botClient.SendTextMessageAsync(
                 chatId: user.Id,
@@ -149,21 +134,22 @@ public class JoinCommandExecutor(
             return;
         }
 
-        var queue = serialNumberRepository.GetQueueBySubject(subject, cancellationToken);
-        var waiting = serialNumberRepository.GetWaitingBySubject(subject, cancellationToken);
-
-        var sn = (await queue).FirstOrDefault(sn => sn.TgUserIndex == user.Id);
-        if (sn is not null)
+        var userQueueIndex = subject.Queue
+            .ToList()
+            .IndexOf(user.Id);
+        if (userQueueIndex != -1)
         {
             await botClient.SendTextMessageAsync(
                 chatId: user.Id,
-                text: $"{UserAlreadyInQueueMessage} {sn.QueueIndex + 1}",
+                text: string.Format(UserAlreadyInQueueMessage, userQueueIndex + 1),
                 cancellationToken: cancellationToken);
             return;
         }
-
-        sn = (await waiting).FirstOrDefault(sn => sn.TgUserIndex == user.Id);
-        if (sn is not null)
+        
+        var userWaitingIndex = subject.Waiting
+            .ToList()
+            .IndexOf(user.Id);
+        if (userWaitingIndex != -1)
         {
             await botClient.SendTextMessageAsync(
                 chatId: user.Id,
@@ -172,17 +158,12 @@ public class JoinCommandExecutor(
             return;
         }
 
-        sn = new SerialNumber
-        {
-            TgUserIndex = user.Id,
-            SubjectId = subject.Id,
-            QueueIndex = -2
-        };
-        await serialNumberRepository.SaveAsync(sn, cancellationToken);
+        subject.Waiting = subject.Waiting.Append(user.Id).ToArray();
+        await subjectsRepository.SaveAsync(subject, cancellationToken);
         
         await botClient.SendTextMessageAsync(
             chatId: user.Id,
-            text: $"{JoinCompleteMessage} {subject.SubjectName}",
+            text: string.Format(JoinCompleteMessage, subject.SubjectName),
             cancellationToken: cancellationToken);
     }
 }
