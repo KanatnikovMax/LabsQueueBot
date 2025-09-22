@@ -17,7 +17,6 @@ namespace LabsQueueBot.DataAccess.Entities
         /// <summary>
         /// Название дисциплины
         /// </summary>
-        [MaxLength(50)]
         public string SubjectName { get; set; } = string.Empty;
 
         /// <summary>

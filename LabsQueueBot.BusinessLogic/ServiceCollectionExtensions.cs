@@ -10,12 +10,13 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddUserManageServices(this IServiceCollection serviceCollection, QueueBotSettings settings)
     {
+        serviceCollection.AddScoped<IUserManagementService, UserManagementService>();
+        serviceCollection.AddScoped<ISubjectManageService, SubjectManageService>();
+
         serviceCollection.AddSingleton<IUserCleanerService>(x => new UserCleanerService(
             x.GetRequiredService<ITelegramBotClient>(),
             x.GetRequiredService<IServiceScopeFactory>(),
             settings));
-
-        serviceCollection.AddSingleton<IUserManagementService, UserManagementService>();
 
         return serviceCollection;
     }

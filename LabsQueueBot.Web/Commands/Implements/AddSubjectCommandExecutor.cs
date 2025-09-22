@@ -77,7 +77,7 @@ public class AddSubjectCommandExecutor(
         }
         
         var subject = await subjectsRepository.GetByGroupAndName(user.CourseNumber, user.GroupNumber, subjectName!, cancellationToken);
-        if (subject is not null)
+        if (subject != null)
         {
             await botClient.SendTextMessageAsync(
                 chatId: user.Id,
@@ -99,7 +99,7 @@ public class AddSubjectCommandExecutor(
             text: string.Format(AddSubjectCompleteMessage, subjectName),
             cancellationToken: cancellationToken);
 
-        await notificationProvider.NotifyBySubject(user.CourseNumber, user.GroupNumber, subjectName!, 
+        await notificationProvider.NotifyGroupBySubject(user.CourseNumber, user.GroupNumber, subjectName!, 
             subject.Queue.ToList(), subject.Waiting.ToList(), cancellationToken);
     }
 }

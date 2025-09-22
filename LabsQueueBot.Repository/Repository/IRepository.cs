@@ -8,5 +8,6 @@ public interface IRepository<T>
     Task<IEnumerable<T>> GetByConditionAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken);
     Task<T?> GetByIdAsync(long id, CancellationToken cancellationToken);
     Task<T> SaveAsync(T entity, CancellationToken cancellationToken);
+    Task UpdateBatchAsync(IReadOnlyCollection<T> entities, CancellationToken cancellationToken);
     Task DeleteAsync(T entity, CancellationToken cancellationToken);
 }

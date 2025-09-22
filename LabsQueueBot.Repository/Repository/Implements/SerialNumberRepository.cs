@@ -43,6 +43,15 @@ public class SerialNumberRepository(IDbContextFactory<QueueBotContext> contextFa
         
         return result.Entity;
     }
+    
+    public async Task UpdateBatchAsync(IReadOnlyCollection<SerialNumber> entities, CancellationToken cancellationToken)
+    {
+        await using var dbContext = await contextFactory.CreateDbContextAsync(cancellationToken);
+        
+        dbContext.Set<SerialNumber>().UpdateRange(entities);
+        
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
 
     public async Task DeleteAsync(SerialNumber entity, CancellationToken cancellationToken)
     {

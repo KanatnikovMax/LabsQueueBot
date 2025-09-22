@@ -45,10 +45,7 @@ public class QueueBotUpdateHandler(
             var id = update.Message?.Chat.Id 
                      ?? update.CallbackQuery?.Message?.Chat.Id
                      ?? update.MyChatMember?.Chat.Id;
-            if (id == null)
-                return;
-        
-            var user = await usersRepository.GetByIdAsync(id.Value, cancellationToken);
+            var user = await usersRepository.GetByIdAsync(id!.Value, cancellationToken);
             if (user is null && update.Type == UpdateType.Message && update.Message?.Text != "/start")
             {
                 await botClient.SendTextMessageAsync(

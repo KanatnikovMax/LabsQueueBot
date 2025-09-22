@@ -12,10 +12,7 @@ public static class BotConfigurator
 {
     public static IServiceCollection AddTelegramBotServices(this IServiceCollection serviceCollection, QueueBotSettings settings, CancellationToken cancellationToken)
     {
-        serviceCollection.AddSingleton<IUpdateHandler, QueueBotUpdateHandler>(x => new QueueBotUpdateHandler(
-            x.GetRequiredService<ILogger>(),
-            x.GetRequiredService<INotificationProvider>(),
-            x.GetRequiredService<IServiceScopeFactory>()));
+        serviceCollection.AddSingleton<IUpdateHandler, QueueBotUpdateHandler>();
 
         serviceCollection.AddHostedService<LabsQueueBotService>(x => new LabsQueueBotService(
             x.GetRequiredService<ILogger>(),

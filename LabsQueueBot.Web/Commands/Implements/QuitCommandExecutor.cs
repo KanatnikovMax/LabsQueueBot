@@ -123,10 +123,7 @@ public class QuitCommandExecutor(
             return;
         }
 
-        var userQueueIndex = subject.Queue
-            .ToList()
-            .IndexOf(user.Id);
-        if (userQueueIndex != -1)
+        if (subject.Queue.Contains(user.Id))
         {
             subject.Queue = subject.Queue.Where(x => x != user.Id).ToArray();
             await subjectsRepository.SaveAsync(subject, cancellationToken);
@@ -138,10 +135,7 @@ public class QuitCommandExecutor(
             return;
         }
         
-        var userWaitingIndex = subject.Waiting
-            .ToList()
-            .IndexOf(user.Id);
-        if (userWaitingIndex != -1)
+        if (subject.Waiting.Contains(user.Id))
         {
             subject.Waiting = subject.Waiting.Where(x => x != user.Id).ToArray();
             await subjectsRepository.SaveAsync(subject, cancellationToken);

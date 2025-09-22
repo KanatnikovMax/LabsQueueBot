@@ -1,19 +1,14 @@
 ﻿using LabsQueueBot.DataAccess.Entities;
 using LabsQueueBot.Repository.Repository;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace LabsQueueBot.BusinessLogic.Services.Implementation;
 
 public class UserManagementService(
-    IServiceScopeFactory scopeFactory) : IUserManagementService
+    IUserRepository userRepository,
+    ISubjectRepository subjectRepository) : IUserManagementService
 {
     public async Task DeleteUser(User user, CancellationToken cancellationToken)
     {
-        await using var scope = scopeFactory.CreateAsyncScope();
-
-        var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
-        var subjectRepository = scope.ServiceProvider.GetRequiredService<ISubjectRepository>();
-        
         var subjects = (await subjectRepository.GetByGroup(user.CourseNumber, user.GroupNumber, cancellationToken)).ToList();
         foreach (var subject in subjects)
         {
@@ -28,6 +23,9 @@ public class UserManagementService(
             .ToList();
         if (subjectsToDelete.Count != 0)
             await subjectRepository.DeleteBatchAsync(subjectsToDelete, cancellationToken);
+
+        var subjectsToUpdate = subjects.Except(subjectsToDelete).ToList();
+        await subjectRepository.UpdateBatchAsync(subjectsToUpdate, cancellationToken);
         
         await userRepository.DeleteAsync(user, cancellationToken);
     }

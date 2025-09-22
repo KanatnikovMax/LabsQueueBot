@@ -46,6 +46,15 @@ public class SubjectRepository(IDbContextFactory<QueueBotContext> contextFactory
 
         return result.Entity;
     }
+    
+    public async Task UpdateBatchAsync(IReadOnlyCollection<Subject> entities, CancellationToken cancellationToken)
+    {
+        await using var dbContext = await contextFactory.CreateDbContextAsync(cancellationToken);
+        
+        dbContext.Set<Subject>().UpdateRange(entities);
+        
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
 
     public async Task DeleteAsync(Subject entity, CancellationToken cancellationToken)
     {
