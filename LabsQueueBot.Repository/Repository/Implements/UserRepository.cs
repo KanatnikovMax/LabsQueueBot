@@ -18,13 +18,18 @@ public class UserRepository(IDbContextFactory<QueueBotContext> contextFactory) :
     public async Task<IEnumerable<User>> GetByConditionAsync(Expression<Func<User, bool>> predicate, CancellationToken cancellationToken)
     {
         await using var dbContext = await contextFactory.CreateDbContextAsync(cancellationToken);
-        return await dbContext.Set<User>().AsNoTracking().Where(predicate).ToListAsync(cancellationToken);
+        return await dbContext.Set<User>()
+            .AsNoTracking()
+            .Where(predicate)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<User?> GetByIdAsync(long id, CancellationToken cancellationToken)
     {
         await using var dbContext = await contextFactory.CreateDbContextAsync(cancellationToken);
-        return await dbContext.Set<User>().AsNoTracking().FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+        return await dbContext.Set<User>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
     
     public async Task<User> SaveAsync(User entity, CancellationToken cancellationToken)
@@ -79,5 +84,14 @@ public class UserRepository(IDbContextFactory<QueueBotContext> contextFactory) :
             .Distinct()
             .ToListAsync(cancellationToken))
             .Select(kv => (kv.Key, kv.Value));
+    }
+
+    public async Task<IEnumerable<User>> GetGroup(byte course, byte group, CancellationToken cancellationToken)
+    {
+        await using var dbContext = await contextFactory.CreateDbContextAsync(cancellationToken);
+        
+        return await dbContext.Set<User>()
+            .Where(u => u.CourseNumber == course && u.GroupNumber == group)
+            .ToListAsync(cancellationToken);
     }
 }

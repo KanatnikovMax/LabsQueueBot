@@ -50,16 +50,18 @@ public class NotificationProvider(
         Task.WaitAll(sendList.ToArray(), cancellationToken);
     }
 
-    public async Task NotifyGroup(short course, short group, CancellationToken cancellationToken)
+    public async Task NotifyGroup(byte course, byte group, CancellationToken cancellationToken)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
         
         var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
         var subjectRepository = scope.ServiceProvider.GetRequiredService<ISubjectRepository>();
         
-        var users = (await userRepository.GetByConditionAsync(
-                u => u.CourseNumber == course && u.GroupNumber == group, // && u.State == UserState.None,
-                cancellationToken))
+        // var users = (await userRepository.GetByConditionAsync(
+        //         u => u.CourseNumber == course && u.GroupNumber == group && u.State == UserState.None,
+        //         cancellationToken))
+        //     .ToList();
+        var users = (await userRepository.GetGroup(course, group, cancellationToken))
             .ToList();
         var subjects = (await subjectRepository.GetByConditionAsync(
                 s => s.CourseNumber == course && s.GroupNumber == group,
@@ -81,15 +83,17 @@ public class NotificationProvider(
         Task.WaitAll(tasks, cancellationToken);
     }
 
-    public async Task NotifyGroupBySubject(short course, short group, string subjectName, List<long> queue, List<long> waiting, CancellationToken cancellationToken)
+    public async Task NotifyGroupBySubject(byte course, byte group, string subjectName, List<long> queue, List<long> waiting, CancellationToken cancellationToken)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
         
         var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
         
-        var users = (await userRepository.GetByConditionAsync(
-                u => u.CourseNumber == course && u.GroupNumber == group, // && u.State == UserState.None,
-                cancellationToken))
+        // var users = (await userRepository.GetByConditionAsync(
+        //         u => u.CourseNumber == course && u.GroupNumber == group && u.State == UserState.None,
+        //         cancellationToken))
+        //     .ToList();
+        var users = (await userRepository.GetGroup(course, group, cancellationToken))
             .ToList();
 
         var tasks = users
@@ -136,9 +140,8 @@ public class NotificationProvider(
         
         var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
         
-        var users = (await userRepository.GetByConditionAsync(u =>
-                    u.State == UserState.None
-                    && u.Role == Role.Admin,
+        var users = (await userRepository.GetByConditionAsync(
+                u => u.Role == Role.Admin, // && u.State == UserState.None,
                 cancellationToken))
             .ToList();
 
