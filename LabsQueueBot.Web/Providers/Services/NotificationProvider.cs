@@ -107,6 +107,29 @@ public class NotificationProvider(
         Task.WaitAll(tasks, cancellationToken);
     }
 
+    public async Task NotifyUserBySubject(long userId, string subjectName, CancellationToken cancellationToken)
+    {
+        await using var scope = scopeFactory.CreateAsyncScope();
+        
+        var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
+
+        var user = await userRepository.GetByIdAsync(userId, cancellationToken);
+        if (user == null)
+            return;
+        
+        var subjectRepository = scope.ServiceProvider.GetRequiredService<ISubjectRepository>();
+
+        var subject = await subjectRepository.GetByGroupAndName(user.CourseNumber, user.GroupNumber, subjectName, cancellationToken);
+        if (subject == null)
+            return;
+        
+        var message = QueueInfoBuildHelper.GetBySubject(user.Id, subject.SubjectName, subject.Queue.ToList(), subject.Waiting.ToList());
+        await botClient.SendTextMessageAsync(
+            chatId: user.Id,
+            text: message,
+            cancellationToken: cancellationToken);
+    }
+    
     public async Task NotifyAdminsWithDocument(int documentId, string message, CancellationToken cancellationToken)
     {
         await using var scope = scopeFactory.CreateAsyncScope();

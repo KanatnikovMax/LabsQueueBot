@@ -20,7 +20,7 @@ public class UnionQueueCommandExecutor(
     ISubjectManageService subjectManageService,
     INotificationProvider notificationProvider,
     CommandsSettings commandsSettings,
-    ILogger logger) : CommandExecutorBase(logger), ICommandExecutor // TODO проверить
+    ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";
     private const string WrongUserAcceptRole = """
@@ -126,10 +126,7 @@ public class UnionQueueCommandExecutor(
         user.State = UserState.None;
         await userRepository.SaveAsync(user, cancellationToken);
 
-        var subject = (await subjectsRepository.GetByConditionAsync(
-                s => s.CourseNumber == user.CourseNumber && s.GroupNumber == user.GroupNumber && s.SubjectName == subjectName, 
-                cancellationToken))
-            .FirstOrDefault();
+        var subject = await subjectsRepository.GetByGroupAndName(user.CourseNumber, user.GroupNumber, subjectName!, cancellationToken);
 
         if (subject == null)
         {

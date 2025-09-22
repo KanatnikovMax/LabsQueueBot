@@ -106,12 +106,7 @@ public class ShowTimetableCommandExecutor(
         user.State = UserState.None;
         await userRepository.SaveAsync(user, cancellationToken);
 
-        var subject = (await subjectsRepository.GetByConditionAsync(s =>
-                    s.CourseNumber == user.CourseNumber
-                    && s.GroupNumber == user.GroupNumber
-                    && s.SubjectName == subjectName,
-                cancellationToken))
-            .FirstOrDefault();
+        var subject = await subjectsRepository.GetByGroupAndName(user.CourseNumber, user.GroupNumber, subjectName!, cancellationToken);
         
         if (subject is null)
         {

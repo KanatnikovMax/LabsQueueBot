@@ -1,65 +1,73 @@
-﻿using LabsQueueBot.Core.Enums;
+﻿using System.Text.Json;
+using LabsQueueBot.Core.Enums;
 using LabsQueueBot.Core.Settings;
+using LabsQueueBot.Core.Utils;
 using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Web.Helpers;
+using LabsQueueBot.Web.Providers;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using ILogger = Serilog.ILogger;
 using User = LabsQueueBot.DataAccess.Entities.User;
 
 namespace LabsQueueBot.Web.Commands.Implements;
 
 public class SkipCommandExecutor(
     IUserRepository userRepository,
-    ISerialNumberRepository serialNumberRepository,
     ISubjectRepository subjectsRepository,
-    CommandsSettings commandsSettings) : ICommandExecutor // TODO проверить
+    INotificationProvider notificationProvider,
+    CommandsSettings commandsSettings,
+    ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";
-    private const string WrongCallbackQueryMessageRequest = "Не в той табличке ты тыкнул";
+    // private const string WrongCallbackQueryMessageRequest = "Не в той табличке ты тыкнул";
     private const string SubjectNotFoundMessage = "Такой дисциплины не существует";
     private const string UserIsWaitingMessage = "Ты в списке ожидания, так чего не ждётся?";
     private const string UserNotExistsInQueueMessage = "Вас нет в очереди по дисциплине ";
     private const string UserIsLastInQueue = "Ты уже итак в конце очереди, ожидай своего часа :)";
     private const string SkipCompleteMessage = "Это как шаг вперед, но назад";
     
-    public string Type => commandsSettings.SkipCommand.Type;
-    public string Name => commandsSettings.SkipCommand.Name;
-    public IReadOnlyCollection<UserState> States => [UserState.Skip];
-    public Role AcceptRole => Role.Default;
-    public string Definition => commandsSettings.SkipCommand.Definition;
-    public async Task Execute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
+    public override string Type => commandsSettings.SkipCommand.Type;
+    public override string Name => commandsSettings.SkipCommand.Name;
+    public override IReadOnlyCollection<UserState> States => [UserState.Skip];
+    public override Role AcceptRole => Role.Default;
+    public override string Definition => commandsSettings.SkipCommand.Definition;
+    protected override async Task InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
         switch (user.State)
         {
             case UserState.None:
             {
-                user.State = UserState.Skip;
-                await userRepository.SaveAsync(user, cancellationToken);
-
-                await SendSubjectsKeyboard(botClient, user, cancellationToken);
-
-                return;
+                if (update.Type == UpdateType.Message)
+                {
+                    await SendSubjectsKeyboard(botClient, user, cancellationToken);
+                    return;
+                }
+                break;
             }
             case UserState.Skip:
             {
-                if (!update.Type.Equals(UpdateType.CallbackQuery))
+                if (update.Type == UpdateType.CallbackQuery
+                    && update.CallbackQuery!.Message!.MessageId == user.LastCallbackableMessageId)
                 {
-                    await botClient.DeleteMessageAsync(
-                        chatId: user.Id,
-                        messageId: update.Message.MessageId,
-                        cancellationToken: cancellationToken);
+                    user.LastCallbackableMessageId = null;
+                    await SkipUserInQueue(botClient, update, user, cancellationToken);
                     return;
                 }
-
-                await SkipUserInQueue(botClient, update, user, cancellationToken);
-                return;
+                break;
             }
+        }
+        // если при UserState.None или UserState.Join получены Update не ожидаемого типа
+        if (!await BotClientUtils.DeleteUpdate(botClient, user.Id, update, cancellationToken))
+        {
+            // в случае если получили невозможный Update (не Message и не CallbackQuery) - игнорируем его
+            var updateString = JsonSerializer.Serialize(update);
+            logger.Warning("Update.MessageId is null\n\n{updateString}", updateString);
         }
     }
     
-    private async Task SendSubjectsKeyboard(ITelegramBotClient botClient, User user, 
-        CancellationToken cancellationToken)
+    private async Task SendSubjectsKeyboard(ITelegramBotClient botClient, User user, CancellationToken cancellationToken)
     {
         var subjects = (await subjectsRepository.GetByConditionAsync(s =>
                     s.CourseNumber == user.CourseNumber && s.GroupNumber == user.GroupNumber,
@@ -67,34 +75,27 @@ public class SkipCommandExecutor(
             .Select(s => s.SubjectName).ToList();
         var keyboard = InlineKeyboardHelper.ListToKeyboard(subjects, false, true, 1);
 
-        await botClient.SendTextMessageAsync(
+        var message = await botClient.SendTextMessageAsync(
             chatId: user.Id,
             text: SendSubjectsKeyboardMessage,
             replyMarkup: keyboard,
             cancellationToken: cancellationToken);
+        
+        user.State = UserState.Skip;
+        user.LastCallbackableMessageId = message.MessageId;
+        await userRepository.SaveAsync(user, cancellationToken);
     }
 
-    private async Task SkipUserInQueue(ITelegramBotClient botClient, Update update, User user,
-        CancellationToken cancellationToken)
+    private async Task SkipUserInQueue(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
-        await botClient.DeleteMessageAsync(
+        await BotClientUtils.ClearMarkupMessage(
+            botClient: botClient,
             chatId: user.Id,
-            messageId: update.CallbackQuery.Message.MessageId,
+            messageId: update.CallbackQuery!.Message!.MessageId,
+            message: $"{SendSubjectsKeyboardMessage} {update.CallbackQuery.Data}",
             cancellationToken: cancellationToken);
 
-        if (update.CallbackQuery.Message.Text != SendSubjectsKeyboardMessage)
-        {
-            user.State = UserState.None;
-            await userRepository.SaveAsync(user, cancellationToken);
-            
-            await botClient.SendTextMessageAsync(
-                chatId: user.Id,
-                text: WrongCallbackQueryMessageRequest,
-                cancellationToken: cancellationToken);
-            return;
-        }
-
-        var subjectName = update.CallbackQuery.Data;
+        var subjectName = update.CallbackQuery!.Data;
 
         if (subjectName == InlineKeyboardHelper.BackMessage)
         {
@@ -106,14 +107,9 @@ public class SkipCommandExecutor(
         user.State = UserState.None;
         await userRepository.SaveAsync(user, cancellationToken);
 
-        var subject = (await subjectsRepository.GetByConditionAsync(s =>
-                s.CourseNumber == user.CourseNumber
-                && s.GroupNumber == user.GroupNumber
-                && s.SubjectName == subjectName,
-            cancellationToken
-        )).FirstOrDefault();
+        var subject = await subjectsRepository.GetByGroupAndName(user.CourseNumber, user.GroupNumber, subjectName!, cancellationToken);
 
-        if (subject is null)
+        if (subject == null)
         {
             await botClient.SendTextMessageAsync(
                 chatId: user.Id,
@@ -121,9 +117,8 @@ public class SkipCommandExecutor(
                 cancellationToken: cancellationToken);
             return;
         }
-
-        var waiting = (await serialNumberRepository.GetWaitingBySubject(subject, cancellationToken)).ToList();
-        if (waiting.Select(sn => sn.TgUserIndex).Contains(user.Id))
+        
+        if (subject.Waiting.Contains(user.Id))
         {
             await botClient.SendTextMessageAsync(
                 chatId: user.Id,
@@ -131,9 +126,9 @@ public class SkipCommandExecutor(
                 cancellationToken: cancellationToken);
             return;
         }
-
-        var queue = (await serialNumberRepository.GetQueueBySubject(subject, cancellationToken)).ToList();
-        if (!queue.Select(sn => sn.TgUserIndex).Contains(user.Id))
+        
+        var queueIndex = subject.Queue.ToList().IndexOf(user.Id);
+        if (queueIndex == -1)
         {
             await botClient.SendTextMessageAsync(
                 chatId: user.Id,
@@ -142,10 +137,7 @@ public class SkipCommandExecutor(
             return;
         }
 
-        var sn1 = queue.First(sn => sn.TgUserIndex == user.Id);
-        var sn2 = queue.FirstOrDefault(sn => sn.QueueIndex > sn1.QueueIndex);
-        
-        if (sn2 is null)
+        if (queueIndex == subject.Queue.Length - 1)
         {
             await botClient.SendTextMessageAsync(
                 chatId: user.Id,
@@ -154,11 +146,16 @@ public class SkipCommandExecutor(
             return;
         }
 
-        await serialNumberRepository.SwapUsersInQueue(sn1, sn2, cancellationToken);
+        var skippedUserId = subject.Queue[queueIndex + 1];
+
+        (subject.Queue[queueIndex], subject.Queue[queueIndex + 1]) = (subject.Queue[queueIndex + 1], subject.Queue[queueIndex]);
+        await subjectsRepository.SaveAsync(subject, cancellationToken);
 
         await botClient.SendTextMessageAsync(
             chatId: user.Id,
             text: SkipCompleteMessage,
             cancellationToken: cancellationToken);
+
+        // await notificationProvider.NotifyUserBySubject(skippedUserId, subject.SubjectName, cancellationToken);
     }
 }
