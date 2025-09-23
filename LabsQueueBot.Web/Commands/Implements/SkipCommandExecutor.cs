@@ -18,7 +18,7 @@ public class SkipCommandExecutor(
     ISubjectRepository subjectsRepository,
     INotificationProvider notificationProvider,
     CommandsSettings commandsSettings,
-    ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
+    ILogger logger) : CommandExecutorBase(logger), ICommandExecutor // TODO: протестировано, перед деплоем надо раскомментировать рассылку
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";
     // private const string WrongCallbackQueryMessageRequest = "Не в той табличке ты тыкнул";
