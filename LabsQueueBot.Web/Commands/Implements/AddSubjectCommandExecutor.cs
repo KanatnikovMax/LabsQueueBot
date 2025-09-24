@@ -12,7 +12,7 @@ using ILogger = Serilog.ILogger;
 namespace LabsQueueBot.Web.Commands.Implements;
 
 public class AddSubjectCommandExecutor(
-    INotificationProvider notificationProvider,
+    IQueueInfoNotificationProvider queueInfoNotificationProvider,
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
     CommandsSettings commandsSettings,
@@ -99,7 +99,7 @@ public class AddSubjectCommandExecutor(
             text: string.Format(AddSubjectCompleteMessage, subjectName),
             cancellationToken: cancellationToken);
 
-        await notificationProvider.NotifyGroupBySubject(user.CourseNumber, user.GroupNumber, subjectName!, 
+        await queueInfoNotificationProvider.NotifyGroupBySubject(user.CourseNumber, user.GroupNumber, subjectName!, 
             subject.Queue.ToList(), subject.Waiting.ToList(), cancellationToken);
     }
 }

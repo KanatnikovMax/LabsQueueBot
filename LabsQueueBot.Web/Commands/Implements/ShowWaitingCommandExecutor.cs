@@ -1,12 +1,15 @@
 ﻿using System.Text;
+using System.Text.Json;
 using LabsQueueBot.Core.Enums;
 using LabsQueueBot.Core.Settings;
+using LabsQueueBot.Core.Utils;
 using LabsQueueBot.DataAccess.Entities;
 using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Web.Helpers;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using ILogger = Serilog.ILogger;
 using User = LabsQueueBot.DataAccess.Entities.User;
 
 namespace LabsQueueBot.Web.Commands.Implements;
@@ -15,43 +18,48 @@ public class ShowWaitingCommandExecutor(
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
     ISerialNumberRepository serialNumberRepository,
-    CommandsSettings commandsSettings) : ICommandExecutor // TODO проверить
+    CommandsSettings commandsSettings,
+    ILogger logger) : CommandExecutorBase(logger), ICommandExecutor // TODO проверить
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";
-    private const string WrongCallbackQueryMessageRequest = "Не в той табличке ты тыкнул";
+    // private const string WrongCallbackQueryMessageRequest = "Не в той табличке ты тыкнул";
     private const string SubjectNotFoundMessage = "Такой дисциплины не существует";
-    public string Type => commandsSettings.ShowWaitingCommand.Type;
-    public string Name => commandsSettings.ShowWaitingCommand.Name;
-    public IReadOnlyCollection<UserState> States => [UserState.ShowWaiting];
-    public Role AcceptRole => Role.Default;
-    public string Definition => commandsSettings.ShowWaitingCommand.Definition;
-    public async Task Execute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
+    public override string Type => commandsSettings.ShowWaitingCommand.Type;
+    public override string Name => commandsSettings.ShowWaitingCommand.Name;
+    public override IReadOnlyCollection<UserState> States => [UserState.ShowWaiting];
+    public override Role AcceptRole => Role.Default;
+    public override string Definition => commandsSettings.ShowWaitingCommand.Definition;
+    protected override async Task InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
         switch (user.State)
         {
             case UserState.None:
             {
-                user.State = UserState.ShowQueue;
-                await userRepository.SaveAsync(user, cancellationToken);
-                
-                await SendSubjectsKeyboard(botClient, user, cancellationToken);
-                
-                return;
-            }
-            case UserState.ShowQueue:
-            {
-                if (!update.Type.Equals(UpdateType.CallbackQuery))
+                if (update.Type == UpdateType.Message)
                 {
-                    await botClient.DeleteMessageAsync(
-                        chatId: user.Id,
-                        messageId: update.Message.MessageId,
-                        cancellationToken: cancellationToken);
+                    await SendSubjectsKeyboard(botClient, user, cancellationToken);
                     return;
                 }
-                
-                await SendWaitingList(botClient, update, user, cancellationToken);
-                return;
+                break;
             }
+            case UserState.ShowWaiting:
+            {
+                if (update.Type == UpdateType.CallbackQuery
+                    && update.CallbackQuery!.Message!.MessageId == user.LastCallbackableMessageId)
+                {
+                    user.LastCallbackableMessageId = null;
+                    await SendWaitingList(botClient, update, user, cancellationToken);
+                    return;
+                }
+                break;
+            }
+        }
+        // если при UserState.None или UserState.ShowQueue получены Update не ожидаемого типа
+        if (!await BotClientUtils.DeleteUpdate(botClient, user.Id, update, cancellationToken))
+        {
+            // в случае если получили невозможный Update (не Message и не CallbackQuery) - игнорируем его
+            var updateString = JsonSerializer.Serialize(update);
+            logger.Warning("Update.MessageId is null\n\n{updateString}", updateString);
         }
     }
     
@@ -64,32 +72,26 @@ public class ShowWaitingCommandExecutor(
             .Select(s => s.SubjectName).ToList();
         var keyboard = InlineKeyboardHelper.ListToKeyboard(subjects, false, true, 1);
 
-        await botClient.SendTextMessageAsync(
+        var message = await botClient.SendTextMessageAsync(
             chatId: user.Id,
             text: SendSubjectsKeyboardMessage,
             replyMarkup: keyboard,
             cancellationToken: cancellationToken);
+        
+        user.State = UserState.ShowQueue;
+        user.LastCallbackableMessageId = message.MessageId;
+        await userRepository.SaveAsync(user, cancellationToken);
     }
     
     private async Task SendWaitingList(ITelegramBotClient botClient, Update update, User user, 
         CancellationToken cancellationToken)
     {
-        await botClient.DeleteMessageAsync(
+        await BotClientUtils.ClearMarkupMessage(
+            botClient: botClient,
             chatId: user.Id,
-            messageId: update.CallbackQuery.Message.MessageId,
+            messageId: update.CallbackQuery!.Message!.MessageId,
+            message: $"{SendSubjectsKeyboardMessage} {update.CallbackQuery.Data}",
             cancellationToken: cancellationToken);
-        
-        if (update.CallbackQuery.Message.Text != SendSubjectsKeyboardMessage)
-        {
-            user.State = UserState.None;
-            await userRepository.SaveAsync(user, cancellationToken);
-            
-            await botClient.SendTextMessageAsync(
-                chatId: user.Id,
-                text: WrongCallbackQueryMessageRequest,
-                cancellationToken: cancellationToken);
-            return;
-        }
 
         var subjectName = update.CallbackQuery.Data;
         

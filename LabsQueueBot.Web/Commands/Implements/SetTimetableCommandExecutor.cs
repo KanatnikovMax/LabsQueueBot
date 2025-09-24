@@ -14,7 +14,7 @@ using User = LabsQueueBot.DataAccess.Entities.User;
 namespace LabsQueueBot.Web.Commands.Implements;
 
 public class SetTimetableCommandExecutor(
-    INotificationProvider notificationProvider,
+    IQueueInfoNotificationProvider queueInfoNotificationProvider,
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
     CommandsSettings commandsSettings) : ICommandExecutor // TODO проверить

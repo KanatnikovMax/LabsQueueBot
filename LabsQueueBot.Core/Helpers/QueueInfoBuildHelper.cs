@@ -4,12 +4,15 @@ namespace LabsQueueBot.Core.Helpers;
 
 public static class QueueInfoBuildHelper
 {
-    private const string QueueHeader = "Дисциплины твоего курса и твои номера в очередях по ним:";
+    private const string MultipleQueueHeader = "Дисциплины твоего курса и твои номера в очередях по ним:";
     private const string NoSubjects = "В твоей группе не добавлено ни одной дисциплины";
     private const string SingleQueueHeader = "Твое место в очереди по дисциплине:\n{0} \u2192 {1}";
     private const string OutOfSubject = "отсутствует";
     private const string Waiting = "в ожидании";
     private const string PositionPattern = "{0} \u2192 {1}";
+    private const string QueueHeader = "Текущая очередь по дисциплине {0}:";
+    private const string WaitingHeader = "Текущая очередь ожидания по дисциплине {0}:";
+    private const string EmptyQueueWaiting = " пуста";
     
     public static string GetByUser(long userId, Dictionary<string, (List<long> queue, List<long> waiting)> subjects)
     {
@@ -18,7 +21,7 @@ public static class QueueInfoBuildHelper
         
         var builder = new StringBuilder();
         
-        builder.AppendLine(QueueHeader);
+        builder.AppendLine(MultipleQueueHeader);
         foreach (var subject in subjects)
         {
             var position = GetPosition(userId, subject.Value.queue, subject.Value.waiting);
@@ -28,7 +31,42 @@ public static class QueueInfoBuildHelper
         return builder.ToString();
     }
 
-    public static string GetBySubject(long userId, string subjectName, List<long> queue, List<long> waiting)
+    public static string GetAllBySubject(string subjectName, List<(string Name, int Num)> queue, List<string> waiting)
+    {
+        var builder = new StringBuilder();
+
+        builder.Append(string.Format(QueueHeader, subjectName));
+        if (queue.Count == 0)
+        {
+            builder.AppendLine(EmptyQueueWaiting);
+        }
+        else
+        {
+            builder.AppendLine();
+            
+            foreach (var userInfo in queue)
+                builder.AppendLine(string.Format(PositionPattern, userInfo.Name, userInfo.Num));
+        }
+
+        builder.AppendLine();
+        
+        builder.Append(string.Format(WaitingHeader, subjectName));
+        if (waiting.Count == 0)
+        {
+            builder.AppendLine(EmptyQueueWaiting);
+        }
+        else
+        {
+            builder.AppendLine();
+            
+            foreach (var userName in waiting)
+                builder.AppendLine(userName);
+        }
+
+        return builder.ToString();
+    }
+
+    public static string GetSingleBySubject(long userId, string subjectName, List<long> queue, List<long> waiting)
     {
         var position = GetPosition(userId, queue, waiting);
 

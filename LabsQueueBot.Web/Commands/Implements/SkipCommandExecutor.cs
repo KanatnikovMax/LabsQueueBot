@@ -16,7 +16,7 @@ namespace LabsQueueBot.Web.Commands.Implements;
 public class SkipCommandExecutor(
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
-    INotificationProvider notificationProvider,
+    IQueueInfoNotificationProvider queueInfoNotificationProvider,
     CommandsSettings commandsSettings,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor // TODO: протестировано, перед деплоем надо раскомментировать рассылку
 {

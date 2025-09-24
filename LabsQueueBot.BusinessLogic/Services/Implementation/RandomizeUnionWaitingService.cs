@@ -3,8 +3,8 @@ using LabsQueueBot.Repository.Repository;
 
 namespace LabsQueueBot.BusinessLogic.Services.Implementation;
 
-public class SubjectManageService(
-    ISubjectRepository subjectRepository) : ISubjectManageService
+public class RandomizeUnionWaitingService(
+    ISubjectRepository subjectRepository) : IRandomizeUnionWaitingService
 {
     public async Task RandomizeAndUnionWaitingByGroup(byte course, byte group, CancellationToken cancellationToken)
     {

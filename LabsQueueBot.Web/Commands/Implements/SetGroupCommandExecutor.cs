@@ -1,12 +1,11 @@
 ﻿using System.Text.Json;
+using LabsQueueBot.BusinessLogic.Services;
 using LabsQueueBot.Core.Enums;
-using LabsQueueBot.Core.Helpers;
 using LabsQueueBot.Core.Settings;
 using LabsQueueBot.Core.Utils;
 using LabsQueueBot.Core.Validators;
 using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Web.Helpers;
-using Microsoft.VisualBasic;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -17,11 +16,13 @@ namespace LabsQueueBot.Web.Commands.Implements;
 
 public class SetGroupCommandExecutor(
     IUserRepository userRepository,
+    ISubjectsManagementService subjectsManagementService,
+    IUserManagementService userManagementService,
     CommandsSettings commandsSettings, 
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string SendGroupsKeyboardMessage = "Выберите курс и группу:";
-    private const string WrongCallbackQueryMessageRequest = "Не в той табличке ты тыкнул";
+    // private const string WrongCallbackQueryMessageRequest = "Не в той табличке ты тыкнул";
     private const string AddGroupMessage = "Введите курс и группу в формате course:group";
     private const string InvalidGroupInfoMessage = "Введены некорректные данные:\n{0}";
     private const string AlreadyInChosenGroupMessage = "Ты уже находишься в выбранной группе =)";
@@ -107,13 +108,6 @@ public class SetGroupCommandExecutor(
         
         var subjectName = update.CallbackQuery.Data;
         
-        if (subjectName == InlineKeyboardHelper.BackMessage)
-        {
-            user.State = UserState.None;
-            await userRepository.SaveAsync(user, cancellationToken);
-            return;
-        }
-        
         if (subjectName == InlineKeyboardHelper.AddMessage)
         {
             user.State = UserState.AddGroup;
@@ -126,6 +120,16 @@ public class SetGroupCommandExecutor(
             return;
         }
         
+        if (subjectName == InlineKeyboardHelper.BackMessage)
+        {
+            user.State = UserState.None;
+            await userRepository.SaveAsync(user, cancellationToken);
+            return;
+        }
+        
+        user.State = UserState.None;
+        await userRepository.SaveAsync(user, cancellationToken);
+        
         var validationResult = CourseGroupValidator.ValidateFormatted(update.CallbackQuery.Data);
         if (validationResult != null)
         {
@@ -135,10 +139,10 @@ public class SetGroupCommandExecutor(
                 cancellationToken: cancellationToken);
             return;
         }
-
+        
         var courseGroup = ParseFormattedCourseGroup(update.CallbackQuery.Data!);
         
-        if (courseGroup.course == user.CourseNumber && courseGroup.group == user.GroupNumber)
+        if (courseGroup.Course == user.CourseNumber && courseGroup.Group == user.GroupNumber)
         {
             await botClient.SendTextMessageAsync(
                 chatId: user.Id,
@@ -147,7 +151,10 @@ public class SetGroupCommandExecutor(
             return;
         }
         
-        await SaveChosenCourseGroup(courseGroup, user, cancellationToken);
+        await subjectsManagementService.DeleteUserFromSubjectsQueues(user.Id, user.CourseNumber, user.GroupNumber, cancellationToken);
+        
+        await userManagementService.PutUserIntoGroup(user, courseGroup.Course, courseGroup.Group, cancellationToken);
+        
         await botClient.SendTextMessageAsync(
             chatId: user.Id,
             text: SuccessMessage,
@@ -167,33 +174,25 @@ public class SetGroupCommandExecutor(
             return;
         }
 
-        var courseGroup = ParseCourseGroup(update.Message.Text!);
-        await SaveChosenCourseGroup(courseGroup, user, cancellationToken);
+        var courseGroup = ParseRawCourseGroup(update.Message.Text!);
+        
+        await subjectsManagementService.DeleteUserFromSubjectsQueues(user.Id, user.CourseNumber, user.GroupNumber, cancellationToken);
+        
+        await userManagementService.PutUserIntoGroup(user, courseGroup.Course, courseGroup.Group, cancellationToken);
         
         await botClient.SendTextMessageAsync(
             chatId: user.Id,
             text: SuccessMessage,
             cancellationToken: cancellationToken);
     }
-    
-    private async Task SaveChosenCourseGroup((byte course, byte group) courseGroup, User user,
-        CancellationToken cancellationToken)
-    {
-        user.State = UserState.None;
-        user.Role = Role.Default;
-        user.CourseNumber = courseGroup.course;
-        user.GroupNumber = courseGroup.group;
-        
-        await userRepository.SaveAsync(user, cancellationToken);
-    }
 
-    private static (byte course, byte group) ParseFormattedCourseGroup(string info)
+    private static (byte Course, byte Group) ParseFormattedCourseGroup(string info)
     {
         var parsed = info.Split(' ');
         return (byte.Parse(parsed[0]), byte.Parse(parsed[2]));
     }
     
-    private static (byte course, byte group) ParseCourseGroup(string info)
+    private static (byte Course, byte Group) ParseRawCourseGroup(string info)
     {
         var parsed = info.Split(':');
         return (byte.Parse(parsed[0]), byte.Parse(parsed[1]));

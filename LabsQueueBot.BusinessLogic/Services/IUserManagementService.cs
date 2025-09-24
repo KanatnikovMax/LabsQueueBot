@@ -4,5 +4,5 @@ namespace LabsQueueBot.BusinessLogic.Services;
 
 public interface IUserManagementService
 {
-    Task DeleteUser(User user, CancellationToken cancellationToken);
+    Task PutUserIntoGroup(User user, byte course, byte group, CancellationToken cancellationToken);
 }

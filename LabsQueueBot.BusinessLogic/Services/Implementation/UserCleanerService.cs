@@ -1,5 +1,6 @@
 ﻿using LabsQueueBot.Core.Enums;
 using LabsQueueBot.Core.Settings;
+using LabsQueueBot.DataAccess.Entities;
 using LabsQueueBot.Repository.Repository;
 using Microsoft.Extensions.DependencyInjection;
 using Telegram.Bot;
@@ -16,12 +17,7 @@ public class UserCleanerService(
         await using var scope = scopeFactory.CreateAsyncScope();
         var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
 
-        var users = (await userRepository.GetByConditionAsync(u => 
-                    u.State != UserState.None 
-                    && u.State != UserState.Register 
-                    && u.State != UserState.Unregistered 
-                    && u.LastActivityAt.AddMinutes(settings.UserStateUpdateTimeoutInMinutes) < DateTime.UtcNow, 
-                cancellationToken))
+        var users = (await GetUsersToClear(userRepository, cancellationToken))
             .ToList();
 
         if (users.Count != 0)
@@ -52,12 +48,7 @@ public class UserCleanerService(
                 && x.LastActivityAt.AddMinutes(settings.UserStateAllowedIntervalInMinutes) < DateTime.UtcNow, 
             cancellationToken);
 
-        var users = (await userRepository.GetByConditionAsync(u => 
-                    u.State != UserState.None 
-                    && u.State != UserState.Register 
-                    && u.State != UserState.Unregistered 
-                    && u.LastActivityAt.AddMinutes(settings.UserStateUpdateTimeoutInMinutes) < DateTime.UtcNow, 
-                cancellationToken))
+        var users = (await GetUsersToClear(userRepository, cancellationToken))
             .ToList();
 
         if (users.Count != 0)
@@ -78,6 +69,16 @@ public class UserCleanerService(
         }
 
         await deleteUnregisteredUsersTask;
+    }
+
+    private async Task<IEnumerable<User>> GetUsersToClear(IUserRepository userRepository, CancellationToken cancellationToken)
+    {
+        return await userRepository.GetByConditionAsync(u =>
+                u.State != UserState.None
+                && u.State != UserState.Register
+                && u.State != UserState.Unregistered
+                && u.LastActivityAt.AddMinutes(settings.UserStateUpdateTimeoutInMinutes) < DateTime.UtcNow,
+            cancellationToken);
     }
 
     private void ClearReplyMarkupsInChats(IReadOnlyDictionary<long, int> markupsToClear, CancellationToken cancellationToken)

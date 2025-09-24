@@ -17,8 +17,8 @@ namespace LabsQueueBot.Web.Commands.Implements;
 public class UnionQueueCommandExecutor(
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
-    ISubjectManageService subjectManageService,
-    INotificationProvider notificationProvider,
+    IRandomizeUnionWaitingService randomizeUnionWaitingService,
+    IQueueInfoNotificationProvider queueInfoNotificationProvider,
     CommandsSettings commandsSettings,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
@@ -146,13 +146,13 @@ public class UnionQueueCommandExecutor(
             return;
         }
 
-        await subjectManageService.RandomizeAndUnionWaitingBySubject(subject.Id, cancellationToken);
+        await randomizeUnionWaitingService.RandomizeAndUnionWaitingBySubject(subject.Id, cancellationToken);
 
         await botClient.SendTextMessageAsync(
             chatId: user.Id,
             text: $"{UnionCompleteMessage} {subject.SubjectName}",
             cancellationToken: cancellationToken);
 
-        await notificationProvider.NotifyGroup(user.CourseNumber, user.GroupNumber, cancellationToken);
+        await queueInfoNotificationProvider.NotifyGroup(user.CourseNumber, user.GroupNumber, cancellationToken);
     }
 }

@@ -1,19 +1,17 @@
-﻿using LabsQueueBot.Core.Constants;
-using LabsQueueBot.Core.Enums;
+﻿using LabsQueueBot.Core.Enums;
 using LabsQueueBot.Core.Helpers;
 using LabsQueueBot.Repository.Repository;
 using Telegram.Bot;
-using Telegram.Bot.Types;
 
 namespace LabsQueueBot.Web.Providers.Services;
 
-public class NotificationProvider(
-    ITelegramBotClient botClient,
-    IServiceScopeFactory scopeFactory) : INotificationProvider
+public class QueueInfoNotificationProvider(
+    IServiceScopeFactory scopeFactory,
+    ITelegramBotClient botClient) : IQueueInfoNotificationProvider
 {
     public async Task NotifyAll(CancellationToken cancellationToken)
     {
-        // TODO подумать про закрепление последнего расписания
+        // TODO подумать про закрепление последнего расписания (расписания или очереди? если очереди - нафиг)
         await using var scope = scopeFactory.CreateAsyncScope();
         
         var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
@@ -57,6 +55,7 @@ public class NotificationProvider(
         var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
         var subjectRepository = scope.ServiceProvider.GetRequiredService<ISubjectRepository>();
         
+        //// TODO проверить, работает ли без UserState.None
         // var users = (await userRepository.GetByConditionAsync(
         //         u => u.CourseNumber == course && u.GroupNumber == group && u.State == UserState.None,
         //         cancellationToken))
@@ -89,6 +88,7 @@ public class NotificationProvider(
         
         var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
         
+        //// TODO проверить, работает ли без UserState.None
         // var users = (await userRepository.GetByConditionAsync(
         //         u => u.CourseNumber == course && u.GroupNumber == group && u.State == UserState.None,
         //         cancellationToken))
@@ -100,7 +100,7 @@ public class NotificationProvider(
             .Select(Task (user) =>
             Task.Run(() => 
                 {
-                    var message = QueueInfoBuildHelper.GetBySubject(user.Id, subjectName, queue, waiting);
+                    var message = QueueInfoBuildHelper.GetSingleBySubject(user.Id, subjectName, queue, waiting);
                     botClient.SendTextMessageAsync(
                         chatId: user.Id,
                         text: message,
@@ -111,57 +111,46 @@ public class NotificationProvider(
         Task.WaitAll(tasks, cancellationToken);
     }
 
-    public async Task NotifyUserBySubject(long userId, string subjectName, CancellationToken cancellationToken)
+    public async Task NotifyUserBySubject(long userId, string subjectName, CancellationToken cancellationToken, byte? course = null, byte? group = null)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
-        
-        var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
 
-        var user = await userRepository.GetByIdAsync(userId, cancellationToken);
-        if (user == null)
-            return;
+        var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
+        
+        if (course == null || group == null)
+        {
+            var user = await userRepository.GetByIdAsync(userId, cancellationToken);
+            if (user == null)
+                return;
+
+            course = user.CourseNumber;
+            group = user.GroupNumber;
+        }
         
         var subjectRepository = scope.ServiceProvider.GetRequiredService<ISubjectRepository>();
 
-        var subject = await subjectRepository.GetByGroupAndName(user.CourseNumber, user.GroupNumber, subjectName, cancellationToken);
+        var subject = await subjectRepository.GetByGroupAndName(course.Value, group.Value, subjectName, cancellationToken);
         if (subject == null)
             return;
+
+        var queue = (await userRepository.GetByConditionAsync(
+                u => subject.Queue.Contains(u.Id),
+                cancellationToken))
+            .Join(subject.Queue, u => u.Id, id => id,
+                (u, id) => (u.Name, subject.Queue.ToList().IndexOf(id)))
+            .OrderBy(x => x.Item2)
+            .ToList();
         
-        var message = QueueInfoBuildHelper.GetBySubject(user.Id, subject.SubjectName, subject.Queue.ToList(), subject.Waiting.ToList());
+        var waiting = (await userRepository.GetByConditionAsync(
+                u => subject.Waiting.Contains(u.Id),
+                cancellationToken))
+            .Select(u => u.Name)
+            .ToList();
+        
+        var message = QueueInfoBuildHelper.GetAllBySubject(subject.SubjectName, queue, waiting);
         await botClient.SendTextMessageAsync(
-            chatId: user.Id,
+            chatId: userId,
             text: message,
             cancellationToken: cancellationToken);
-    }
-    
-    public async Task NotifyAdminsWithDocument(int documentId, string message, CancellationToken cancellationToken)
-    {
-        await using var scope = scopeFactory.CreateAsyncScope();
-        
-        var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
-        
-        var users = (await userRepository.GetByConditionAsync(
-                u => u.Role == Role.Admin, // && u.State == UserState.None,
-                cancellationToken))
-            .ToList();
-
-        var path = string.Format(GlobalConstants.ErrorDocumentPath, documentId);
-        
-        await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read);
-        var document = new InputFileStream(stream, path);
-        
-        var tasks = users
-            .Select(Task (user) =>
-                Task.Run(() => 
-                    {
-                        botClient.SendDocumentAsync(
-                            chatId: user.Id,
-                            document: document,
-                            caption: message,
-                            cancellationToken: cancellationToken);
-                    },
-                    cancellationToken))
-            .ToArray();
-        Task.WaitAll(tasks, cancellationToken);
     }
 }

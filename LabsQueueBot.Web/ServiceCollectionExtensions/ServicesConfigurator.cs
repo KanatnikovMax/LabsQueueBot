@@ -18,7 +18,8 @@ public static class ServicesConfigurator
         serviceCollection.AddSingleton<ITelegramBotClient>(x => new TelegramBotClient(
             settings.BotToken));
         
-        serviceCollection.AddSingleton<INotificationProvider, NotificationProvider>();
+        serviceCollection.AddSingleton<IQueueInfoNotificationProvider, QueueInfoNotificationProvider>();
+        serviceCollection.AddSingleton<IAdminNotificationProvider, AdminNotificationProvider>();
 
         return serviceCollection;
     }

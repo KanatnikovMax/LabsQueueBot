@@ -1,6 +1,7 @@
 ﻿using LabsQueueBot.Core.Constants;
 using LabsQueueBot.Core.Enums;
 using LabsQueueBot.Core.Helpers;
+using LabsQueueBot.Core.Settings;
 using Newtonsoft.Json;
 using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Web.Exceptions;
@@ -17,9 +18,14 @@ namespace LabsQueueBot.Web.UpdateHandler;
 
 public class QueueBotUpdateHandler(
     ILogger logger,
-    INotificationProvider notificationProvider,
-    IServiceScopeFactory scopeFactory) : IUpdateHandler
+    IAdminNotificationProvider adminNotificationProvider,
+    IServiceScopeFactory scopeFactory,
+    CommandsSettings commandsSettings) : IUpdateHandler
 {
+    private const string NotRegisteredMessage = """
+                                                Вы не зарегистрированы!
+                                                {0} для регистрации
+                                                """;
     private const string WrongCommandRequestMessage = "Введи команду, ящур";
     private const string AdminErrorMessage = "Что-то упало, уровень: {0}";
 
@@ -27,6 +33,7 @@ public class QueueBotUpdateHandler(
     {
         try
         {
+            // TODO: может не удалять чтобы не создавать лишнюю нагрузку, а просто игнорировать?
             // check non text messages
             if (update.Type == UpdateType.Message && update.Message!.Type != MessageType.Text)
             {
@@ -41,19 +48,23 @@ public class QueueBotUpdateHandler(
         
             var usersRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
         
-            // TODO проверить first message
             var id = update.Message?.Chat.Id 
                      ?? update.CallbackQuery?.Message?.Chat.Id
                      ?? update.MyChatMember?.Chat.Id;
             var user = await usersRepository.GetByIdAsync(id!.Value, cancellationToken);
-            if (user is null && update.Type == UpdateType.Message && update.Message?.Text != "/start")
+            
+            // проверка на first message
+            if (user == null && update.Type == UpdateType.Message && update.Message?.Text != commandsSettings.StartCommand.Name
+                || user == null && update.Type != UpdateType.Message)
             {
                 await botClient.SendTextMessageAsync(
                     chatId: id,
-                    text: "Вы не зарегистрированы!\n/start для регистрации",
+                    text: string.Format(NotRegisteredMessage, commandsSettings.StartCommand.Name),
                     cancellationToken: cancellationToken);
                 return;
             }
+            
+            // TODO вынести сюда проверку на соответствие Callback.MessageId
 
             var commandProvider = scope.ServiceProvider.GetRequiredService<ICommandProvider>();
         
@@ -107,7 +118,7 @@ public class QueueBotUpdateHandler(
         var path = string.Format(GlobalConstants.ErrorDocumentPath, documentId);
         await File.WriteAllTextAsync(path, errorDocumentBody, cancellationToken);
             
-        await notificationProvider.NotifyAdminsWithDocument(documentId, errorMessage, cancellationToken);
+        await adminNotificationProvider.NotifyAdminsWithDocument(documentId, errorMessage, cancellationToken);
     }
 
     private async Task InternalHandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
