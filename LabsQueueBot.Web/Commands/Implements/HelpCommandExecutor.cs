@@ -3,6 +3,8 @@ using LabsQueueBot.Core.Enums;
 using LabsQueueBot.Core.Settings;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
+using ILogger = Serilog.ILogger;
 using User = LabsQueueBot.DataAccess.Entities.User;
 
 namespace LabsQueueBot.Web.Commands.Implements;
@@ -10,33 +12,41 @@ namespace LabsQueueBot.Web.Commands.Implements;
 public class HelpCommandExecutor(
     Func<IEnumerable<ICommandExecutor>> commands,
     QueueBotSettings botSettings,
-    CommandsSettings commandsSettings) : ICommandExecutor
+    CommandsSettings commandsSettings,
+    ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
-    public string Type => commandsSettings.HelpCommand.Type;
-    public string Name => commandsSettings.HelpCommand.Name;
-    public IReadOnlyCollection<UserState> States => [];
-    public Role AcceptRole => Role.Nobody;
-    public string Definition => commandsSettings.HelpCommand.Definition;
-    public async Task Execute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
+    private const string InformationMessage = """
+                                              При добавлении в очередь пользователь записывается в список ожидающих.
+                                              В установленный день в {0} список ожидающих случайным образом перемешивается и добавляется в конец соответствующей очереди.
+                                              Тем, кто подписан на рассылку, приходит уведомление с его местами в очередях, в которые он записан.
+                                              Пользователи с правами администратора соответствующей командой могут вызвать генерацию очередей для своей группы в любой момент времени и изменять расписание генерации.
+                                              Для получения прав администратора староста группы (или другое ответственный гражданин) должен написать админу бота в лс (ссылка на профиль админа в описании).
+                                              
+                                              """;
+    
+    public override string Type => commandsSettings.HelpCommand.Type;
+    public override string Name => commandsSettings.HelpCommand.Name;
+    public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [];
+    public override Role AcceptRole => Role.Nobody;
+    public override string Definition => commandsSettings.HelpCommand.Definition;
+    
+    protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
+        var notificationTime = botSettings.UnionNotificationTimeUtc + TimeSpan.FromHours(3);
+        
         var commandsDescription = GetDescription(user.Role);
         
         var builder = new StringBuilder();
-        builder.AppendLine("При добавлении в очередь пользователь записывается в список ожидающих. "
-                           + $"В установленный день в {botSettings.UnionNotificationTimeUtc} список ожидающих случайным образом перемешивается и добавляется в конец "
-                           + "соответствующей очереди, тем, кто подписан на рассылку, приходит уведомление с его местами в очередях, "
-                           + "в которые он записан. Пользователи с админскими правами соответствующей командой "
-                           + "могут вызвать генерацию очередей для своей группы в любой момент времени и изменять расписание для генерации. "
-                           + "Для получения админских прав староста группы (или другое ответственное лицо) должен написать админу "
-                           + "бота в лс (ссылка на профиль админа в описании)");
         
-        builder.AppendLine();
+        builder.AppendLine(string.Format(InformationMessage, notificationTime.ToString("hh\\:mm")));
         builder.AppendLine(commandsDescription);
 
         await botClient.SendTextMessageAsync(
             chatId: user.Id,
             text: builder.ToString(),
             cancellationToken: cancellationToken);
+
+        return true;
     }
     
     private string GetDescription(Role role)

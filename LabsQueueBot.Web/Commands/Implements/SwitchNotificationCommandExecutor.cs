@@ -3,6 +3,7 @@ using LabsQueueBot.Core.Settings;
 using LabsQueueBot.Repository.Repository;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using ILogger = Serilog.ILogger;
 using User = LabsQueueBot.DataAccess.Entities.User;
 
@@ -18,11 +19,11 @@ public class SwitchNotificationCommandExecutor(
     
     public override string Type => commandsSettings.SwitchNotificationCommand.Type;
     public override string Name => commandsSettings.SwitchNotificationCommand.Name;
-    public override IReadOnlyCollection<UserState> States => [];
+    public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [];
     public override Role AcceptRole => Role.Default;
     public override string Definition => commandsSettings.SwitchNotificationCommand.Definition;
 
-    protected override async Task InternalExecute(ITelegramBotClient botClient, Update update, User user,
+    protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user,
         CancellationToken cancellationToken)
     {
         user.IsNotifyNeeded = !user.IsNotifyNeeded;
@@ -34,5 +35,7 @@ public class SwitchNotificationCommandExecutor(
                 ? NotifyOnMessage
                 : NotifyOffMessage,
             cancellationToken: cancellationToken);
+
+        return true;
     }
 }

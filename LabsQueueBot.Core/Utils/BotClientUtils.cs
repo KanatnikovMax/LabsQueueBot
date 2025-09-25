@@ -1,4 +1,4 @@
-﻿using LabsQueueBot.Core.Helpers;
+﻿using LabsQueueBot.Core.Extensions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -22,7 +22,7 @@ public static class BotClientUtils
 
     public static async Task<bool> DeleteUpdate(ITelegramBotClient botClient, long chatId, Update update, CancellationToken cancellationToken)
     {
-        var messageId = BotClientUpdateHelper.GetUpdateMessageId(update);
+        var messageId = update.GetMessageId();
         if (messageId == null)
             return false;
         

@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using LabsQueueBot.BusinessLogic.Services;
+﻿using LabsQueueBot.BusinessLogic.Services;
 using LabsQueueBot.Core.Enums;
 using LabsQueueBot.Core.Settings;
 using LabsQueueBot.Core.Utils;
@@ -27,47 +26,37 @@ public class UnionQueueCommandExecutor(
                                                У вас недостаточно прав для этого действия.
                                                Если вы так не считаете - обратитесь к администратору
                                                """;
-    // private const string WrongCallbackQueryMessageRequest = "Не в той табличке ты тыкнул";
     private const string SubjectNotFoundMessage = "Такой дисциплины не существует";
     private const string WaitingListIsEmpty = "Список ожидания по выбранному предмету пуст";
     private const string UnionCompleteMessage = "Очередь по выбранному предмету сформирована:";
+    
     public override string Type => commandsSettings.UnionQueueCommand.Type;
     public override string Name => commandsSettings.UnionQueueCommand.Name;
-    public override IReadOnlyCollection<UserState> States => [UserState.Union];
+    public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [ (UserState.Union, UpdateType.CallbackQuery) ];
     public override Role AcceptRole => Role.Privileged;
     public override string Definition => commandsSettings.UnionQueueCommand.Definition;
 
-    protected override async Task InternalExecute(ITelegramBotClient botClient, Update update, User user,
+    protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user,
         CancellationToken cancellationToken)
     {
+        var isSuccess = false;
         switch (user.State)
         {
             case UserState.None:
             {
-                if (update.Type == UpdateType.Message)
-                {
-                    await SendSubjectsKeyboard(botClient, user, cancellationToken);
-                    return;
-                }
+                await SendSubjectsKeyboard(botClient, user, cancellationToken);
+                isSuccess = true;
                 break;
             }
             case UserState.Union:
             {
-                if (update.Type == UpdateType.CallbackQuery)
-                {
-                    await UnionQueue(botClient, update, user, cancellationToken);
-                    return;
-                }
+                await UnionQueue(botClient, update, user, cancellationToken);
+                isSuccess = true;
                 break;
             }
         }
-        // если при UserState.None или UserState.Join получены Update не ожидаемого типа
-        if (!await BotClientUtils.DeleteUpdate(botClient, user.Id, update, cancellationToken))
-        {
-            // в случае если получили невозможный Update (не Message и не CallbackQuery) - игнорируем его
-            var updateString = JsonSerializer.Serialize(update);
-            logger.Warning("Update.MessageId is null\n\n{updateString}", updateString);
-        }
+        
+        return isSuccess;
     }
 
     private async Task SendSubjectsKeyboard(ITelegramBotClient botClient, User user,

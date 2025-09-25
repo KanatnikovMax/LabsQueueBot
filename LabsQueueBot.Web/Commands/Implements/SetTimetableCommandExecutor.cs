@@ -30,11 +30,16 @@ public class SetTimetableCommandExecutor(
     private const string SubjectNotFoundMessage = "Такой дисциплины не существует";
     private const string WrongTimetableFormatMessage = "Расписание введено в неверном формате.";
     private const string CompleteSetTimetableMessage = "Расписание для предмета установлено:";
+    
     public string Type => commandsSettings.ShowTimetableCommand.Type;
     public string Name => commandsSettings.SetTimetableCommand.Name;
-    public IReadOnlyCollection<UserState> States => [UserState.SetTimetable, UserState.SetTimetableDays];
+    public IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [
+        (UserState.SetTimetable, UpdateType.Message),
+        (UserState.SetTimetableDays, UpdateType.Message)
+    ];
     public Role AcceptRole => Role.Privileged;
     public string Definition => commandsSettings.SetTimetableCommand.Definition;
+    
     public async Task Execute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
         /*

@@ -4,6 +4,7 @@ using LabsQueueBot.Core.Validators;
 using LabsQueueBot.Repository.Repository;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using User = LabsQueueBot.DataAccess.Entities.User;
 using ILogger = Serilog.ILogger;
 
@@ -21,11 +22,14 @@ public class StartCommandExecutor(
     
     public override string Type { get; } = commandsSettings.StartCommand.Type;
     public override string Name { get; } = commandsSettings.StartCommand.Name;
-    public override IReadOnlyCollection<UserState> States => [UserState.Unregistered, UserState.Register];
+    public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [ 
+        (UserState.Unregistered, UpdateType.Message),
+        (UserState.Register, UpdateType.Message)
+    ];
     public override Role AcceptRole => Role.Nobody;
     public override string Definition { get; } = commandsSettings.StartCommand.Definition;
 
-    protected override async Task InternalExecute(ITelegramBotClient botClient, Update update, User user,
+    protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user,
         CancellationToken cancellationToken)
     {
         switch (user.State)
@@ -46,6 +50,8 @@ public class StartCommandExecutor(
                 break;
             }
         }
+        
+        return true;
     }
 
     private async Task StartRegistration(ITelegramBotClient botClient, User user, CancellationToken cancellationToken)
@@ -61,8 +67,6 @@ public class StartCommandExecutor(
 
     private async Task CompleteRegistration(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
-        var id = user.Id;
-        
         var validationResult = UserInfoValidator.ValidateName(update.Message!.Text);
         if (validationResult != null)
         {

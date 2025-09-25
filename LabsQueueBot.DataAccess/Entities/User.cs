@@ -12,7 +12,7 @@ namespace LabsQueueBot.DataAccess.Entities
         /// <summary>
         /// Id пользователя
         /// </summary>
-        public long Id { get; set; } = 0;
+        public long Id { get; init; } = 0;
 
         /// <summary>
         /// Имя-фамилия пользователя
@@ -126,7 +126,7 @@ namespace LabsQueueBot.DataAccess.Entities
 
         /// <summary>
         /// Конструктор класса User; <br/>
-        /// инициализирует Id пользователя
+        /// State = UserState.None
         /// </summary>
         /// <param name="id"> Id пользователя </param>
         public User(long id)

@@ -22,7 +22,6 @@ public class SetGroupCommandExecutor(
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string SendGroupsKeyboardMessage = "Выберите курс и группу:";
-    // private const string WrongCallbackQueryMessageRequest = "Не в той табличке ты тыкнул";
     private const string AddGroupMessage = "Введите курс и группу в формате course:group";
     private const string InvalidGroupInfoMessage = "Введены некорректные данные:\n{0}";
     private const string AlreadyInChosenGroupMessage = "Ты уже находишься в выбранной группе =)";
@@ -30,12 +29,16 @@ public class SetGroupCommandExecutor(
     
     public override string Type => commandsSettings.SetGroupCommand.Type;
     public override string Name => commandsSettings.SetGroupCommand.Name;
-    public override IReadOnlyCollection<UserState> States => [UserState.ChooseGroup, UserState.AddGroup];
+    public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [
+        (UserState.ChooseGroup, UpdateType.CallbackQuery),
+        (UserState.AddGroup, UpdateType.Message)
+    ];
     public override Role AcceptRole => Role.Nobody;
     public override string Definition => commandsSettings.SetGroupCommand.Definition;
     
-    protected override async Task InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
+    protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
+        var isSuccess = false;
         switch (user.State)
         {
             case UserState.None:
@@ -43,7 +46,7 @@ public class SetGroupCommandExecutor(
                 if (update.Type == UpdateType.Message)
                 {
                     await SendGroupsKeyboard(botClient, user, cancellationToken);
-                    return;
+                    isSuccess = true;
                 }
                 break;
             }
@@ -54,7 +57,7 @@ public class SetGroupCommandExecutor(
                 {
                     user.LastCallbackableMessageId = null;
                     await PutUserToChosenGroup(botClient, update, user, cancellationToken);
-                    return;
+                    isSuccess = true;
                 }
                 break;
             }
@@ -63,18 +66,13 @@ public class SetGroupCommandExecutor(
                 if (update.Type == UpdateType.Message)
                 {
                     await PutUserToAddedGroup(botClient, update, user, cancellationToken);
-                    return;
+                    isSuccess = true;
                 }
                 break;
             }
         }
-        // если при  UserState.None, UserState.ChooseGroup или UserState.AddGroup получены Update не ожидаемого типа
-        if (!await BotClientUtils.DeleteUpdate(botClient, user.Id, update, cancellationToken))
-        {
-            // в случае если получили невозможный Update (не Message и не CallbackQuery) - игнорируем его
-            var updateString = JsonSerializer.Serialize(update);
-            logger.Warning("Update.MessageId is null\n\n{updateString}", updateString);
-        }
+
+        return isSuccess;
     }
     
     private async Task SendGroupsKeyboard(ITelegramBotClient botClient, User user, CancellationToken cancellationToken)

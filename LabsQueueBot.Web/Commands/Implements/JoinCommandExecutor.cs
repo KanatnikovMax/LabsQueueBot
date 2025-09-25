@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using LabsQueueBot.Core.Enums;
+﻿using LabsQueueBot.Core.Enums;
 using LabsQueueBot.Core.Settings;
 using LabsQueueBot.Core.Utils;
 using LabsQueueBot.Repository.Repository;
@@ -19,19 +18,21 @@ public class JoinCommandExecutor(
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";
-    // private const string WrongCallbackQueryMessageRequest = "Не в той табличке ты тыкнул";
     private const string AddSubjectMessage = "Введите название дисциплины, которую хотите добавить";
     private const string SubjectNotFoundMessage = "Такой дисциплины не существует";
     private const string UserAlreadyInQueueMessage = "Ты уже находишься в этой очереди. Твоё место в очереди: {0}";
     private const string UserAlreadyInWaitingMessage = "Ты уже находишься в списке ожидания";
     private const string JoinCompleteMessage = "Вы добавлены в список ожидания по дисциплине {0}";
+    
     public override string Type => commandsSettings.JoinCommand.Type;
     public override string Name => commandsSettings.JoinCommand.Name;
-    public override IReadOnlyCollection<UserState> States => [UserState.Join];
+    public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [ (UserState.Join, UpdateType.CallbackQuery) ];
     public override Role AcceptRole => Role.Default;
     public override string Definition => commandsSettings.JoinCommand.Definition;
-    protected override async Task InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
+    
+    protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
+        var isSuccess = false;
         switch (user.State)
         {
             case UserState.None:
@@ -39,7 +40,7 @@ public class JoinCommandExecutor(
                 if (update.Type == UpdateType.Message)
                 {
                     await SendSubjectsKeyboard(botClient, user, cancellationToken);
-                    return;
+                    isSuccess = true;
                 }
                 break;
             }
@@ -50,18 +51,13 @@ public class JoinCommandExecutor(
                 {
                     user.LastCallbackableMessageId = null;
                     await JoinUserIntoQueue(botClient, update, user, cancellationToken);
-                    return;
+                    isSuccess = true;
                 }
                 break;
             }
         }
-        // если при UserState.None или UserState.Join получены Update не ожидаемого типа
-        if (!await BotClientUtils.DeleteUpdate(botClient, user.Id, update, cancellationToken))
-        {
-            // в случае если получили невозможный Update (не Message и не CallbackQuery) - игнорируем его
-            var updateString = JsonSerializer.Serialize(update);
-            logger.Warning("Update.MessageId is null\n\n{updateString}", updateString);
-        }
+
+        return isSuccess;
     }
     
     private async Task SendSubjectsKeyboard(ITelegramBotClient botClient, User user, 

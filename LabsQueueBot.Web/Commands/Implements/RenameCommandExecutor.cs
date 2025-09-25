@@ -1,5 +1,5 @@
 ﻿using LabsQueueBot.Core.Enums;
-using LabsQueueBot.Core.Helpers;
+using LabsQueueBot.Core.Extensions;
 using LabsQueueBot.Core.Settings;
 using LabsQueueBot.Core.Validators;
 using LabsQueueBot.Repository.Repository;
@@ -12,33 +12,36 @@ using ILogger = Serilog.ILogger;
 namespace LabsQueueBot.Web.Commands.Implements;
 
 public class RenameCommandExecutor(
-    ILogger logger,
     IUserRepository userRepository,
-    CommandsSettings commandsSettings) : ICommandExecutor
+    CommandsSettings commandsSettings,
+    ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string EnterNewNameMessage = "Введите новые Фамилию Имя";
     private const string ErrorNameValidationMessage = "Новое имя не соответствует формату:\n{0}";
     private const string RenameCompleteMessage = "Имя успешно изменено";
-    public string Type => commandsSettings.RenameCommand.Type;
-    public string Name => commandsSettings.RenameCommand.Name;
-    public IReadOnlyCollection<UserState> States => [UserState.Rename];
-    public Role AcceptRole => Role.Default;
-    public string Definition => commandsSettings.RenameCommand.Definition;
-    public async Task Execute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
+    
+    public override string Type => commandsSettings.RenameCommand.Type;
+    public override string Name => commandsSettings.RenameCommand.Name;
+    public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [ (UserState.Rename, UpdateType.Message) ];
+    public override Role AcceptRole => Role.Default;
+    public override string Definition => commandsSettings.RenameCommand.Definition;
+    
+    protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
+        var isSuccess = false;
         switch (user.State)
         {
             case UserState.None:
             {
                 await SendRenameMessage(botClient, user, cancellationToken);
-
-                return;
+                isSuccess = true;
+                break;
             }
             case UserState.Rename:
             {
                 if (update.Type != UpdateType.Message)
                 {
-                    var messageId = BotClientUpdateHelper.GetUpdateMessageId(update);
+                    var messageId = update.GetMessageId();
                     if (messageId is null)
                     {
                         var error = "messageId is null\n---\n" + update;
@@ -50,18 +53,18 @@ public class RenameCommandExecutor(
                         chatId: user.Id,
                         messageId: (int)messageId,
                         cancellationToken: cancellationToken);
-                    return;
+                    isSuccess = false;
+                    break;
                 }
 
                 await RenameUser(botClient, update, user, cancellationToken);
+                isSuccess = true;
                 
-                return;
-            }
-            default:
-            {
-                return;
+                break;
             }
         }
+        
+        return isSuccess;
     }
 
     private async Task SendRenameMessage(ITelegramBotClient botClient, User user, CancellationToken cancellationToken)

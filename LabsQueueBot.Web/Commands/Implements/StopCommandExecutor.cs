@@ -4,6 +4,7 @@ using LabsQueueBot.Core.Settings;
 using LabsQueueBot.Repository.Repository;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using User = LabsQueueBot.DataAccess.Entities.User;
 using ILogger = Serilog.ILogger;
 
@@ -19,11 +20,11 @@ public class StopCommandExecutor(
     
     public override string Type => commandsSettings.StopCommand.Type;
     public override string Name => commandsSettings.StopCommand.Name;
-    public override IReadOnlyCollection<UserState> States => [];
+    public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [];
     public override Role AcceptRole => Role.Nobody;
     public override string Definition => commandsSettings.StopCommand.Definition;
     
-    protected override async Task InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
+    protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
         await subjectsManagementService.DeleteUserFromSubjectsQueues(user.Id, user.CourseNumber, user.GroupNumber, cancellationToken);
 
@@ -33,5 +34,7 @@ public class StopCommandExecutor(
             chatId: user.Id,
             text: ByeByeMessage,
             cancellationToken: cancellationToken);
+
+        return true;
     }
 }

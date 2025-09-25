@@ -1,8 +1,7 @@
 using LabsQueueBot.BusinessLogic;
 using LabsQueueBot.Core.Settings;
 using LabsQueueBot.Web.ServiceCollectionExtensions;
-using LabsQueueBot.Web.Settings.Commands;
-using LabsQueueBot.Web.Settings.QueueBot;
+using LabsQueueBot.Web.SettingsReader;
 using Serilog;
 
 var cts = new CancellationTokenSource();

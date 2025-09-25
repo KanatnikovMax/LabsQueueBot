@@ -19,9 +19,10 @@ public class ShowTimetableCommandExecutor(
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";
     private const string WrongCallbackQueryMessageRequest = "Не в той табличке ты тыкнул";
     private const string SubjectNotFoundMessage = "Такой дисциплины не существует";
+    
     public string Type => commandsSettings.ShowTimetableCommand.Type;
     public string Name => commandsSettings.ShowTimetableCommand.Name;
-    public IReadOnlyCollection<UserState> States => [UserState.ShowTimetable];
+    public IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [ (UserState.ShowTimetable, UpdateType.CallbackQuery) ];
     public Role AcceptRole => Role.Default;
     public string Definition => commandsSettings.ShowTimetableCommand.Definition;
 

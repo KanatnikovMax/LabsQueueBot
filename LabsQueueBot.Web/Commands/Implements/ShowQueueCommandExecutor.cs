@@ -21,17 +21,17 @@ public class ShowQueueCommandExecutor(
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";
-    // private const string WrongCallbackQueryMessageRequest = "Не в той табличке ты тыкнул";
     private const string SubjectNotFoundMessage = "Такой дисциплины не существует";
     
     public override string Type => commandsSettings.ShowQueueCommand.Type;
     public override string Name => commandsSettings.ShowQueueCommand.Name;
-    public override IReadOnlyCollection<UserState> States => [UserState.ShowQueue];
+    public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [ (UserState.ShowQueue, UpdateType.CallbackQuery) ];
     public override Role AcceptRole => Role.Default;
     public override string Definition => commandsSettings.ShowQueueCommand.Definition;
 
-    protected override async Task InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
+    protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
+        var isSuccess = false;
         switch (user.State)
         {
             case UserState.None:
@@ -39,7 +39,7 @@ public class ShowQueueCommandExecutor(
                 if (update.Type == UpdateType.Message)
                 {
                     await SendSubjectsKeyboard(botClient, user, cancellationToken);
-                    return;
+                    isSuccess = true;
                 }
                 break;
             }
@@ -50,18 +50,13 @@ public class ShowQueueCommandExecutor(
                 {
                     user.LastCallbackableMessageId = null;
                     await SendQueueList(botClient, update, user, cancellationToken);
-                    return;
+                    isSuccess = true;
                 }
                 break;
             }
         }
-        // если при UserState.None или UserState.ShowQueue получены Update не ожидаемого типа
-        if (!await BotClientUtils.DeleteUpdate(botClient, user.Id, update, cancellationToken))
-        {
-            // в случае если получили невозможный Update (не Message и не CallbackQuery) - игнорируем его
-            var updateString = JsonSerializer.Serialize(update);
-            logger.Warning("Update.MessageId is null\n\n{updateString}", updateString);
-        }
+        
+        return isSuccess;
     }
 
     private async Task SendSubjectsKeyboard(ITelegramBotClient botClient, User user, 

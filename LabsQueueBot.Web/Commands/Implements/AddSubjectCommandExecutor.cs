@@ -6,6 +6,7 @@ using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Web.Providers;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using User = LabsQueueBot.DataAccess.Entities.User;
 using ILogger = Serilog.ILogger;
 
@@ -25,26 +26,36 @@ public class AddSubjectCommandExecutor(
     
     public override string Type => commandsSettings.AddSubjectCommand.Type;
     public override string Name => commandsSettings.AddSubjectCommand.Name;
-    public override IReadOnlyCollection<UserState> States => [UserState.AddSubject];
+    public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [ (UserState.AddSubject, UpdateType.Message) ];
     public override Role AcceptRole => Role.Default;
     public override string Definition => commandsSettings.AddSubjectCommand.Definition;
 
-    protected override async Task InternalExecute(ITelegramBotClient botClient, Update update, User user,
+    protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user,
         CancellationToken cancellationToken)
     {
+        if (update.Type != UpdateType.Message)
+            return false;
+        
+        var isSuccess = false;
         switch (user.State)
         {
             case UserState.None:
-            { 
+            {
                 await SendAddSubjectMessage(botClient, user, cancellationToken);
-                return;
+                isSuccess = true;
+
+                break;
             }
             case UserState.AddSubject:
             {
                 await AddNewSubject(botClient, update, user, cancellationToken);
-                return;
+                isSuccess = true;
+
+                break;
             }
         }
+        
+        return isSuccess;
     }
 
     private async Task SendAddSubjectMessage(ITelegramBotClient botClient, User user,

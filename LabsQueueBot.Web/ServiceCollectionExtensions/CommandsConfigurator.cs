@@ -3,6 +3,7 @@ using LabsQueueBot.Web.Commands;
 using LabsQueueBot.Web.Commands.Implements;
 using LabsQueueBot.Web.Providers;
 using LabsQueueBot.Web.Providers.Services;
+using ILogger = Serilog.ILogger;
 
 namespace LabsQueueBot.Web.ServiceCollectionExtensions;
 
@@ -14,11 +15,11 @@ public static class CommandsConfigurator
         serviceCollection.AddTransient<CommandsSettings>(x => commandsSettings);
 
         serviceCollection.AddScoped<ICommandExecutor, SwitchNotificationCommandExecutor>();
-        serviceCollection.AddScoped<ICommandExecutor, SetTimetableCommandExecutor>();
-        serviceCollection.AddScoped<ICommandExecutor, ShowTimetableCommandExecutor>();
+        // serviceCollection.AddScoped<ICommandExecutor, SetTimetableCommandExecutor>();
+        // serviceCollection.AddScoped<ICommandExecutor, ShowTimetableCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, ShowSubjectsCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, ShowQueueCommandExecutor>();
-        serviceCollection.AddScoped<ICommandExecutor, ShowWaitingCommandExecutor>();
+        // serviceCollection.AddScoped<ICommandExecutor, ShowWaitingCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, AddSubjectCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, JoinCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, QuitCommandExecutor>();
@@ -30,10 +31,11 @@ public static class CommandsConfigurator
         serviceCollection.AddScoped<ICommandExecutor, StopCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, HelpCommandExecutor>(x => new HelpCommandExecutor(
             x.GetServices<ICommandExecutor>,
-            x.GetRequiredService<QueueBotSettings>(),
-            x.GetRequiredService<CommandsSettings>()));
+            x.GetRequiredService<QueueBotSettings>(), 
+            x.GetRequiredService<CommandsSettings>(), 
+            x.GetRequiredService<ILogger>()));
         
-        serviceCollection.AddScoped<ICommandProvider, CommandProvider>();
+        serviceCollection.AddScoped<ICommandExecutorProvider, CommandExecutorProvider>();
 
         return serviceCollection;
     }

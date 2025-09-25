@@ -1,8 +1,9 @@
-﻿using LabsQueueBot.Core.Constants;
+﻿using System.Text.Json;
+using LabsQueueBot.Core.Constants;
 using LabsQueueBot.Core.Enums;
-using LabsQueueBot.Core.Helpers;
+using LabsQueueBot.Core.Extensions;
 using LabsQueueBot.Core.Settings;
-using Newtonsoft.Json;
+using LabsQueueBot.Core.Utils;
 using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Web.Exceptions;
 using LabsQueueBot.Web.Providers;
@@ -26,55 +27,76 @@ public class QueueBotUpdateHandler(
                                                 Вы не зарегистрированы!
                                                 {0} для регистрации
                                                 """;
-    private const string WrongCommandRequestMessage = "Введи команду, ящур";
+    private const string InvalidUpdateMessage = "Введи команду, ящур";
+    
     private const string AdminErrorMessage = "Что-то упало, уровень: {0}";
 
     public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
         try
         {
-            // TODO: может не удалять чтобы не создавать лишнюю нагрузку, а просто игнорировать?
-            // check non text messages
-            if (update.Type == UpdateType.Message && update.Message!.Type != MessageType.Text)
+            // проверяем: is text message | is valid callback | is left chat member
+            if (!update.IsValid())
             {
-                await botClient.DeleteMessageAsync(
-                    chatId: update.Message.Chat.Id,
-                    messageId: update.Message.MessageId,
-                    cancellationToken: cancellationToken);
+                // удаляем сообщение
+                // или игнорируем, если пришел невалидный UpdateType.MyChatMember
+                if (update.Type != UpdateType.MyChatMember)
+                {
+                    await botClient.DeleteMessageAsync(
+                        chatId: update.GetChatId()!,
+                        messageId: update.GetMessageId()!.Value,
+                        cancellationToken: cancellationToken);
+                }
                 return;
             }
         
             await using var scope = scopeFactory.CreateAsyncScope();
         
             var usersRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
-        
-            var id = update.Message?.Chat.Id 
-                     ?? update.CallbackQuery?.Message?.Chat.Id
-                     ?? update.MyChatMember?.Chat.Id;
-            var user = await usersRepository.GetByIdAsync(id!.Value, cancellationToken);
             
-            // проверка на first message
-            if (user == null && update.Type == UpdateType.Message && update.Message?.Text != commandsSettings.StartCommand.Name
-                || user == null && update.Type != UpdateType.Message)
-            {
-                await botClient.SendTextMessageAsync(
-                    chatId: id,
-                    text: string.Format(NotRegisteredMessage, commandsSettings.StartCommand.Name),
-                    cancellationToken: cancellationToken);
-                return;
-            }
+            // TODO проверить first message
+            var chatId = update.GetChatId()!;
             
-            // TODO вынести сюда проверку на соответствие Callback.MessageId
+            var user = await usersRepository.GetByIdAsync(chatId.Value, cancellationToken);
 
-            var commandProvider = scope.ServiceProvider.GetRequiredService<ICommandProvider>();
-        
-            if (update.Type == UpdateType.MyChatMember)
+            if (user == null)
             {
-                await HandleMyChatMember(update, usersRepository, cancellationToken);
+                user = new User(chatId.Value)
+                {
+                    State = UserState.Unregistered
+                };
+                await usersRepository.SaveAsync(user, cancellationToken);
+                
+                // проверка на first message /start
+                if (update.IsTextMessage(commandsSettings.StartCommand.Name))
+                {
+                    await botClient.SendTextMessageAsync(
+                        chatId: chatId,
+                        text: string.Format(NotRegisteredMessage, commandsSettings.StartCommand.Name),
+                        cancellationToken: cancellationToken);
+                    return;
+                }
             }
-            else
+                    
+            var commandExecutorProvider = scope.ServiceProvider.GetRequiredService<ICommandExecutorProvider>();
+            
+            switch (update.Type)
             {
-                await HandleDefaultUpdate(botClient, update, commandProvider, usersRepository, cancellationToken);
+                case UpdateType.Message:
+                {
+                    await HandleMessageUpdate(botClient, update, user, commandExecutorProvider, usersRepository, cancellationToken);
+                    break;
+                }
+                case UpdateType.CallbackQuery:
+                {
+                    await HandleCallbackQueryUpdate(botClient, update, user, commandExecutorProvider, cancellationToken);
+                    break;
+                }
+                case UpdateType.MyChatMember:
+                {
+                    await HandleMyChatMemberUpdate(update, user, usersRepository, cancellationToken);
+                    break;
+                }
             }
         }
         catch (Exception exception)
@@ -91,8 +113,8 @@ public class QueueBotUpdateHandler(
         
         if (exception is CommandExecutionException e)
         {
-            var exceptionBody = JsonConvert.SerializeObject(e.ThrownException);
-            var lastUpdateBody = JsonConvert.SerializeObject(e.LastUpdate);
+            var exceptionBody = JsonSerializer.Serialize(e.ThrownException);
+            var lastUpdateBody = JsonSerializer.Serialize(e.LastUpdate);
             
             logger.Error("Ошибка выполнения команды");
             logger.Error(e.ThrownException, e.ThrownException.Message);
@@ -110,7 +132,7 @@ public class QueueBotUpdateHandler(
         {
             logger.Fatal(exception, exception.Message);
 
-            errorDocumentBody = JsonConvert.SerializeObject(exception);
+            errorDocumentBody = JsonSerializer.Serialize(exception);
             documentId = exception.GetHashCode();
             errorMessage = string.Format(AdminErrorMessage, nameof(logger.Fatal));
         }
@@ -121,87 +143,74 @@ public class QueueBotUpdateHandler(
         await adminNotificationProvider.NotifyAdminsWithDocument(documentId, errorMessage, cancellationToken);
     }
 
-    private async Task InternalHandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
+    private async Task HandleMessageUpdate(ITelegramBotClient botClient, Update update, User user,
+        ICommandExecutorProvider commandExecutorProvider, IUserRepository usersRepository, CancellationToken cancellationToken)
     {
-        // check non text messages
-        if (update.Type == UpdateType.Message && update.Message.Type != MessageType.Text)
+        if (!update.IsValidMessage())
         {
-            await botClient.DeleteMessageAsync(
-                chatId: update.Message.Chat.Id,
-                messageId: update.Message.MessageId,
-                cancellationToken: cancellationToken);
-            return;
-        }
-        
-        await using var scope = scopeFactory.CreateAsyncScope();
-        
-        var usersRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
-        
-        // TODO проверить first message
-        var id = update.Message?.Chat.Id 
-                 ?? update.CallbackQuery?.Message?.Chat.Id
-                 ?? update.MyChatMember?.Chat.Id;
-        if (id == null)
-            return;
-        
-        var user = await usersRepository.GetByIdAsync(id.Value, cancellationToken);
-        if (user is null && update.Type == UpdateType.Message && update.Message?.Text != "/start")
-        {
-            await botClient.SendTextMessageAsync(
-                chatId: id,
-                text: "Вы не зарегистрированы!\n/start для регистрации",
-                cancellationToken: cancellationToken);
+            await ReactInvalidUpdate(botClient, update, user.Id, cancellationToken);
             return;
         }
 
-        var commandProvider = scope.ServiceProvider.GetRequiredService<ICommandProvider>();
-        
-        if (update.Type == UpdateType.MyChatMember)
-        {
-            await HandleMyChatMember(update, usersRepository, cancellationToken);
-        }
-        else
-        {
-            await HandleDefaultUpdate(botClient, update, commandProvider, usersRepository, cancellationToken);
-        }
-    }
+        var isCommandMessage = user.State == UserState.None && update.IsCommand();
 
-    private async Task HandleDefaultUpdate(ITelegramBotClient botClient, Update update,
-        ICommandProvider commandProvider, IUserRepository usersRepository, CancellationToken cancellationToken)
-    {
-        var id = BotClientUpdateHelper.GetUpdateChatId(update);
-        // var id = update.Type == UpdateType.Message ? update.Message.Chat.Id : update.CallbackQuery.Message.Chat.Id;
-        var user = await usersRepository.GetByIdAsync(id, cancellationToken);
-        if (user is null)
+        var command = isCommandMessage
+            ? commandExecutorProvider.GetCommandExecutorByText(update.Message!.Text!, user.Role)
+            : commandExecutorProvider.GetCommandExecutorByState(user.State, update.Type, user.Role);
+        if (command == null)
         {
-            user = new User(id)
+            if (isCommandMessage)
             {
-                State = UserState.Unregistered
-            };
-            await usersRepository.SaveAsync(user, cancellationToken);
+                await botClient.SendTextMessageAsync(
+                    chatId: user.Id,
+                    text: InvalidUpdateMessage,
+                    cancellationToken: cancellationToken);
+            }
+            return;
         }
 
-        var command = user.State == UserState.None
-            ? commandProvider.GetCommandByText(update.Message.Text, user.Role)
-            : commandProvider.GetCommandByState(user.State, user.Role);
-        
-        if (command is not null)
-        {
-            await command.Execute(botClient, update, user, cancellationToken);
-        }
-        else
-        {
-            await botClient.SendTextMessageAsync(
-                chatId: update.Message.Chat.Id,
-                text: WrongCommandRequestMessage,
-                cancellationToken: cancellationToken);
-        }
+        await command.Execute(botClient, update, user, cancellationToken);
     }
 
-    private async Task HandleMyChatMember(Update update, IUserRepository usersRepository, CancellationToken cancellationToken)
+    private async Task HandleCallbackQueryUpdate(ITelegramBotClient botClient, Update update, User user,
+        ICommandExecutorProvider commandExecutorProvider, CancellationToken cancellationToken)
     {
-        var id = update.MyChatMember.Chat.Id;
-        var user = await usersRepository.GetByIdAsync(id, cancellationToken);
-        await usersRepository.DeleteAsync(user, cancellationToken);
+        // проверка ответа на нужный Callback
+        // проверка валидности если пользователь ткнул в InlineKeyboard
+        if (!update.IsValidCallbackQuery(user.LastCallbackableMessageId))
+        {
+            await ReactInvalidUpdate(botClient, update, user.Id, cancellationToken);
+            return;
+        }
+        
+        var command = commandExecutorProvider.GetCommandExecutorByState(user.State, update.Type, user.Role);
+        if (command == null)
+        {
+            await botClient.SendTextMessageAsync(
+                chatId: user.Id,
+                text: InvalidUpdateMessage, // TODO придумать другой комментарий на ошибочный callback
+                cancellationToken: cancellationToken);
+            return;
+        }
+        
+        await command.Execute(botClient, update, user, cancellationToken);
+    }
+
+    private async Task HandleMyChatMemberUpdate(Update update, User user, IUserRepository userRepository, CancellationToken cancellationToken)
+    {
+        if (!update.IsValidMyChatMember())
+            return;
+        
+        await userRepository.DeleteAsync(user, cancellationToken);
+    }
+
+    private async Task ReactInvalidUpdate(ITelegramBotClient botClient, Update update, long chatId, CancellationToken cancellationToken)
+    {
+        if (await BotClientUtils.DeleteUpdate(botClient, chatId, update, cancellationToken))
+            return;
+                
+        // в случае если получили невозможный Update (не Message и не CallbackQuery) - игнорируем его
+        var updateString = JsonSerializer.Serialize(update);
+        logger.Warning("Update.MessageId is null\n\n{updateString}", updateString);
     }
 }

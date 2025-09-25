@@ -1,6 +1,6 @@
 ﻿using LabsQueueBot.Core.Settings;
 
-namespace LabsQueueBot.Web.Settings.Commands;
+namespace LabsQueueBot.Web.SettingsReader;
 
 public static class CommandsSettingsReader
 {
