@@ -1,5 +1,4 @@
 ﻿using System.Text;
-using System.Text.Json;
 using LabsQueueBot.Core.Enums;
 using LabsQueueBot.Core.Settings;
 using LabsQueueBot.Core.Utils;
@@ -122,7 +121,7 @@ public class ShowWaitingCommandExecutor(
 
     private async Task<string> CreateWaitingList(Subject subject, CancellationToken cancellationToken)
     {
-        var waiting = (await serialNumberRepository.GetWaitingBySubject(subject, cancellationToken)).ToList();
+        var waiting = (await serialNumberRepository.GetWaitingBySubject(subject, cancellationToken)).ToList();// TODO убрать serialNumberRepository
                 
         var builder = new StringBuilder();
         builder.AppendLine($"Текущая очередь по дисциплине {subject.SubjectName}:");

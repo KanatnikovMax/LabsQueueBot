@@ -3,6 +3,7 @@ using System;
 using LabsQueueBot.DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LabsQueueBot.DataAccess.Migrations
 {
     [DbContext(typeof(QueueBotContext))]
-    partial class QueueBotContextModelSnapshot : ModelSnapshot
+    [Migration("20250925211531_Drop_Table_SerialNumberRepository_Migration")]
+    partial class Drop_Table_SerialNumberRepository_Migration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

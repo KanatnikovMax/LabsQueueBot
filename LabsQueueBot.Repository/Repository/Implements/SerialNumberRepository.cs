@@ -10,24 +10,32 @@ public class SerialNumberRepository(IDbContextFactory<QueueBotContext> contextFa
 {
     public async Task<IEnumerable<SerialNumber>> GetAllAsync(CancellationToken cancellationToken)
     {
+        throw new NotImplementedException();
+        
         await using var dbContext = await contextFactory.CreateDbContextAsync(cancellationToken);
         return await dbContext.Set<SerialNumber>().AsNoTracking().ToListAsync(cancellationToken);
     }
 
     public async Task<IEnumerable<SerialNumber>> GetByConditionAsync(Expression<Func<SerialNumber, bool>> predicate, CancellationToken cancellationToken)
     {
+        throw new NotImplementedException();
+        
         await using var dbContext = await contextFactory.CreateDbContextAsync(cancellationToken);
         return await dbContext.Set<SerialNumber>().AsNoTracking().Where(predicate).ToListAsync(cancellationToken);
     }
 
     public async Task<SerialNumber?> GetByIdAsync(long id, CancellationToken cancellationToken)
     {
+        throw new NotImplementedException();
+        
         await using var dbContext = await contextFactory.CreateDbContextAsync(cancellationToken);
         return await dbContext.Set<SerialNumber>().AsNoTracking().FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
 
     public async Task<SerialNumber> SaveAsync(SerialNumber entity, CancellationToken cancellationToken)
     {
+        throw new NotImplementedException();
+        
         await using var dbContext = await contextFactory.CreateDbContextAsync(cancellationToken);
         EntityEntry<SerialNumber> result;
         
@@ -46,6 +54,8 @@ public class SerialNumberRepository(IDbContextFactory<QueueBotContext> contextFa
     
     public async Task UpdateBatchAsync(IReadOnlyCollection<SerialNumber> entities, CancellationToken cancellationToken)
     {
+        throw new NotImplementedException();
+        
         await using var dbContext = await contextFactory.CreateDbContextAsync(cancellationToken);
         
         dbContext.Set<SerialNumber>().UpdateRange(entities);
@@ -55,6 +65,8 @@ public class SerialNumberRepository(IDbContextFactory<QueueBotContext> contextFa
 
     public async Task DeleteAsync(SerialNumber entity, CancellationToken cancellationToken)
     {
+        throw new NotImplementedException();
+        
         await using var dbContext = await contextFactory.CreateDbContextAsync(cancellationToken);
         dbContext.Set<SerialNumber>().Remove(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -62,6 +74,8 @@ public class SerialNumberRepository(IDbContextFactory<QueueBotContext> contextFa
 
     public async Task<IEnumerable<SerialNumber>> GetQueueBySubject(Subject subject, CancellationToken cancellationToken)
     {
+        throw new NotImplementedException();
+        
         await using var dbContext = await contextFactory.CreateDbContextAsync(cancellationToken);
         return await dbContext.Set<SerialNumber>()
             .AsNoTracking()
@@ -71,6 +85,8 @@ public class SerialNumberRepository(IDbContextFactory<QueueBotContext> contextFa
 
     public async Task<IEnumerable<SerialNumber>> GetWaitingBySubject(Subject subject, CancellationToken cancellationToken)
     {
+        throw new NotImplementedException();
+        
         await using var dbContext = await contextFactory.CreateDbContextAsync(cancellationToken);
         return await dbContext.Set<SerialNumber>()
             .AsNoTracking()
@@ -80,6 +96,8 @@ public class SerialNumberRepository(IDbContextFactory<QueueBotContext> contextFa
 
     public async Task SwapUsersInQueue(SerialNumber sn1, SerialNumber sn2, CancellationToken cancellationToken) // TODO проверить работоспособность
     {
+        throw new NotImplementedException();
+        
         await using var dbContext = await contextFactory.CreateDbContextAsync(cancellationToken);
         (sn1.QueueIndex, sn2.QueueIndex) = (sn2.QueueIndex, sn1.QueueIndex);
         dbContext.Set<SerialNumber>().Update(sn1);
@@ -89,8 +107,10 @@ public class SerialNumberRepository(IDbContextFactory<QueueBotContext> contextFa
 
     public async Task SaveRange(IEnumerable<SerialNumber> range, CancellationToken cancellationToken)
     {
-        await using var dbContext = await contextFactory.CreateDbContextAsync(cancellationToken);
-        dbContext.SerialNumberRepository.UpdateRange(range);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        throw new NotImplementedException();
+        
+        // await using var dbContext = await contextFactory.CreateDbContextAsync(cancellationToken);
+        // dbContext.SerialNumberRepository.UpdateRange(range);
+        // await dbContext.SaveChangesAsync(cancellationToken);
     }
 }
