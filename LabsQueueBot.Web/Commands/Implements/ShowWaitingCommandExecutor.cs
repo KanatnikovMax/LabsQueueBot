@@ -18,7 +18,7 @@ public class ShowWaitingCommandExecutor(
     ISubjectRepository subjectsRepository,
     ISerialNumberRepository serialNumberRepository,
     CommandsSettings commandsSettings,
-    ILogger logger) : CommandExecutorBase(logger), ICommandExecutor // TODO проверить
+    ILogger logger) : CommandExecutorBase(logger), ICommandExecutor // TODO не используется: функциональность вынесена в ShowQueue
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";
     private const string SubjectNotFoundMessage = "Такой дисциплины не существует";

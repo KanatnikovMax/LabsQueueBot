@@ -54,11 +54,12 @@ public class QueueBotUpdateHandler(
         
             var usersRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
             
-            // TODO проверить first message
+            
             var chatId = update.GetChatId()!;
             
             var user = await usersRepository.GetByIdAsync(chatId.Value, cancellationToken);
 
+            // проверка на first message (null если да)
             if (user == null)
             {
                 user = new User(chatId.Value)

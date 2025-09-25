@@ -63,7 +63,7 @@ namespace LabsQueueBot.DataAccess.Entities
         /// имя или фамилия состоит менее, чем из 2 символов; <br/>
         /// имя или фамилия содержат цифры или специальные символы
         /// </exception>
-        public User(byte course, byte group, string name, long id)
+        public User(byte course, byte group, string name, long id) // TODO сделать что-то с конструктором имени пользователя из Ватаги
         {
             // StringBuilder builder = new StringBuilder();
             // if (course < 1 || course > 6)

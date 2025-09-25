@@ -94,7 +94,7 @@ public class SerialNumberRepository(IDbContextFactory<QueueBotContext> contextFa
             .ToListAsync(cancellationToken);
     }
 
-    public async Task SwapUsersInQueue(SerialNumber sn1, SerialNumber sn2, CancellationToken cancellationToken) // TODO проверить работоспособность
+    public async Task SwapUsersInQueue(SerialNumber sn1, SerialNumber sn2, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
         

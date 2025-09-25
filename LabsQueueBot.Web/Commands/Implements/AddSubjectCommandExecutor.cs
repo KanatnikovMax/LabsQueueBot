@@ -17,7 +17,7 @@ public class AddSubjectCommandExecutor(
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
     CommandsSettings commandsSettings,
-    ILogger logger) : CommandExecutorBase(logger), ICommandExecutor // TODO доделать
+    ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string AddingSubjectMessage = "Введите название дисциплины, которую хотите добавить";
     private const string InvalidSubjectNameMessage = "Некорректное название дисциплины:\n{0}";
