@@ -71,6 +71,7 @@ public class QueueBotUpdateHandler(
             {
                 user = new User(chatId.Value)
                 {
+                    Role = Role.Nobody,
                     State = UserState.Unregistered
                 };
                 await usersRepository.SaveAsync(user, cancellationToken);
@@ -84,6 +85,12 @@ public class QueueBotUpdateHandler(
                         cancellationToken: cancellationToken);
                     return;
                 }
+            }
+            // проверка на Username (для обновления данных пользователей)
+            else if (user.Username == null || user.Username != update.GetUsername())
+            {
+                user.Username = update.GetUsername();
+                await usersRepository.SaveAsync(user, cancellationToken);
             }
                     
             var commandExecutorProvider = scope.ServiceProvider.GetRequiredService<ICommandExecutorProvider>();

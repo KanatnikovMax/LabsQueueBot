@@ -37,7 +37,7 @@ namespace LabsQueueBot.DataAccess.Entities
         /// <summary>
         /// Текущие права пользователя
         /// </summary>
-        public Role Role { get; set; } = Role.Nobody;
+        public Role Role { get; set; } = Role.Default;
 
         /// <summary>
         /// Флаг необходимости в уведомлениях
@@ -47,6 +47,8 @@ namespace LabsQueueBot.DataAccess.Entities
         public DateTime LastActivityAt { get; set; }
         
         public int? LastCallbackableMessageId { get; set; }
+        
+        public string? Username { get; set; }
 
         /// <summary>
         /// Конструктор класса User; <br/>

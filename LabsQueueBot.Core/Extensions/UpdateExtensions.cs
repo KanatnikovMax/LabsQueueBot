@@ -7,14 +7,20 @@ public static class UpdateExtensions
 {
     public static bool IsValid(this Update update)
     {
-        if (update.Type == UpdateType.Message && update.Message!.Type == MessageType.Text)
+        var messageFrom = update.Message?.From;
+        if (update.Type == UpdateType.Message && messageFrom != null && !messageFrom.IsBot
+            && update.Message!.Type == MessageType.Text)
             return true;
 
-        if (update.Type == UpdateType.CallbackQuery && update.CallbackQuery!.Data != null && !update.CallbackQuery!.IsGameQuery)
+        var callbackQueryFrom = update.CallbackQuery?.From;
+        if (update.Type == UpdateType.CallbackQuery && callbackQueryFrom != null && !callbackQueryFrom.IsBot
+            && update.CallbackQuery!.Data != null && !update.CallbackQuery!.IsGameQuery)
             return true;
         
+        var myChatMemberFrom = update.MyChatMember?.From;
         List<ChatMemberStatus> leftChat = [ChatMemberStatus.Member, ChatMemberStatus.Restricted];
-        if (update.Type == UpdateType.MyChatMember && leftChat.Contains(update.MyChatMember!.OldChatMember.Status))
+        if (update.Type == UpdateType.MyChatMember && myChatMemberFrom != null && !myChatMemberFrom.IsBot
+            && leftChat.Contains(update.MyChatMember!.OldChatMember.Status))
             return true;
 
         return false;
@@ -73,6 +79,24 @@ public static class UpdateExtensions
             
             case UpdateType.MyChatMember:
                 return update.MyChatMember!.Chat.Id;
+            
+            default:
+                return null;
+        }
+    }
+
+    public static string? GetUsername(this Update update)
+    {
+        switch (update.Type)
+        {
+            case UpdateType.Message:
+                return update.Message!.From?.Username;
+            
+            case UpdateType.CallbackQuery:
+                return update.CallbackQuery!.Message!.From?.Username;
+            
+            case UpdateType.MyChatMember:
+                return update.MyChatMember!.From.Username;
             
             default:
                 return null;
