@@ -162,9 +162,13 @@ public class SetGroupCommandExecutor(
     private async Task PutUserToAddedGroup(ITelegramBotClient botClient, Update update, User user,
         CancellationToken cancellationToken)
     {
+        user.State = UserState.None;
+        
         var validationResult = CourseGroupValidator.Validate(update.Message!.Text);
         if (validationResult != null)
         {
+            await userRepository.SaveAsync(user, cancellationToken);
+            
             await botClient.SendTextMessageAsync(
                 chatId: user.Id,
                 text: string.Format(InvalidGroupInfoMessage, validationResult),
@@ -175,7 +179,7 @@ public class SetGroupCommandExecutor(
         var courseGroup = ParseRawCourseGroup(update.Message.Text!);
         
         await subjectsManagementService.DeleteUserFromSubjectsQueues(user.Id, user.CourseNumber, user.GroupNumber, cancellationToken);
-        
+
         await userManagementService.PutUserIntoGroup(user, courseGroup.Course, courseGroup.Group, cancellationToken);
         
         await botClient.SendTextMessageAsync(

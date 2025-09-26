@@ -75,8 +75,9 @@ public class UserCleanerService(
     {
         return await userRepository.GetByConditionAsync(u =>
                 u.State != UserState.None
-                && u.State != UserState.Register
-                && u.State != UserState.Unregistered
+                && u.State != UserState.Register        // ответ на текстовое сообщение
+                && u.State != UserState.AddGroup        // ответ на текстовое сообщение
+                && u.State != UserState.Unregistered    // удаляются, а не очищаются
                 && u.LastActivityAt.AddMinutes(settings.UserStateUpdateTimeoutInMinutes) < DateTime.UtcNow,
             cancellationToken);
     }

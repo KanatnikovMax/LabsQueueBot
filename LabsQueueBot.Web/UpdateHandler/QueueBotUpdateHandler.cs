@@ -28,8 +28,16 @@ public class QueueBotUpdateHandler(
                                                 {0} для регистрации
                                                 """;
     private const string InvalidUpdateMessage = "Введи команду, ящур";
-    
-    private const string AdminErrorMessage = "Что-то упало, уровень: {0}";
+    private const string AdminErrorMessage = "Что-то упало: {0}";
+    private const string AdminErrorDocumentPattern = """
+                                             Type: {0}
+                                             
+                                             Message: {1}
+                                             
+                                             StackTrace: {2}
+                                             
+                                             Last update: {3}
+                                             """;
 
     public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
@@ -54,7 +62,6 @@ public class QueueBotUpdateHandler(
         
             var usersRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
             
-            
             var chatId = update.GetChatId()!;
             
             var user = await usersRepository.GetByIdAsync(chatId.Value, cancellationToken);
@@ -69,7 +76,7 @@ public class QueueBotUpdateHandler(
                 await usersRepository.SaveAsync(user, cancellationToken);
                 
                 // проверка на first message /start
-                if (update.IsTextMessage(commandsSettings.StartCommand.Name))
+                if (!update.IsTextMessage(commandsSettings.StartCommand.Name))
                 {
                     await botClient.SendTextMessageAsync(
                         chatId: chatId,
@@ -85,7 +92,7 @@ public class QueueBotUpdateHandler(
             {
                 case UpdateType.Message:
                 {
-                    await HandleMessageUpdate(botClient, update, user, commandExecutorProvider, usersRepository, cancellationToken);
+                    await HandleMessageUpdate(botClient, update, user, commandExecutorProvider, cancellationToken);
                     break;
                 }
                 case UpdateType.CallbackQuery:
@@ -114,18 +121,20 @@ public class QueueBotUpdateHandler(
         
         if (exception is CommandExecutionException e)
         {
-            var exceptionBody = JsonSerializer.Serialize(e.ThrownException);
             var lastUpdateBody = JsonSerializer.Serialize(e.LastUpdate);
             
             logger.Error("Ошибка выполнения команды");
             logger.Error(e.ThrownException, e.ThrownException.Message);
             logger.Error("\n");
-            logger.Error(exceptionBody);
-            logger.Error("\n");
             logger.Error("Последний update");
             logger.Error(lastUpdateBody);
-
-            errorDocumentBody = $"{exceptionBody}\n\n\n{lastUpdateBody}";
+            
+            errorDocumentBody = string.Format(
+                AdminErrorDocumentPattern,
+                e.ThrownException,
+                e.ThrownException.Message,
+                e.ThrownException.StackTrace,
+                lastUpdateBody);
             documentId = e.ThrownException.GetHashCode();
             errorMessage = string.Format(AdminErrorMessage, nameof(logger.Error));
         }
@@ -145,9 +154,9 @@ public class QueueBotUpdateHandler(
     }
 
     private async Task HandleMessageUpdate(ITelegramBotClient botClient, Update update, User user,
-        ICommandExecutorProvider commandExecutorProvider, IUserRepository usersRepository, CancellationToken cancellationToken)
+        ICommandExecutorProvider commandExecutorProvider, CancellationToken cancellationToken)
     {
-        if (!update.IsValidMessage())
+        if (!update.IsValidMessage() || user.LastCallbackableMessageId != null)
         {
             await ReactInvalidUpdate(botClient, update, user.Id, cancellationToken);
             return;

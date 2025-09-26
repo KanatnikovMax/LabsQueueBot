@@ -30,7 +30,7 @@ public static class UserInfoValidator
                     builder.AppendLine("Имя должно содержать как минимум две буквы");
                 }
                 
-                if (name.Any(c => "0123456789~!@#$%^&*()_+{}:\"|?><`=[]\\;',./№".Contains(c)))
+                if (name.Any(c => !char.IsLetter(c) && !char.IsWhiteSpace(c)))
                 {
                     builder.AppendLine("Имя и фамилия не должны содержать цифр и специальных символов");
                 }

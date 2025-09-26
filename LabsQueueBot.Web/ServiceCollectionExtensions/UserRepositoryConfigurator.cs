@@ -31,12 +31,12 @@ public static class UserRepositoryConfigurator
         {
             var user = await dbContext.UserRepository.Where(ur => ur.Id == id).FirstOrDefaultAsync(cancellationToken);
             
-            if (user is not null && user.Role == Role.Privileged)
+            if (user != null && user.Role == Role.Privileged)
             {
                 continue;
             }
 
-            if (user is not null && user.Role != Role.Privileged)
+            if (user != null && user.Role != Role.Privileged)
             {
                 user.Role = Role.Privileged;
                 dbContext.UserRepository.Update(user);

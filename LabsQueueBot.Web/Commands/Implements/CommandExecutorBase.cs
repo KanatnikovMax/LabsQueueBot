@@ -39,22 +39,26 @@ public abstract class CommandExecutorBase(ILogger logger) : ICommandExecutor
         {
             isSuccess = await InternalExecute(botClient, update, user, cancellationToken);
 
-            if (!isSuccess)
-            {
-                // если при  UserState.None, UserState.ChooseGroup или UserState.AddGroup получены Update не ожидаемого типа
-                if (!await BotClientUtils.DeleteUpdate(botClient, user.Id, update, cancellationToken))
-                {
-                    // в случае если получили невозможный Update (не Message и не CallbackQuery) - игнорируем его
-                    var updateString = JsonSerializer.Serialize(update);
-                    logger.Warning("Update.MessageId is null\n\n{updateString}", updateString);
-                }
-            }
+            // if (!isSuccess)
+            // {
+            //     // если при  UserState.None, UserState.ChooseGroup или UserState.AddGroup получены Update не ожидаемого типа
+            //     if (!await BotClientUtils.DeleteUpdate(botClient, user.Id, update, cancellationToken))
+            //     {
+            //         // в случае если получили невозможный Update (не Message и не CallbackQuery) - игнорируем его
+            //         var updateString = JsonSerializer.Serialize(update);
+            //         logger.Warning("Update.MessageId is null\n\n{updateString}", updateString);
+            //     }
+            // }
+        }
+        catch
+        {
+            isSuccess = false;
+            throw;
         }
         finally
         {
             _stopwatch.Stop();
             logger.Information(ProfilingMessage, update.Id, GetType(), _stopwatch.Elapsed.Milliseconds, isSuccess ? Success : Error);
-            //_stopwatch.Reset();
         }
     }
     
