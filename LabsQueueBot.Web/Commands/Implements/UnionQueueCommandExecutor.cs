@@ -51,6 +51,7 @@ public class UnionQueueCommandExecutor(
             }
             case UserState.Union:
             {
+                user.LastCallbackableMessageId = null;
                 await UnionQueue(botClient, update, user, cancellationToken);
                 isSuccess = true;
                 break;
