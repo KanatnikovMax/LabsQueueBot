@@ -16,7 +16,6 @@ public static class ServicesConfigurator
         
         serviceCollection.AddScoped<IUserRepository, UserRepository>();
         serviceCollection.AddScoped<ISubjectRepository, SubjectRepository>();
-        serviceCollection.AddScoped<ISerialNumberRepository, SerialNumberRepository>();
         
         serviceCollection.AddSingleton<ITelegramBotClient>(new TelegramBotClient(settings.Token));
         
