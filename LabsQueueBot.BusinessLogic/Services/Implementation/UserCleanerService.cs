@@ -45,7 +45,7 @@ public class UserCleanerService(
 
         var deleteUnregisteredUsersTask = userRepository.DeleteByConditionAsync(x => 
                 x.State == UserState.Unregistered 
-                && x.LastActivityAt.AddMinutes(settings.UserStateAllowedIntervalInMinutes) < DateTime.UtcNow, 
+                && x.LastActivityAt.AddMinutes(settings.StateAllowedIntervalInMinutes) < DateTime.UtcNow, 
             cancellationToken);
 
         var users = (await GetUsersToClear(userRepository, cancellationToken))
@@ -78,7 +78,7 @@ public class UserCleanerService(
                 && u.State != UserState.Register        // ответ на текстовое сообщение
                 && u.State != UserState.AddGroup        // ответ на текстовое сообщение
                 && u.State != UserState.Unregistered    // удаляются, а не очищаются
-                && u.LastActivityAt.AddMinutes(settings.UserStateUpdateTimeoutInMinutes) < DateTime.UtcNow,
+                && u.LastActivityAt.AddMinutes(settings.StateUpdateTimeoutInMinutes) < DateTime.UtcNow,
             cancellationToken);
     }
 

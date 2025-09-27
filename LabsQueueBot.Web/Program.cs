@@ -12,7 +12,7 @@ var builder = Host.CreateApplicationBuilder();
 var queueBotSettings = QueueBotSettingsReader.Read(builder.Configuration);
 var commandsSettings = CommandsSettingsReader.Read(builder.Configuration);
 
-builder.Services.Configure<QueueBotSettings>(builder.Configuration.GetRequiredSection("LabsQueueBot"));
+builder.Services.Configure<QueueBotSettings>(builder.Configuration.GetRequiredSection("BotSettings"));
 
 builder.Services.AddSerilog(loggerConfiguration =>
 {

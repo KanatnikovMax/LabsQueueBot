@@ -70,7 +70,7 @@ public class QuitCommandExecutor(
             .Select(s => s.SubjectName)
             .ToList();
         
-        var keyboard = InlineKeyboardHelper.ListToKeyboard(subjects, false, true, 1);
+        var keyboard = InlineKeyboardHelper.ListToKeyboard(subjects, 1);
 
         var message = await botClient.SendTextMessageAsync(
             chatId: user.Id,

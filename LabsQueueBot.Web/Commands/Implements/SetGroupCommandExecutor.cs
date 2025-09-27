@@ -81,7 +81,7 @@ public class SetGroupCommandExecutor(
             .Select(x => x.course + " курс " + x.group + " группа")
             .ToList();
         
-        var keyboard = InlineKeyboardHelper.ListToKeyboard(groups, true, true, 1);
+        var keyboard = InlineKeyboardHelper.ListToKeyboard(groups, 1, true);
         
         var message = await botClient.SendTextMessageAsync(
             chatId: user.Id,

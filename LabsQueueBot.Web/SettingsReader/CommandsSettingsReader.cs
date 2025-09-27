@@ -10,10 +10,10 @@ public static class CommandsSettingsReader
 
         List<string> stringValues = [];
         
-        configuration.GetSection("LabsQueueBot").GetSection("InlineKeyboardCreator").Bind(stringValues);
+        configuration.GetSection("BotSettings").GetSection("InlineKeyboardCreator").Bind(stringValues);
         commandsSettings.InlineKeyboardCreator = (stringValues[0], stringValues[1]);
         
-        var section = configuration.GetSection("LabsQueueBot").GetSection("Commands");
+        var section = configuration.GetSection("BotSettings").GetSection("Commands");
         
         stringValues = [];
         section.GetSection("HelpCommand").Bind(stringValues);

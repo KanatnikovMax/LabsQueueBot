@@ -8,26 +8,26 @@ public static class QueueBotSettingsReader
     {
         var connectionString = configuration.GetValue<string>("QueueBotDbContext");
         
-        var section = configuration.GetRequiredSection("LabsQueueBot");
+        var section = configuration.GetRequiredSection("BotSettings");
         
-        var botToken = section.GetValue<string>("BotToken");
-        var botUrl = section.GetValue<string>("BotUrl");
-        var unionNotificationTime = section.GetValue<string>("UnionNotificationTimeUtc");
+        var token = section.GetValue<string>("Token");
+        var url = section.GetValue<string>("Url");
+        var unionTime = section.GetValue<string>("UnionTimeUtc");
         var localOffset = section.GetValue<int>("LocalUtcOffset");
-        var userStateUpdateTimeoutInMinutes = section.GetValue<int>("UserStateUpdateTimeoutInMinutes");
-        var userStateAllowedIntervalInMinutes = section.GetValue<int>("UserStateAllowedIntervalInMinutes");
+        var stateUpdateTimeoutInMinutes = section.GetValue<int>("StateUpdateTimeoutInMinutes");
+        var stateAllowedIntervalInMinutes = section.GetValue<int>("StateAllowedIntervalInMinutes");
         
         var settings = new QueueBotSettings
         {
             PrivilegedChatId = [],
             AdminChatId = [],
-            BotToken = botToken,
-            BotUrl = botUrl,
+            Token = token,
+            Url = url,
             ConnectionString = connectionString,
-            UnionNotificationTimeUtc = TimeOnly.Parse(unionNotificationTime).ToTimeSpan(),
+            UnionNotificationTimeUtc = TimeOnly.Parse(unionTime).ToTimeSpan(),
             LocalUtcOffset = TimeSpan.FromHours(localOffset),
-            UserStateUpdateTimeoutInMinutes = userStateUpdateTimeoutInMinutes,
-            UserStateAllowedIntervalInMinutes = userStateAllowedIntervalInMinutes
+            StateUpdateTimeoutInMinutes = stateUpdateTimeoutInMinutes,
+            StateAllowedIntervalInMinutes = stateAllowedIntervalInMinutes
         };
 
         section.GetSection("PrivilegedChatId").Bind(settings.PrivilegedChatId);

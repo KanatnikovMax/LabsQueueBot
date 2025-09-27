@@ -8,7 +8,7 @@ public static class DbContextConfigurator
 {
     public static IServiceCollection AddDbContext(this IServiceCollection serviceCollection, QueueBotSettings settings)
     {
-        var connectionString = settings.QueueBotDbContext;
+        var connectionString = settings.ConnectionString;
         serviceCollection.AddDbContextFactory<QueueBotContext>(
             options => { options.UseNpgsql(connectionString); },
             ServiceLifetime.Scoped);

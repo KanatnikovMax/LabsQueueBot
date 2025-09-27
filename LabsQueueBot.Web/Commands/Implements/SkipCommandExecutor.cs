@@ -68,7 +68,7 @@ public class SkipCommandExecutor(
                     s.CourseNumber == user.CourseNumber && s.GroupNumber == user.GroupNumber,
                 cancellationToken))
             .Select(s => s.SubjectName).ToList();
-        var keyboard = InlineKeyboardHelper.ListToKeyboard(subjects, false, true, 1);
+        var keyboard = InlineKeyboardHelper.ListToKeyboard(subjects, 1);
 
         var message = await botClient.SendTextMessageAsync(
             chatId: user.Id,
