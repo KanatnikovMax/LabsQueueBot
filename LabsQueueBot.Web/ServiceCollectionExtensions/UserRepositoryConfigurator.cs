@@ -8,8 +8,11 @@ namespace LabsQueueBot.Web.ServiceCollectionExtensions;
 
 public static class UserRepositoryConfigurator
 {
-    public static async Task<IServiceProvider> InitializeRepository(this IServiceProvider services, QueueBotSettings settings, CancellationToken cancellationToken)
+    public static async Task<IServiceProvider> InitializeRepository(this IServiceProvider services, IConfiguration configuration, CancellationToken cancellationToken)
     {
+        var settings = configuration.GetRequiredSection(nameof(TelegramBotSettings)).Get<TelegramBotSettings>();
+        ArgumentNullException.ThrowIfNull(settings);
+        
         using var scope = services.GetRequiredService<IServiceScopeFactory>().CreateScope();
         var dbContextFactory = (IDbContextFactory<QueueBotContext>)scope.ServiceProvider.GetRequiredService(
             typeof(IDbContextFactory<QueueBotContext>));
@@ -20,7 +23,7 @@ public static class UserRepositoryConfigurator
     }
     
     private static async Task InternalInitializeRepository(IDbContextFactory<QueueBotContext> contextFactory,
-        QueueBotSettings settings, CancellationToken cancellationToken)
+        TelegramBotSettings settings, CancellationToken cancellationToken)
     {
         await using var dbContext = await contextFactory.CreateDbContextAsync(cancellationToken);
 

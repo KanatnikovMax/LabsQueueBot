@@ -10,9 +10,6 @@ public static class CommandsSettingsReader
 
         List<string> stringValues = [];
         
-        configuration.GetSection("BotSettings").GetSection("InlineKeyboardCreator").Bind(stringValues);
-        commandsSettings.InlineKeyboardCreator = (stringValues[0], stringValues[1]);
-        
         var section = configuration.GetSection("BotSettings").GetSection("Commands");
         
         stringValues = [];

@@ -4,6 +4,7 @@ using LabsQueueBot.Core.Settings;
 using LabsQueueBot.DataAccess.Entities;
 using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Web.Helpers;
+using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -14,17 +15,17 @@ namespace LabsQueueBot.Web.Commands.Implements;
 public class ShowTimetableCommandExecutor(
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
-    CommandsSettings commandsSettings) : ICommandExecutor // TODO доделать
+    IOptions<CommansSettings> options) : ICommandExecutor // TODO доделать
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";
     private const string WrongCallbackQueryMessageRequest = "Не в той табличке ты тыкнул";
     private const string SubjectNotFoundMessage = "Такой дисциплины не существует";
     
-    public string Type => commandsSettings.ShowTimetableCommand.Type;
-    public string Name => commandsSettings.ShowTimetableCommand.Name;
+    public string Type => options.Value.ShowTimetable.Type;
+    public string Name => options.Value.ShowTimetable.Name;
     public IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [ (UserState.ShowTimetable, UpdateType.CallbackQuery) ];
     public Role AcceptRole => Role.Default;
-    public string Definition => commandsSettings.ShowTimetableCommand.Definition;
+    public string Definition => options.Value.ShowTimetable.Definition;
 
     public async Task Execute(ITelegramBotClient botClient, Update update, User user,
         CancellationToken cancellationToken)

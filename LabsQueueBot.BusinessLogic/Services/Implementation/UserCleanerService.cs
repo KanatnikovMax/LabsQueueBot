@@ -3,6 +3,7 @@ using LabsQueueBot.Core.Settings;
 using LabsQueueBot.DataAccess.Entities;
 using LabsQueueBot.Repository.Repository;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Telegram.Bot;
 
 namespace LabsQueueBot.BusinessLogic.Services.Implementation;
@@ -10,7 +11,7 @@ namespace LabsQueueBot.BusinessLogic.Services.Implementation;
 public class UserCleanerService(
     ITelegramBotClient botClient,
     IServiceScopeFactory scopeFactory,
-    QueueBotSettings settings) : IUserCleanerService
+    IOptions<TelegramBotSettings> options) : IUserCleanerService
 {
     public async Task ClearAll(CancellationToken cancellationToken)
     {
@@ -45,7 +46,7 @@ public class UserCleanerService(
 
         var deleteUnregisteredUsersTask = userRepository.DeleteByConditionAsync(x => 
                 x.State == UserState.Unregistered 
-                && x.LastActivityAt.AddMinutes(settings.StateAllowedIntervalInMinutes) < DateTime.UtcNow, 
+                && x.LastActivityAt.AddMinutes(options.Value.StateAllowedIntervalInMinutes) < DateTime.UtcNow, 
             cancellationToken);
 
         var users = (await GetUsersToClear(userRepository, cancellationToken))
@@ -78,7 +79,7 @@ public class UserCleanerService(
                 && u.State != UserState.Register        // ответ на текстовое сообщение
                 && u.State != UserState.AddGroup        // ответ на текстовое сообщение
                 && u.State != UserState.Unregistered    // удаляются, а не очищаются
-                && u.LastActivityAt.AddMinutes(settings.StateUpdateTimeoutInMinutes) < DateTime.UtcNow,
+                && u.LastActivityAt.AddMinutes(options.Value.StateUpdateTimeoutInMinutes) < DateTime.UtcNow,
             cancellationToken);
     }
 

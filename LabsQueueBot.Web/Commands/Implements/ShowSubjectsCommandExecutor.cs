@@ -2,6 +2,7 @@
 using LabsQueueBot.Core.Helpers;
 using LabsQueueBot.Core.Settings;
 using LabsQueueBot.Repository.Repository;
+using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -12,7 +13,7 @@ namespace LabsQueueBot.Web.Commands.Implements;
 
 public class ShowSubjectsCommandExecutor(
     ISubjectRepository subjectRepository,
-    CommandsSettings commandsSettings,
+    IOptions<CommansSettings> options,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string NoSubjectsMessage = """
@@ -20,11 +21,11 @@ public class ShowSubjectsCommandExecutor(
                                        {0} чтобы добавить дисциплину и {1} чтобы встать в очередь
                                        """;
     
-    public override string Type => commandsSettings.ShowSubjectsCommand.Type;
-    public override string Name => commandsSettings.ShowSubjectsCommand.Name;
+    public override string Type => options.Value.ShowSubjects.Type;
+    public override string Name => options.Value.ShowSubjects.Name;
     public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [];
     public override Role AcceptRole => Role.Default;
-    public override string Definition => commandsSettings.ShowSubjectsCommand.Definition;
+    public override string Definition => options.Value.ShowSubjects.Definition;
 
     protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
@@ -35,7 +36,7 @@ public class ShowSubjectsCommandExecutor(
         {
             await botClient.SendTextMessageAsync(
                 chatId: user.Id,
-                text: string.Format(NoSubjectsMessage, commandsSettings.AddSubjectCommand.Name, commandsSettings.JoinCommand.Name),
+                text: string.Format(NoSubjectsMessage, options.Value.AddSubject.Name, options.Value.Join.Name),
                 cancellationToken: cancellationToken);
             
             return false;

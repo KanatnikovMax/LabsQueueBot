@@ -7,6 +7,7 @@ using LabsQueueBot.Web.Helpers;
 using LabsQueueBot.Web.Providers;
 using LabsQueueBot.Web.Providers.Services;
 using LabsQueueBot.Web.Services;
+using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -18,7 +19,7 @@ public class SetTimetableCommandExecutor(
     IQueueInfoNotificationService queueInfoNotificationService,
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
-    CommandsSettings commandsSettings) : ICommandExecutor // TODO доделать
+    IOptions<CommansSettings> options) : ICommandExecutor // TODO доделать
 {
     private readonly Dictionary<long, long> _usersChosenSubjects = new();
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";
@@ -32,14 +33,14 @@ public class SetTimetableCommandExecutor(
     private const string WrongTimetableFormatMessage = "Расписание введено в неверном формате.";
     private const string CompleteSetTimetableMessage = "Расписание для предмета установлено:";
     
-    public string Type => commandsSettings.ShowTimetableCommand.Type;
-    public string Name => commandsSettings.SetTimetableCommand.Name;
+    public string Type => options.Value.ShowTimetable.Type;
+    public string Name => options.Value.ShowTimetable.Name;
     public IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [
         (UserState.SetTimetable, UpdateType.Message),
         (UserState.SetTimetableDays, UpdateType.Message)
     ];
     public Role AcceptRole => Role.Privileged;
-    public string Definition => commandsSettings.SetTimetableCommand.Definition;
+    public string Definition => options.Value.ShowTimetable.Definition;
     
     public async Task Execute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {

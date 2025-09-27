@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using LabsQueueBot.Core.Enums;
 using LabsQueueBot.Core.Settings;
+using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -11,8 +12,8 @@ namespace LabsQueueBot.Web.Commands.Implements;
 
 public class HelpCommandExecutor(
     Func<IEnumerable<ICommandExecutor>> commands,
-    QueueBotSettings botSettings,
-    CommandsSettings commandsSettings,
+    IOptions<TelegramBotSettings> botOptions,
+    IOptions<CommansSettings> commandsOptions,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string InformationMessage = """
@@ -24,15 +25,15 @@ public class HelpCommandExecutor(
                                               
                                               """;
     
-    public override string Type => commandsSettings.HelpCommand.Type;
-    public override string Name => commandsSettings.HelpCommand.Name;
+    public override string Type => commandsOptions.Value.Help.Type;
+    public override string Name => commandsOptions.Value.Help.Name;
     public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [];
     public override Role AcceptRole => Role.Nobody;
-    public override string Definition => commandsSettings.HelpCommand.Definition;
+    public override string Definition => commandsOptions.Value.Help.Definition;
     
     protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
-        var notificationTime = botSettings.UnionNotificationTimeUtc + botSettings.LocalUtcOffset;
+        var notificationTime = botOptions.Value.UnionTimeUtc + TimeSpan.FromHours(botOptions.Value.LocalUtcOffset);
         
         var commandsDescription = GetDescription(user.Role);
         

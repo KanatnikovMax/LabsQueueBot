@@ -3,6 +3,7 @@ using LabsQueueBot.Core.Extensions;
 using LabsQueueBot.Core.Settings;
 using LabsQueueBot.Core.Validators;
 using LabsQueueBot.Repository.Repository;
+using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -13,18 +14,18 @@ namespace LabsQueueBot.Web.Commands.Implements;
 
 public class RenameCommandExecutor(
     IUserRepository userRepository,
-    CommandsSettings commandsSettings,
+    IOptions<CommansSettings> options,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string EnterNewNameMessage = "Введите новые Фамилию Имя";
     private const string ErrorNameValidationMessage = "Новое имя не соответствует формату:\n{0}";
     private const string RenameCompleteMessage = "Имя успешно изменено";
     
-    public override string Type => commandsSettings.RenameCommand.Type;
-    public override string Name => commandsSettings.RenameCommand.Name;
+    public override string Type => options.Value.Rename.Type;
+    public override string Name => options.Value.Rename.Name;
     public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [ (UserState.Rename, UpdateType.Message) ];
     public override Role AcceptRole => Role.Default;
-    public override string Definition => commandsSettings.RenameCommand.Definition;
+    public override string Definition => options.Value.Rename.Definition;
     
     protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {

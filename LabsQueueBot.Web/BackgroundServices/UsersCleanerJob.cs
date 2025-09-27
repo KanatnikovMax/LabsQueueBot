@@ -1,26 +1,27 @@
 ﻿using System.Diagnostics;
 using LabsQueueBot.BusinessLogic.Services;
 using LabsQueueBot.Core.Settings;
+using Microsoft.Extensions.Options;
 using ILogger = Serilog.ILogger;
 
 namespace LabsQueueBot.Web.BackgroundServices;
 
 public class UsersCleanerJob(
     IUserCleanerService userCleanerService,
-    QueueBotSettings settings,
+    IOptions<TelegramBotSettings> options,
     ILogger logger) : BackgroundService
 {
-    private const string JobTimingMessage = "Job operating time: {0}ms";
+    private const string JobTimingMessage = "{0} operating time: {1}ms";
+
+    private readonly Stopwatch _stopwatch = new();
     
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            // await Task.Delay(TimeSpan.FromMinutes(settings.UserStateUpdateTimeoutInMinutes), cancellationToken);
-            await Task.Delay(TimeSpan.FromSeconds(10), cancellationToken);
+            await Task.Delay(TimeSpan.FromMinutes(options.Value.CleanerJobTimeoutInMinutes), cancellationToken);
             
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
+            _stopwatch.Restart();
             try
             {
                 await userCleanerService.ClearOrDeleteAll(cancellationToken);
@@ -30,9 +31,9 @@ public class UsersCleanerJob(
                 logger.Error(e, e.Message);
             }
             finally
-            {
-                stopwatch.Stop();
-                logger.Information(string.Format(JobTimingMessage, stopwatch.Elapsed.Milliseconds));
+            {                
+                _stopwatch.Stop();
+                logger.Information(string.Format(JobTimingMessage, nameof(UsersCleanerJob), _stopwatch.Elapsed.Milliseconds));
             }
         }
     }

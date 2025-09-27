@@ -2,7 +2,6 @@
 
 public class CommandsSettings
 {
-    public (string AddMessage, string BackMessage) InlineKeyboardCreator { get; set; }
     public (string Type, string Name, string Definition) HelpCommand { get; set; }
     public (string Type, string Name, string Definition) SwitchNotificationCommand { get; set; }
     public (string Type, string Name, string Definition) SetTimetableCommand { get; set; }

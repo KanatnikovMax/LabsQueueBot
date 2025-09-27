@@ -6,8 +6,11 @@ namespace LabsQueueBot.Web.ServiceCollectionExtensions;
 
 public static class DbContextConfigurator
 {
-    public static IServiceCollection AddDbContext(this IServiceCollection serviceCollection, QueueBotSettings settings)
+    public static IServiceCollection AddDbContext(this IServiceCollection serviceCollection, IConfiguration configuration)
     {
+        var settings = configuration.GetRequiredSection(nameof(PostgreSqlSettings)).Get<PostgreSqlSettings>();
+        ArgumentNullException.ThrowIfNull(settings);
+
         var connectionString = settings.ConnectionString;
         serviceCollection.AddDbContextFactory<QueueBotContext>(
             options => { options.UseNpgsql(connectionString); },

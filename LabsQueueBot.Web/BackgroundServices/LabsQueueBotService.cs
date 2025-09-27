@@ -1,4 +1,5 @@
 ﻿using LabsQueueBot.Core.Settings;
+using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types.Enums;
@@ -10,7 +11,7 @@ public class LabsQueueBotService(
     ILogger logger,
     ITelegramBotClient tgBotClient,
     IUpdateHandler updateHandler,
-    QueueBotSettings settings)
+    IOptions<TelegramBotSettings> options)
     : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -33,7 +34,7 @@ public class LabsQueueBotService(
         
         logger.Information("LabsQueueBot started");
 
-        foreach (var id in settings.AdminChatId)
+        foreach (var id in options.Value.AdminChatId)
         {
             await tgBotClient.SendTextMessageAsync(
                 chatId: id,

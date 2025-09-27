@@ -4,6 +4,7 @@ using LabsQueueBot.Core.Settings;
 using LabsQueueBot.Core.Utils;
 using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Web.Helpers;
+using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -15,7 +16,7 @@ namespace LabsQueueBot.Web.Commands.Implements;
 public class QuitCommandExecutor(
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
-    CommandsSettings commandsSettings,
+    IOptions<CommansSettings> options,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";
@@ -24,11 +25,11 @@ public class QuitCommandExecutor(
     private const string QuitWaitingCompleteMessage = "Вы вышли из списка ожидания по дисциплине {0}";
     private const string UserNotExistsInQueueMessage = "Вас нет в очереди по дисциплине {0}";
     
-    public override string Type => commandsSettings.QuitCommand.Type;
-    public override string Name => commandsSettings.QuitCommand.Name;
+    public override string Type => options.Value.Quit.Type;
+    public override string Name => options.Value.Quit.Name;
     public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [ (UserState.Quit, UpdateType.CallbackQuery) ];
     public override Role AcceptRole => Role.Default;
-    public override string Definition => commandsSettings.QuitCommand.Definition;
+    public override string Definition => options.Value.Quit.Definition;
 
     protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user,
         CancellationToken cancellationToken)

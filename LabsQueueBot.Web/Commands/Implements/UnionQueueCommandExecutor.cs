@@ -5,6 +5,7 @@ using LabsQueueBot.Core.Utils;
 using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Web.Helpers;
 using LabsQueueBot.Web.Services;
+using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -18,7 +19,7 @@ public class UnionQueueCommandExecutor(
     ISubjectRepository subjectsRepository,
     IRandomizeUnionWaitingService randomizeUnionWaitingService,
     IQueueInfoNotificationService queueInfoNotificationService,
-    CommandsSettings commandsSettings,
+    IOptions<CommansSettings> options,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";
@@ -30,11 +31,11 @@ public class UnionQueueCommandExecutor(
     private const string WaitingListIsEmpty = "Список ожидания по выбранному предмету пуст";
     private const string UnionCompleteMessage = "Очередь по выбранному предмету сформирована:";
     
-    public override string Type => commandsSettings.UnionQueueCommand.Type;
-    public override string Name => commandsSettings.UnionQueueCommand.Name;
+    public override string Type => options.Value.Union.Type;
+    public override string Name => options.Value.Union.Name;
     public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [ (UserState.Union, UpdateType.CallbackQuery) ];
     public override Role AcceptRole => Role.Privileged;
-    public override string Definition => commandsSettings.UnionQueueCommand.Definition;
+    public override string Definition => options.Value.Union.Definition;
 
     protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user,
         CancellationToken cancellationToken)

@@ -4,10 +4,8 @@ namespace LabsQueueBot.Web.SettingsReader;
 
 public static class QueueBotSettingsReader
 {
-    public static QueueBotSettings Read(IConfiguration configuration)
+    public static TelegramBotSettings Read(IConfiguration configuration)
     {
-        var connectionString = configuration.GetValue<string>("QueueBotDbContext");
-        
         var section = configuration.GetRequiredSection("BotSettings");
         
         var token = section.GetValue<string>("Token");
@@ -17,23 +15,21 @@ public static class QueueBotSettingsReader
         var stateUpdateTimeoutInMinutes = section.GetValue<int>("StateUpdateTimeoutInMinutes");
         var stateAllowedIntervalInMinutes = section.GetValue<int>("StateAllowedIntervalInMinutes");
         
-        var settings = new QueueBotSettings
+        var settings = new TelegramBotSettings
         {
             PrivilegedChatId = [],
             AdminChatId = [],
             Token = token,
             Url = url,
-            ConnectionString = connectionString,
-            UnionNotificationTimeUtc = TimeOnly.Parse(unionTime).ToTimeSpan(),
-            LocalUtcOffset = TimeSpan.FromHours(localOffset),
+            UnionTimeUtc = TimeOnly.Parse(unionTime).ToTimeSpan(),
+            LocalUtcOffset = localOffset,
+            CleanerJobTimeoutInMinutes = 1,
             StateUpdateTimeoutInMinutes = stateUpdateTimeoutInMinutes,
             StateAllowedIntervalInMinutes = stateAllowedIntervalInMinutes
         };
 
         section.GetSection("PrivilegedChatId").Bind(settings.PrivilegedChatId);
         section.GetSection("AdminChatId").Bind(settings.AdminChatId);
-        
-        settings.PrivilegedChatId.RemoveAll(x => settings.AdminChatId.Contains(x));
 
         return settings;
     }

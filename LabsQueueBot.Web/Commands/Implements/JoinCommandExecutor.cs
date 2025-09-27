@@ -3,6 +3,7 @@ using LabsQueueBot.Core.Settings;
 using LabsQueueBot.Core.Utils;
 using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Web.Helpers;
+using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -14,7 +15,7 @@ namespace LabsQueueBot.Web.Commands.Implements;
 public class JoinCommandExecutor(
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
-    CommandsSettings commandsSettings,
+    IOptions<CommansSettings> options,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";
@@ -24,11 +25,11 @@ public class JoinCommandExecutor(
     private const string UserAlreadyInWaitingMessage = "Ты уже находишься в списке ожидания";
     private const string JoinCompleteMessage = "Вы добавлены в список ожидания по дисциплине {0}";
     
-    public override string Type => commandsSettings.JoinCommand.Type;
-    public override string Name => commandsSettings.JoinCommand.Name;
+    public override string Type => options.Value.Join.Type;
+    public override string Name => options.Value.Join.Name;
     public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [ (UserState.Join, UpdateType.CallbackQuery) ];
     public override Role AcceptRole => Role.Default;
-    public override string Definition => commandsSettings.JoinCommand.Definition;
+    public override string Definition => options.Value.Join.Definition;
     
     protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {

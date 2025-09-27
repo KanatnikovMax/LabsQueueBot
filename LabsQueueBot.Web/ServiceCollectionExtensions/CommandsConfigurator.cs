@@ -10,11 +10,8 @@ namespace LabsQueueBot.Web.ServiceCollectionExtensions;
 
 public static class CommandsConfigurator
 {
-    public static IServiceCollection AddCommands(this IServiceCollection serviceCollection, QueueBotSettings queueBotSettings, CommandsSettings commandsSettings)
+    public static IServiceCollection AddCommandExecutors(this IServiceCollection serviceCollection, IConfiguration configuration)
     {
-        serviceCollection.AddTransient<QueueBotSettings>(x => queueBotSettings);
-        serviceCollection.AddTransient<CommandsSettings>(x => commandsSettings);
-
         serviceCollection.AddScoped<ICommandExecutor, SwitchNotificationCommandExecutor>();
         // serviceCollection.AddScoped<ICommandExecutor, SetTimetableCommandExecutor>();
         // serviceCollection.AddScoped<ICommandExecutor, ShowTimetableCommandExecutor>();
@@ -32,8 +29,8 @@ public static class CommandsConfigurator
         serviceCollection.AddScoped<ICommandExecutor, StopCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, HelpCommandExecutor>(x => new HelpCommandExecutor(
             x.GetServices<ICommandExecutor>,
-            x.GetRequiredService<QueueBotSettings>(), 
-            x.GetRequiredService<CommandsSettings>(), 
+            x.GetRequiredService<IOptions<TelegramBotSettings>>(), 
+            x.GetRequiredService<IOptions<CommansSettings>>(), 
             x.GetRequiredService<ILogger>()));
         
         serviceCollection.AddScoped<ICommandExecutorProvider, CommandExecutorProvider>();

@@ -6,6 +6,7 @@ using LabsQueueBot.Core.Utils;
 using LabsQueueBot.Core.Validators;
 using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Web.Helpers;
+using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -18,7 +19,7 @@ public class SetGroupCommandExecutor(
     IUserRepository userRepository,
     ISubjectsManagementService subjectsManagementService,
     IUserManagementService userManagementService,
-    CommandsSettings commandsSettings, 
+    IOptions<CommansSettings> options, 
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string SendGroupsKeyboardMessage = "Выберите курс и группу:";
@@ -27,14 +28,14 @@ public class SetGroupCommandExecutor(
     private const string AlreadyInChosenGroupMessage = "Ты уже находишься в выбранной группе =)";
     private const string SuccessMessage = "Курс и группа успешно обновлены";
     
-    public override string Type => commandsSettings.SetGroupCommand.Type;
-    public override string Name => commandsSettings.SetGroupCommand.Name;
+    public override string Type => options.Value.SetGroup.Type;
+    public override string Name => options.Value.SetGroup.Name;
     public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [
         (UserState.ChooseGroup, UpdateType.CallbackQuery),
         (UserState.AddGroup, UpdateType.Message)
     ];
     public override Role AcceptRole => Role.Nobody;
-    public override string Definition => commandsSettings.SetGroupCommand.Definition;
+    public override string Definition => options.Value.SetGroup.Definition;
     
     protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {

@@ -2,6 +2,7 @@
 using LabsQueueBot.Core.Settings;
 using LabsQueueBot.Core.Validators;
 using LabsQueueBot.Repository.Repository;
+using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -13,21 +14,21 @@ namespace LabsQueueBot.Web.Commands.Implements;
 public class StartCommandExecutor(
     IUserRepository usersRepository,
     ILogger logger,
-    CommandsSettings commandsSettings) : CommandExecutorBase(logger), ICommandExecutor
+    IOptions<CommansSettings> options) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string AlreadyRegisteredMessage = "Ты уже зареган\nИди отсюда, розбийник";
     private const string WhoAreYouMessage = "Кто ты, воин?\n\nВведи свои данные в формате\nФамилия Имя";
     private const string InvalidUserNameMessage = "{0}\nПовторите ввод";
     private const string SuccessMessage = "Регистрация успешно завершена!\nОсталось выбрать курс и группу =)\n{0}";
     
-    public override string Type { get; } = commandsSettings.StartCommand.Type;
-    public override string Name { get; } = commandsSettings.StartCommand.Name;
+    public override string Type { get; } = options.Value.Start.Type;
+    public override string Name { get; } = options.Value.Start.Name;
     public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [ 
         (UserState.Unregistered, UpdateType.Message),
         (UserState.Register, UpdateType.Message)
     ];
     public override Role AcceptRole => Role.Nobody;
-    public override string Definition { get; } = commandsSettings.StartCommand.Definition;
+    public override string Definition { get; } = options.Value.Start.Definition;
 
     protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user,
         CancellationToken cancellationToken)
@@ -86,7 +87,7 @@ public class StartCommandExecutor(
         
         await botClient.SendTextMessageAsync(
             chatId: update.Message.Chat.Id,
-            text: string.Format(SuccessMessage, commandsSettings.SetGroupCommand.Name),
+            text: string.Format(SuccessMessage, options.Value.SetGroup.Name),
             cancellationToken: cancellationToken); 
     }
 

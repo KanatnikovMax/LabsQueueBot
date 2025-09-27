@@ -9,8 +9,11 @@ namespace LabsQueueBot.Web.ServiceCollectionExtensions;
 
 public static class ServicesConfigurator
 {
-    public static IServiceCollection AddServices(this IServiceCollection serviceCollection, QueueBotSettings settings)
+    public static IServiceCollection AddCommonServices(this IServiceCollection serviceCollection, IConfiguration configuration)
     {
+        var settings = configuration.GetRequiredSection(nameof(TelegramBotSettings)).Get<TelegramBotSettings>();
+        ArgumentNullException.ThrowIfNull(settings);
+        
         serviceCollection.AddScoped<IUserRepository, UserRepository>();
         serviceCollection.AddScoped<ISubjectRepository, SubjectRepository>();
         serviceCollection.AddScoped<ISerialNumberRepository, SerialNumberRepository>();

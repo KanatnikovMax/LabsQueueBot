@@ -4,6 +4,7 @@ using LabsQueueBot.Core.Utils;
 using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Web.Helpers;
 using LabsQueueBot.Web.Services;
+using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -16,7 +17,7 @@ public class SkipCommandExecutor(
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
     IQueueInfoNotificationService queueInfoNotificationService,
-    CommandsSettings commandsSettings,
+    IOptions<CommansSettings> options,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor // TODO: протестировано, перед деплоем надо раскомментировать рассылку
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";
@@ -26,11 +27,11 @@ public class SkipCommandExecutor(
     private const string UserIsLastInQueue = "Ты уже итак в конце очереди, ожидай своего часа :)";
     private const string SkipCompleteMessage = "Это как шаг вперед, но назад";
     
-    public override string Type => commandsSettings.SkipCommand.Type;
-    public override string Name => commandsSettings.SkipCommand.Name;
+    public override string Type => options.Value.Skip.Type;
+    public override string Name => options.Value.Skip.Name;
     public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [ (UserState.Skip, UpdateType.CallbackQuery) ];
     public override Role AcceptRole => Role.Default;
-    public override string Definition => commandsSettings.SkipCommand.Definition;
+    public override string Definition => options.Value.Skip.Definition;
     
     protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {

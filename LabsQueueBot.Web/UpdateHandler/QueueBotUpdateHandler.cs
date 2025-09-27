@@ -8,6 +8,7 @@ using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Web.Exceptions;
 using LabsQueueBot.Web.Providers;
 using LabsQueueBot.Web.Services;
+using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -19,16 +20,20 @@ using User = LabsQueueBot.DataAccess.Entities.User;
 namespace LabsQueueBot.Web.UpdateHandler;
 
 public class QueueBotUpdateHandler(
-    ILogger logger,
-    IAdminNotificationService adminNotificationService,
     IServiceScopeFactory scopeFactory,
-    CommandsSettings commandsSettings) : IUpdateHandler
+    IAdminNotificationService adminNotificationService,
+    IOptions<CommansSettings> options,
+    ILogger logger) : IUpdateHandler
 {
-    private const string NotRegisteredMessage = """
+    private const string UnregisteredMessage = """
                                                 Вы не зарегистрированы!
                                                 {0} для регистрации
                                                 """;
-    private const string InvalidUpdateMessage = "Введи команду, ящур";
+    private const string InvalidMessageUpdateMessage = "Введи команду, ящур";
+    private const string InvalidCallbackQueryUpdateMessage = """
+                                                             Что-то пошло не так =(
+                                                             Пожалуйста, напиши об этом администратору
+                                                             """;
     private const string AdminErrorMessage = "Что-то уронилось! {0}";
     private const string AdminErrorDocumentPattern = """
                                              Type: {0}
@@ -79,11 +84,11 @@ public class QueueBotUpdateHandler(
                 await usersRepository.SaveAsync(user, cancellationToken);
                 
                 // проверка на first message /start
-                if (!update.IsTextMessage(commandsSettings.StartCommand.Name))
+                if (!update.IsTextMessage(options.Value.Start.Name))
                 {
                     await botClient.SendTextMessageAsync(
                         chatId: chatId,
-                        text: string.Format(NotRegisteredMessage, commandsSettings.StartCommand.Name),
+                        text: string.Format(UnregisteredMessage, options.Value.Start.Name),
                         cancellationToken: cancellationToken);
                     return;
                 }
@@ -171,7 +176,7 @@ public class QueueBotUpdateHandler(
             {
                 await botClient.SendTextMessageAsync(
                     chatId: user.Id,
-                    text: InvalidUpdateMessage,
+                    text: InvalidMessageUpdateMessage,
                     cancellationToken: cancellationToken);
             }
             return;
@@ -202,7 +207,7 @@ public class QueueBotUpdateHandler(
         {
             await botClient.SendTextMessageAsync(
                 chatId: user.Id,
-                text: InvalidUpdateMessage, // TODO придумать другой комментарий на ошибочный callback
+                text: InvalidCallbackQueryUpdateMessage,
                 cancellationToken: cancellationToken);
             return;
         }

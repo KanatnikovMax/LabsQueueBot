@@ -3,8 +3,8 @@ using LabsQueueBot.Core.Settings;
 using LabsQueueBot.Core.Validators;
 using LabsQueueBot.DataAccess.Entities;
 using LabsQueueBot.Repository.Repository;
-using LabsQueueBot.Web.Providers;
 using LabsQueueBot.Web.Services;
+using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -17,7 +17,7 @@ public class AddSubjectCommandExecutor(
     IQueueInfoNotificationService queueInfoNotificationService,
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
-    CommandsSettings commandsSettings,
+    IOptions<CommansSettings> options,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string AddingSubjectMessage = "Введите название дисциплины, которую хотите добавить";
@@ -25,11 +25,11 @@ public class AddSubjectCommandExecutor(
     private const string SubjectAlreadyExistsMessage = "Дисциплина с таким названием уже существует";
     private const string AddSubjectCompleteMessage = "Новая дисциплина успешно добавлена: {0}";
     
-    public override string Type => commandsSettings.AddSubjectCommand.Type;
-    public override string Name => commandsSettings.AddSubjectCommand.Name;
+    public override string Type => options.Value.AddSubject.Type;
+    public override string Name => options.Value.AddSubject.Name;
     public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [ (UserState.AddSubject, UpdateType.Message) ];
     public override Role AcceptRole => Role.Default;
-    public override string Definition => commandsSettings.AddSubjectCommand.Definition;
+    public override string Definition => options.Value.AddSubject.Definition;
 
     protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user,
         CancellationToken cancellationToken)

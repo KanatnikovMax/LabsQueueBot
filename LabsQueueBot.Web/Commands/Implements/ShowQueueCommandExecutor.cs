@@ -4,6 +4,7 @@ using LabsQueueBot.Core.Utils;
 using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Web.Helpers;
 using LabsQueueBot.Web.Services;
+using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -16,17 +17,17 @@ public class ShowQueueCommandExecutor(
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
     IQueueInfoNotificationService queueInfoNotificationService,
-    CommandsSettings commandsSettings,
+    IOptions<CommansSettings> options,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";
     private const string SubjectNotFoundMessage = "Такой дисциплины не существует";
     
-    public override string Type => commandsSettings.ShowQueueCommand.Type;
-    public override string Name => commandsSettings.ShowQueueCommand.Name;
+    public override string Type => options.Value.ShowQueue.Type;
+    public override string Name => options.Value.ShowQueue.Name;
     public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [ (UserState.ShowQueue, UpdateType.CallbackQuery) ];
     public override Role AcceptRole => Role.Default;
-    public override string Definition => commandsSettings.ShowQueueCommand.Definition;
+    public override string Definition => options.Value.ShowQueue.Definition;
 
     protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
