@@ -31,7 +31,7 @@ public static class CommandsConfigurator
         serviceCollection.AddScoped<ICommandExecutor, HelpCommandExecutor>(x => new HelpCommandExecutor(
             x.GetServices<ICommandExecutor>,
             x.GetRequiredService<IOptions<TelegramBotSettings>>(), 
-            x.GetRequiredService<IOptions<CommansSettings>>(), 
+            x.GetRequiredService<IOptions<CommandsSettings>>(), 
             x.GetRequiredService<ILogger>()));
         
         serviceCollection.AddScoped<ICommandExecutorProvider, CommandExecutorProvider>();

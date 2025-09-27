@@ -19,7 +19,7 @@ public class SetGroupCommandExecutor(
     IUserRepository userRepository,
     ISubjectsManagementService subjectsManagementService,
     IUserManagementService userManagementService,
-    IOptions<CommansSettings> options, 
+    IOptions<CommandsSettings> options, 
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string SendGroupsKeyboardMessage = "Выберите курс и группу:";

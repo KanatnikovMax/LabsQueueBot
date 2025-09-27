@@ -14,7 +14,7 @@ namespace LabsQueueBot.Web.Commands.Implements;
 
 public class RenameCommandExecutor(
     IUserRepository userRepository,
-    IOptions<CommansSettings> options,
+    IOptions<CommandsSettings> options,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string EnterNewNameMessage = "Введите новые Фамилию Имя";

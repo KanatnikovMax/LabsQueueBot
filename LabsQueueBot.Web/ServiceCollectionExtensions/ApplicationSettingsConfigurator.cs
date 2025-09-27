@@ -8,7 +8,7 @@ public static class ApplicationSettingsConfigurator
     {
         serviceCollection.Configure<PostgreSqlSettings>(configuration.GetRequiredSection(nameof(PostgreSqlSettings)));
         serviceCollection.Configure<TelegramBotSettings>(configuration.GetRequiredSection(nameof(TelegramBotSettings)));
-        serviceCollection.Configure<CommansSettings>(configuration.GetRequiredSection(nameof(CommandsSettings)));
+        serviceCollection.Configure<CommandsSettings>(configuration.GetRequiredSection(nameof(CommandsSettings)));
         
         return serviceCollection;
     }

@@ -13,8 +13,8 @@ namespace LabsQueueBot.Web.Commands.Implements;
 
 public class StartCommandExecutor(
     IUserRepository usersRepository,
-    ILogger logger,
-    IOptions<CommansSettings> options) : CommandExecutorBase(logger), ICommandExecutor
+    IOptions<CommandsSettings> options,
+    ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string AlreadyRegisteredMessage = "Ты уже зареган\nИди отсюда, розбийник";
     private const string WhoAreYouMessage = "Кто ты, воин?\n\nВведи свои данные в формате\nФамилия Имя";

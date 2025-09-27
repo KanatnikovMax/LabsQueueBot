@@ -13,7 +13,7 @@ namespace LabsQueueBot.Web.Commands.Implements;
 public class HelpCommandExecutor(
     Func<IEnumerable<ICommandExecutor>> commands,
     IOptions<TelegramBotSettings> botOptions,
-    IOptions<CommansSettings> commandsOptions,
+    IOptions<CommandsSettings> commandsOptions,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string InformationMessage = """

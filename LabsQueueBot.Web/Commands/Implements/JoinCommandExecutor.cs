@@ -15,7 +15,7 @@ namespace LabsQueueBot.Web.Commands.Implements;
 public class JoinCommandExecutor(
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
-    IOptions<CommansSettings> options,
+    IOptions<CommandsSettings> options,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";

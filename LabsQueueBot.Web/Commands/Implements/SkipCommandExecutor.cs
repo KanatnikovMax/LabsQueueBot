@@ -17,7 +17,7 @@ public class SkipCommandExecutor(
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
     IQueueInfoNotificationService queueInfoNotificationService,
-    IOptions<CommansSettings> options,
+    IOptions<CommandsSettings> options,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor // TODO: протестировано, перед деплоем надо раскомментировать рассылку
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";

@@ -12,7 +12,7 @@ namespace LabsQueueBot.Web.Commands.Implements;
 
 public class SwitchNotificationCommandExecutor(
     IUserRepository userRepository,
-    IOptions<CommansSettings> options,
+    IOptions<CommandsSettings> options,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string NotifyOnMessage = "Вы подписались на массовую рассылку";

@@ -17,7 +17,7 @@ public class ShowQueueCommandExecutor(
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
     IQueueInfoNotificationService queueInfoNotificationService,
-    IOptions<CommansSettings> options,
+    IOptions<CommandsSettings> options,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";

@@ -17,7 +17,7 @@ public class AddSubjectCommandExecutor(
     IQueueInfoNotificationService queueInfoNotificationService,
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
-    IOptions<CommansSettings> options,
+    IOptions<CommandsSettings> options,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string AddingSubjectMessage = "Введите название дисциплины, которую хотите добавить";

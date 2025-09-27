@@ -15,7 +15,7 @@ namespace LabsQueueBot.Web.Commands.Implements;
 public class ShowTimetableCommandExecutor(
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
-    IOptions<CommansSettings> options) : ICommandExecutor // TODO доделать
+    IOptions<CommandsSettings> options) : ICommandExecutor // TODO доделать
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";
     private const string WrongCallbackQueryMessageRequest = "Не в той табличке ты тыкнул";

@@ -22,7 +22,7 @@ namespace LabsQueueBot.Web.UpdateHandler;
 public class QueueBotUpdateHandler(
     IServiceScopeFactory scopeFactory,
     IAdminNotificationService adminNotificationService,
-    IOptions<CommansSettings> options,
+    IOptions<CommandsSettings> options,
     ILogger logger) : IUpdateHandler
 {
     private const string UnregisteredMessage =

@@ -13,7 +13,7 @@ namespace LabsQueueBot.Web.Commands.Implements;
 
 public class ShowSubjectsCommandExecutor(
     ISubjectRepository subjectRepository,
-    IOptions<CommansSettings> options,
+    IOptions<CommandsSettings> options,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string NoSubjectsMessage = """

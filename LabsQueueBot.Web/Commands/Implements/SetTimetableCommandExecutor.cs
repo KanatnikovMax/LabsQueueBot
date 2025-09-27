@@ -19,7 +19,7 @@ public class SetTimetableCommandExecutor(
     IQueueInfoNotificationService queueInfoNotificationService,
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
-    IOptions<CommansSettings> options) : ICommandExecutor // TODO доделать
+    IOptions<CommandsSettings> options) : ICommandExecutor // TODO доделать
 {
     private readonly Dictionary<long, long> _usersChosenSubjects = new();
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";

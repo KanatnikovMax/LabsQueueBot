@@ -19,7 +19,7 @@ public class UnionQueueCommandExecutor(
     ISubjectRepository subjectsRepository,
     IRandomizeUnionWaitingService randomizeUnionWaitingService,
     IQueueInfoNotificationService queueInfoNotificationService,
-    IOptions<CommansSettings> options,
+    IOptions<CommandsSettings> options,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";

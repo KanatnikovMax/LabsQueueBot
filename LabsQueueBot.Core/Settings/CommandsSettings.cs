@@ -2,20 +2,20 @@
 
 public class CommandsSettings
 {
-    public (string Type, string Name, string Definition) HelpCommand { get; set; }
-    public (string Type, string Name, string Definition) SwitchNotificationCommand { get; set; }
-    public (string Type, string Name, string Definition) SetTimetableCommand { get; set; }
-    public (string Type, string Name, string Definition) ShowTimetableCommand { get; set; }
-    public (string Type, string Name, string Definition) ShowSubjectsCommand { get; set; }
-    public (string Type, string Name, string Definition) ShowQueueCommand { get; set; }
-    public (string Type, string Name, string Definition) ShowWaitingCommand { get; set; }
-    public (string Type, string Name, string Definition) AddSubjectCommand { get; set; }
-    public (string Type, string Name, string Definition) JoinCommand { get; set; }
-    public (string Type, string Name, string Definition) QuitCommand { get; set; }
-    public (string Type, string Name, string Definition) SkipCommand { get; set; }
-    public (string Type, string Name, string Definition) UnionQueueCommand { get; set; }
-    public (string Type, string Name, string Definition) SetGroupCommand { get; set; }
-    public (string Type, string Name, string Definition) RenameCommand { get; set; }
-    public (string Type, string Name, string Definition) StartCommand { get; set; }
-    public (string Type, string Name, string Definition) StopCommand { get; set; }
+    public required CommandSettings Help { get; init; }
+    public required CommandSettings SwitchNotification { get; init; }
+    public required CommandSettings SetTimetable { get; init; }
+    public required CommandSettings ShowTimetable{ get; init; }
+    public required CommandSettings ShowSubjects { get; init; }
+    public required CommandSettings ShowQueue { get; init; }
+    public required CommandSettings ShowWaiting { get; init; }
+    public required CommandSettings AddSubject { get; init; }
+    public required CommandSettings Join { get; init; }
+    public required CommandSettings Quit { get; init; }
+    public required CommandSettings Skip { get; init; }
+    public required CommandSettings Union { get; init; }
+    public required CommandSettings SetGroup { get; init; }
+    public required CommandSettings Rename { get; init; }
+    public required CommandSettings Start { get; init; }
+    public required CommandSettings Stop { get; init; }
 }
