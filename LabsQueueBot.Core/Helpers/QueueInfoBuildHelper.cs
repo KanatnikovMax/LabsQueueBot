@@ -43,8 +43,6 @@ public static class QueueInfoBuildHelper
         }
         else
         {
-            builder.AppendLine(string.Format(QueueWaitingCount, queue.Count));
-            
             foreach (var userInfo in queue)
                 builder.AppendLine(string.Format(PositionPattern, userInfo.Name, userInfo.Num));
         }
@@ -54,7 +52,7 @@ public static class QueueInfoBuildHelper
         builder.Append(string.Format(WaitingHeader, subjectName));
         if (waiting.Count == 0)
         {
-            builder.AppendLine(QueueWaitingEmpty);
+            builder.Append(QueueWaitingEmpty);
         }
         else
         {
