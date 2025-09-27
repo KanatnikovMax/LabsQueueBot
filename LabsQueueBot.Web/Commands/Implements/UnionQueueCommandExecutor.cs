@@ -4,7 +4,7 @@ using LabsQueueBot.Core.Settings;
 using LabsQueueBot.Core.Utils;
 using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Web.Helpers;
-using LabsQueueBot.Web.Providers;
+using LabsQueueBot.Web.Services;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -17,7 +17,7 @@ public class UnionQueueCommandExecutor(
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
     IRandomizeUnionWaitingService randomizeUnionWaitingService,
-    IQueueInfoNotificationProvider queueInfoNotificationProvider,
+    IQueueInfoNotificationService queueInfoNotificationService,
     CommandsSettings commandsSettings,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
@@ -142,6 +142,6 @@ public class UnionQueueCommandExecutor(
             text: $"{UnionCompleteMessage} {subject.SubjectName}",
             cancellationToken: cancellationToken);
 
-        await queueInfoNotificationProvider.NotifyGroup(user.CourseNumber, user.GroupNumber, cancellationToken);
+        await queueInfoNotificationService.NotifyGroup(user.CourseNumber, user.GroupNumber, cancellationToken);
     }
 }

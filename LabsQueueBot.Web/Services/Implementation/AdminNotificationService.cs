@@ -4,13 +4,13 @@ using LabsQueueBot.Repository.Repository;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
-namespace LabsQueueBot.Web.Providers.Services;
+namespace LabsQueueBot.Web.Services.Implementation;
 
-public class AdminNotificationProvider(
+public class AdminNotificationService(
     IServiceScopeFactory scopeFactory,
-    ITelegramBotClient botClient) : IAdminNotificationProvider
+    ITelegramBotClient botClient) : IAdminNotificationService
 {
-    public async Task NotifyAdminsWithDocument(int documentId, string message, CancellationToken cancellationToken)
+    public async Task NotifyWithDocument(int documentId, string message, CancellationToken cancellationToken)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
         

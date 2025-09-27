@@ -6,6 +6,7 @@ using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Web.Helpers;
 using LabsQueueBot.Web.Providers;
 using LabsQueueBot.Web.Providers.Services;
+using LabsQueueBot.Web.Services;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -14,7 +15,7 @@ using User = LabsQueueBot.DataAccess.Entities.User;
 namespace LabsQueueBot.Web.Commands.Implements;
 
 public class SetTimetableCommandExecutor(
-    IQueueInfoNotificationProvider queueInfoNotificationProvider,
+    IQueueInfoNotificationService queueInfoNotificationService,
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
     CommandsSettings commandsSettings) : ICommandExecutor // TODO доделать

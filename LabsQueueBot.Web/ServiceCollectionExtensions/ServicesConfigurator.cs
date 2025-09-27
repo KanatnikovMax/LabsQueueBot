@@ -1,8 +1,8 @@
 ﻿using LabsQueueBot.Core.Settings;
 using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Repository.Repository.Implements;
-using LabsQueueBot.Web.Providers;
-using LabsQueueBot.Web.Providers.Services;
+using LabsQueueBot.Web.Services;
+using LabsQueueBot.Web.Services.Implementation;
 using Telegram.Bot;
 
 namespace LabsQueueBot.Web.ServiceCollectionExtensions;
@@ -18,8 +18,8 @@ public static class ServicesConfigurator
         serviceCollection.AddSingleton<ITelegramBotClient>(x => new TelegramBotClient(
             settings.BotToken));
         
-        serviceCollection.AddSingleton<IQueueInfoNotificationProvider, QueueInfoNotificationProvider>();
-        serviceCollection.AddSingleton<IAdminNotificationProvider, AdminNotificationProvider>();
+        serviceCollection.AddSingleton<IQueueInfoNotificationService, QueueInfoNotificationService>();
+        serviceCollection.AddSingleton<IAdminNotificationService, AdminNotificationService>();
 
         return serviceCollection;
     }

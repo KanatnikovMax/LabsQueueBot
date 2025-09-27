@@ -1,10 +1,9 @@
-﻿using System.Text.Json;
-using LabsQueueBot.Core.Enums;
+﻿using LabsQueueBot.Core.Enums;
 using LabsQueueBot.Core.Settings;
 using LabsQueueBot.Core.Utils;
 using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Web.Helpers;
-using LabsQueueBot.Web.Providers;
+using LabsQueueBot.Web.Services;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -16,7 +15,7 @@ namespace LabsQueueBot.Web.Commands.Implements;
 public class ShowQueueCommandExecutor(
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
-    IQueueInfoNotificationProvider queueInfoNotificationProvider,
+    IQueueInfoNotificationService queueInfoNotificationService,
     CommandsSettings commandsSettings,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
@@ -112,6 +111,6 @@ public class ShowQueueCommandExecutor(
             return;
         }
 
-        await queueInfoNotificationProvider.NotifyUserBySubject(user.Id, subject.SubjectName, cancellationToken, user.CourseNumber, user.GroupNumber);
+        await queueInfoNotificationService.NotifyUserBySubject(user.Id, subject.SubjectName, cancellationToken, user.CourseNumber, user.GroupNumber);
     }
 }

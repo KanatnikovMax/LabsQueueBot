@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Text.Json;
 using LabsQueueBot.Core.Enums;
-using LabsQueueBot.Core.Utils;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -38,17 +37,6 @@ public abstract class CommandExecutorBase(ILogger logger) : ICommandExecutor
         try
         {
             isSuccess = await InternalExecute(botClient, update, user, cancellationToken);
-
-            // if (!isSuccess)
-            // {
-            //     // если при  UserState.None, UserState.ChooseGroup или UserState.AddGroup получены Update не ожидаемого типа
-            //     if (!await BotClientUtils.DeleteUpdate(botClient, user.Id, update, cancellationToken))
-            //     {
-            //         // в случае если получили невозможный Update (не Message и не CallbackQuery) - игнорируем его
-            //         var updateString = JsonSerializer.Serialize(update);
-            //         logger.Warning("Update.MessageId is null\n\n{updateString}", updateString);
-            //     }
-            // }
         }
         catch
         {

@@ -12,7 +12,8 @@ public static class QueueInfoBuildHelper
     private const string PositionPattern = "{0} \u2192 {1}";
     private const string QueueHeader = "Текущая очередь по дисциплине {0}:";
     private const string WaitingHeader = "Текущая очередь ожидания по дисциплине {0}:";
-    private const string EmptyQueueWaiting = " пуста";
+    private const string QueueWaitingEmpty = " пуста";
+    private const string QueueWaitingCount = " {0}";
     
     public static string GetByUser(long userId, Dictionary<string, (List<long> queue, List<long> waiting)> subjects)
     {
@@ -38,11 +39,11 @@ public static class QueueInfoBuildHelper
         builder.Append(string.Format(QueueHeader, subjectName));
         if (queue.Count == 0)
         {
-            builder.AppendLine(EmptyQueueWaiting);
+            builder.AppendLine(QueueWaitingEmpty);
         }
         else
         {
-            builder.AppendLine();
+            builder.AppendLine(string.Format(QueueWaitingCount, queue.Count));
             
             foreach (var userInfo in queue)
                 builder.AppendLine(string.Format(PositionPattern, userInfo.Name, userInfo.Num));
@@ -53,11 +54,11 @@ public static class QueueInfoBuildHelper
         builder.Append(string.Format(WaitingHeader, subjectName));
         if (waiting.Count == 0)
         {
-            builder.AppendLine(EmptyQueueWaiting);
+            builder.AppendLine(QueueWaitingEmpty);
         }
         else
         {
-            builder.AppendLine();
+            builder.AppendLine(string.Format(QueueWaitingCount, waiting.Count));
             
             foreach (var userName in waiting)
                 builder.AppendLine(userName);

@@ -3,11 +3,11 @@ using LabsQueueBot.Core.Helpers;
 using LabsQueueBot.Repository.Repository;
 using Telegram.Bot;
 
-namespace LabsQueueBot.Web.Providers.Services;
+namespace LabsQueueBot.Web.Services.Implementation;
 
-public class QueueInfoNotificationProvider(
+public class QueueInfoNotificationService(
     IServiceScopeFactory scopeFactory,
-    ITelegramBotClient botClient) : IQueueInfoNotificationProvider
+    ITelegramBotClient botClient) : IQueueInfoNotificationService
 {
     public async Task NotifyAll(CancellationToken cancellationToken)
     {

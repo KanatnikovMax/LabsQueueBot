@@ -1,6 +1,6 @@
-﻿namespace LabsQueueBot.Web.Providers;
+﻿namespace LabsQueueBot.Web.Services;
 
-public interface IQueueInfoNotificationProvider
+public interface IQueueInfoNotificationService
 {
     Task NotifyAll(CancellationToken cancellationToken);
     Task NotifyGroup(byte course, byte group, CancellationToken cancellationToken);

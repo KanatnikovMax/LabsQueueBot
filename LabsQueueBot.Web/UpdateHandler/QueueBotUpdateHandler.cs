@@ -7,6 +7,7 @@ using LabsQueueBot.Core.Utils;
 using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Web.Exceptions;
 using LabsQueueBot.Web.Providers;
+using LabsQueueBot.Web.Services;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -19,7 +20,7 @@ namespace LabsQueueBot.Web.UpdateHandler;
 
 public class QueueBotUpdateHandler(
     ILogger logger,
-    IAdminNotificationProvider adminNotificationProvider,
+    IAdminNotificationService adminNotificationService,
     IServiceScopeFactory scopeFactory,
     CommandsSettings commandsSettings) : IUpdateHandler
 {
@@ -28,21 +29,22 @@ public class QueueBotUpdateHandler(
                                                 {0} для регистрации
                                                 """;
     private const string InvalidUpdateMessage = "Введи команду, ящур";
-    private const string AdminErrorMessage = "Что-то упало: {0}";
+    private const string AdminErrorMessage = "Что-то уронилось! {0}";
     private const string AdminErrorDocumentPattern = """
                                              Type: {0}
                                              
-                                             Message: {1}
+                                             ---------------------------------------------------------------------------
                                              
-                                             StackTrace: {2}
-                                             
-                                             Last update: {3}
+                                             Last update: {1}
                                              """;
 
     public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
         try
         {
+            //// славянский ретерн в мейне
+            // return;
+            
             // проверяем: is text message | is valid callback | is left chat member
             if (!update.IsValid())
             {
@@ -85,12 +87,6 @@ public class QueueBotUpdateHandler(
                         cancellationToken: cancellationToken);
                     return;
                 }
-            }
-            // проверка на Username (для обновления данных пользователей)
-            else if (user.Username == null || user.Username != update.GetUsername())
-            {
-                user.Username = update.GetUsername();
-                await usersRepository.SaveAsync(user, cancellationToken);
             }
                     
             var commandExecutorProvider = scope.ServiceProvider.GetRequiredService<ICommandExecutorProvider>();
@@ -136,12 +132,7 @@ public class QueueBotUpdateHandler(
             logger.Error("Последний update");
             logger.Error(lastUpdateBody);
             
-            errorDocumentBody = string.Format(
-                AdminErrorDocumentPattern,
-                e.ThrownException,
-                e.ThrownException.Message,
-                e.ThrownException.StackTrace,
-                lastUpdateBody);
+            errorDocumentBody = string.Format(AdminErrorDocumentPattern, e.ThrownException, lastUpdateBody);
             documentId = e.ThrownException.GetHashCode();
             errorMessage = string.Format(AdminErrorMessage, nameof(logger.Error));
         }
@@ -157,7 +148,7 @@ public class QueueBotUpdateHandler(
         var path = string.Format(GlobalConstants.ErrorDocumentPath, documentId);
         await File.WriteAllTextAsync(path, errorDocumentBody, cancellationToken);
             
-        await adminNotificationProvider.NotifyAdminsWithDocument(documentId, errorMessage, cancellationToken);
+        await adminNotificationService.NotifyWithDocument(documentId, errorMessage, cancellationToken);
     }
 
     private async Task HandleMessageUpdate(ITelegramBotClient botClient, Update update, User user,
@@ -185,7 +176,13 @@ public class QueueBotUpdateHandler(
             }
             return;
         }
-
+        
+        // проверка на Username (для обновления данных пользователей)
+        if (user.Username == null || user.Username != update.GetUsername())
+        {
+            user.Username = update.GetUsername();
+        }
+        
         await command.Execute(botClient, update, user, cancellationToken);
     }
 

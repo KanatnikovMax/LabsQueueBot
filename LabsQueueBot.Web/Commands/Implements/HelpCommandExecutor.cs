@@ -32,7 +32,7 @@ public class HelpCommandExecutor(
     
     protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
-        var notificationTime = botSettings.UnionNotificationTimeUtc + TimeSpan.FromHours(3);
+        var notificationTime = botSettings.UnionNotificationTimeUtc + botSettings.LocalUtcOffset;
         
         var commandsDescription = GetDescription(user.Role);
         

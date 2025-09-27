@@ -3,6 +3,7 @@ using LabsQueueBot.Web.Commands;
 using LabsQueueBot.Web.Commands.Implements;
 using LabsQueueBot.Web.Providers;
 using LabsQueueBot.Web.Providers.Services;
+using Microsoft.Extensions.Options;
 using ILogger = Serilog.ILogger;
 
 namespace LabsQueueBot.Web.ServiceCollectionExtensions;

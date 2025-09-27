@@ -79,7 +79,7 @@ public static class UserRepositoryConfigurator
     }
 
     private static async Task CreateFunction_update_StateModifiedAt(DbContext dbContext, CancellationToken cancellationToken)
-    {
+    {// TODO подумать о проверке перед обновлением времени активности
         var query = @"
 CREATE OR REPLACE FUNCTION update_LastActivityAt()
 RETURNS TRIGGER AS $$ 

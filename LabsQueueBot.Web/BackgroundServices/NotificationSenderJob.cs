@@ -1,10 +1,10 @@
 ﻿using LabsQueueBot.Core.Settings;
-using LabsQueueBot.Web.Providers;
+using LabsQueueBot.Web.Services;
 
 namespace LabsQueueBot.Web.BackgroundServices;
 
 public class NotificationSenderJob( // TODO переделать в QueueWaitingUnionJob и оставить отправку уведомлений
-    IQueueInfoNotificationProvider queueInfoNotificationProvider,
+    IQueueInfoNotificationService queueInfoNotificationService,
     QueueBotSettings settings)
     : BackgroundService
 {
@@ -18,7 +18,7 @@ public class NotificationSenderJob( // TODO переделать в QueueWaiting
         
         while (!cancellationToken.IsCancellationRequested)
         {
-            await queueInfoNotificationProvider.NotifyAll(cancellationToken);
+            await queueInfoNotificationService.NotifyAll(cancellationToken);
 
             await Task.Delay(TimeSpan.FromHours(24), cancellationToken);
         }

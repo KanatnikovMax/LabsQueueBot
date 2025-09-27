@@ -6,13 +6,14 @@ public static class QueueBotSettingsReader
 {
     public static QueueBotSettings Read(IConfiguration configuration)
     {
-        var queueBotContext = configuration.GetValue<string>("QueueBotDbContext");
+        var connectionString = configuration.GetValue<string>("QueueBotDbContext");
         
-        var section = configuration.GetSection("LabsQueueBot");
+        var section = configuration.GetRequiredSection("LabsQueueBot");
         
         var botToken = section.GetValue<string>("BotToken");
         var botUrl = section.GetValue<string>("BotUrl");
         var unionNotificationTime = section.GetValue<string>("UnionNotificationTimeUtc");
+        var localOffset = section.GetValue<int>("LocalUtcOffset");
         var userStateUpdateTimeoutInMinutes = section.GetValue<int>("UserStateUpdateTimeoutInMinutes");
         var userStateAllowedIntervalInMinutes = section.GetValue<int>("UserStateAllowedIntervalInMinutes");
         
@@ -22,8 +23,9 @@ public static class QueueBotSettingsReader
             AdminChatId = [],
             BotToken = botToken,
             BotUrl = botUrl,
-            QueueBotDbContext = queueBotContext,
+            ConnectionString = connectionString,
             UnionNotificationTimeUtc = TimeOnly.Parse(unionNotificationTime).ToTimeSpan(),
+            LocalUtcOffset = TimeSpan.FromHours(localOffset),
             UserStateUpdateTimeoutInMinutes = userStateUpdateTimeoutInMinutes,
             UserStateAllowedIntervalInMinutes = userStateAllowedIntervalInMinutes
         };

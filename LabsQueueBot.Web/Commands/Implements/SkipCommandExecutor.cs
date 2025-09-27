@@ -3,7 +3,7 @@ using LabsQueueBot.Core.Settings;
 using LabsQueueBot.Core.Utils;
 using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Web.Helpers;
-using LabsQueueBot.Web.Providers;
+using LabsQueueBot.Web.Services;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -15,7 +15,7 @@ namespace LabsQueueBot.Web.Commands.Implements;
 public class SkipCommandExecutor(
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
-    IQueueInfoNotificationProvider queueInfoNotificationProvider,
+    IQueueInfoNotificationService queueInfoNotificationService,
     CommandsSettings commandsSettings,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor // TODO: протестировано, перед деплоем надо раскомментировать рассылку
 {
@@ -151,6 +151,6 @@ public class SkipCommandExecutor(
             text: SkipCompleteMessage,
             cancellationToken: cancellationToken);
 
-        // await queueInfoNotificationProvider.NotifyUserBySubject(skippedUserId, subject.SubjectName, cancellationToken);
+        // await queueInfoNotificationService.NotifyUserBySubject(skippedUserId, subject.SubjectName, cancellationToken);
     }
 }

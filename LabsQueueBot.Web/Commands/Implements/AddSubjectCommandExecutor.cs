@@ -4,6 +4,7 @@ using LabsQueueBot.Core.Validators;
 using LabsQueueBot.DataAccess.Entities;
 using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Web.Providers;
+using LabsQueueBot.Web.Services;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -13,7 +14,7 @@ using ILogger = Serilog.ILogger;
 namespace LabsQueueBot.Web.Commands.Implements;
 
 public class AddSubjectCommandExecutor(
-    IQueueInfoNotificationProvider queueInfoNotificationProvider,
+    IQueueInfoNotificationService queueInfoNotificationService,
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
     CommandsSettings commandsSettings,
@@ -33,9 +34,6 @@ public class AddSubjectCommandExecutor(
     protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user,
         CancellationToken cancellationToken)
     {
-        if (update.Type != UpdateType.Message)
-            return false;
-        
         var isSuccess = false;
         switch (user.State)
         {
@@ -110,7 +108,7 @@ public class AddSubjectCommandExecutor(
             text: string.Format(AddSubjectCompleteMessage, subjectName),
             cancellationToken: cancellationToken);
 
-        await queueInfoNotificationProvider.NotifyGroupBySubject(user.CourseNumber, user.GroupNumber, subjectName!, 
+        await queueInfoNotificationService.NotifyGroupBySubject(user.CourseNumber, user.GroupNumber, subjectName!, 
             subject.Queue.ToList(), subject.Waiting.ToList(), cancellationToken);
     }
 }
