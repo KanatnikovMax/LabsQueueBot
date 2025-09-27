@@ -15,9 +15,10 @@ public static class CommandsConfigurator
         serviceCollection.AddScoped<ICommandExecutor, SwitchNotificationCommandExecutor>();
         // serviceCollection.AddScoped<ICommandExecutor, SetTimetableCommandExecutor>();
         // serviceCollection.AddScoped<ICommandExecutor, ShowTimetableCommandExecutor>();
+        // TODO GrantCommandExecutor
+        // TODO RevokeCommandExecutor
         serviceCollection.AddScoped<ICommandExecutor, ShowSubjectsCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, ShowQueueCommandExecutor>();
-        // serviceCollection.AddScoped<ICommandExecutor, ShowWaitingCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, AddSubjectCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, JoinCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, QuitCommandExecutor>();
