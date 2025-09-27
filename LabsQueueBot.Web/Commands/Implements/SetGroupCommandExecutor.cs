@@ -27,6 +27,7 @@ public class SetGroupCommandExecutor(
     private const string InvalidGroupInfoMessage = "Введены некорректные данные:\n{0}";
     private const string AlreadyInChosenGroupMessage = "Ты уже находишься в выбранной группе =)";
     private const string SuccessMessage = "Курс и группа успешно обновлены";
+    private const string CourseGroupRowPattern = "{0} курс {1} группа";
     
     public override string Type => options.Value.SetGroup.Type;
     public override string Name => options.Value.SetGroup.Name;
@@ -79,7 +80,7 @@ public class SetGroupCommandExecutor(
     private async Task SendGroupsKeyboard(ITelegramBotClient botClient, User user, CancellationToken cancellationToken)
     {
         var groups = (await userRepository.GetAllGroups(cancellationToken))
-            .Select(x => x.course + " курс " + x.group + " группа")
+            .Select(x => string.Format(CourseGroupRowPattern, x.course, x.group))
             .ToList();
         
         var keyboard = InlineKeyboardHelper.ListToKeyboard(groups, 1, true);
