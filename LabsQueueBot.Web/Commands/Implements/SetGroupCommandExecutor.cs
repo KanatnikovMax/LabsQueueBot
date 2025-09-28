@@ -22,12 +22,12 @@ public class SetGroupCommandExecutor(
     IOptions<CommandsSettings> options, 
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
+    private const string CourseGroupRowPattern = "{0} курс {1} группа";
     private const string SendGroupsKeyboardMessage = "Выберите курс и группу:";
     private const string AddGroupMessage = "Введите курс и группу в формате course:group";
     private const string InvalidGroupInfoMessage = "Введены некорректные данные:\n{0}";
     private const string AlreadyInChosenGroupMessage = "Ты уже находишься в выбранной группе =)";
     private const string SuccessMessage = "Курс и группа успешно обновлены";
-    private const string CourseGroupRowPattern = "{0} курс {1} группа";
     
     public override string Type => options.Value.SetGroup.Type;
     public override string Name => options.Value.SetGroup.Name;
@@ -140,9 +140,11 @@ public class SetGroupCommandExecutor(
             return;
         }
         
-        var courseGroup = ParseFormattedCourseGroup(update.CallbackQuery.Data!);
+        var courseGroup = update.CallbackQuery.Data!.Split(' ');
+        var course = byte.Parse(courseGroup[0]);
+        var group = byte.Parse(courseGroup[1]);
         
-        if (courseGroup.Course == user.CourseNumber && courseGroup.Group == user.GroupNumber)
+        if (course == user.CourseNumber && group == user.GroupNumber)
         {
             await botClient.SendTextMessageAsync(
                 chatId: user.Id,
@@ -153,7 +155,7 @@ public class SetGroupCommandExecutor(
         
         await subjectsManagementService.DeleteUserFromSubjectsQueues(user.Id, user.CourseNumber, user.GroupNumber, cancellationToken);
         
-        await userManagementService.PutUserIntoGroup(user, courseGroup.Course, courseGroup.Group, cancellationToken);
+        await userManagementService.PutUserIntoGroup(user, course, group, cancellationToken);
         
         await botClient.SendTextMessageAsync(
             chatId: user.Id,
@@ -178,27 +180,17 @@ public class SetGroupCommandExecutor(
             return;
         }
 
-        var courseGroup = ParseRawCourseGroup(update.Message.Text!);
+        var courseGroup = update.Message.Text!.Split(':');
+        var course = byte.Parse(courseGroup[0]);
+        var group = byte.Parse(courseGroup[1]);
         
         await subjectsManagementService.DeleteUserFromSubjectsQueues(user.Id, user.CourseNumber, user.GroupNumber, cancellationToken);
 
-        await userManagementService.PutUserIntoGroup(user, courseGroup.Course, courseGroup.Group, cancellationToken);
+        await userManagementService.PutUserIntoGroup(user, course, group, cancellationToken);
         
         await botClient.SendTextMessageAsync(
             chatId: user.Id,
             text: SuccessMessage,
             cancellationToken: cancellationToken);
-    }
-
-    private static (byte Course, byte Group) ParseFormattedCourseGroup(string info)
-    {
-        var parsed = info.Split(' ');
-        return (byte.Parse(parsed[0]), byte.Parse(parsed[2]));
-    }
-    
-    private static (byte Course, byte Group) ParseRawCourseGroup(string info)
-    {
-        var parsed = info.Split(':');
-        return (byte.Parse(parsed[0]), byte.Parse(parsed[1]));
     }
 }

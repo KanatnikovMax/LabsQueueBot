@@ -28,6 +28,8 @@ public static class CommandsConfigurator
         serviceCollection.AddScoped<ICommandExecutor, SetGroupCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, StartCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, StopCommandExecutor>();
+        serviceCollection.AddScoped<ICommandExecutor, BanCommandExecutor>();
+        // serviceCollection.AddScoped<ICommandExecutor, UnbanCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, HelpCommandExecutor>(x => new HelpCommandExecutor(
             x.GetServices<ICommandExecutor>,
             x.GetRequiredService<IOptions<TelegramBotSettings>>(), 

@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using LabsQueueBot.Core.Enums;
+﻿using LabsQueueBot.Core.Enums;
 
 namespace LabsQueueBot.DataAccess.Entities
 {
@@ -32,12 +31,12 @@ namespace LabsQueueBot.DataAccess.Entities
         /// <summary>
         /// Маска дней недели в числитель
         /// </summary>
-        public int NumWeekTimetableMask { get; set; } = (int) WeekDays.All;
+        public int NumWeekTimetableMask { get; set; } = (int) WeekDays.Sunday;
     
         /// <summary>
         /// Маска дней недели в знаменатель
         /// </summary>
-        public int DenWeekTimetableMask { get; set; } = (int) WeekDays.All;
+        public int DenWeekTimetableMask { get; set; } = (int) WeekDays.Sunday;
 
         public long[] Queue { get; set; } = [];
         public long[] Waiting { get; set; } = [];

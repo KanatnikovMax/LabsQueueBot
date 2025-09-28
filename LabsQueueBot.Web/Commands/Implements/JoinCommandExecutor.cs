@@ -15,8 +15,9 @@ namespace LabsQueueBot.Web.Commands.Implements;
 public class JoinCommandExecutor(
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
+    IBlackListRepository blackListRepository,
     IOptions<CommandsSettings> options,
-    ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
+    ILogger logger) : CommandExecutorBase(logger), ICommandExecutor // TODO проверка на бан
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";
     private const string AddSubjectMessage = "Введите название дисциплины, которую хотите добавить";

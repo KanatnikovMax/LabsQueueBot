@@ -1,4 +1,6 @@
-﻿namespace LabsQueueBot.Core.Settings;
+﻿using LabsQueueBot.Core.Constants;
+
+namespace LabsQueueBot.Core.Settings;
 
 public class TelegramBotSettings
 {
@@ -11,4 +13,5 @@ public class TelegramBotSettings
     public required double CleanerJobTimeoutInMinutes { get; init; }
     public required int StateUpdateTimeoutInMinutes { get; init; }
     public required int StateAllowedIntervalInMinutes { get; init; }
+    public required int MaxBanTimeoutInDays { get; init; } = GlobalConstants.DefaultMaxBanTimeoutInDays;
 }

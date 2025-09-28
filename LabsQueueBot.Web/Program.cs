@@ -1,4 +1,5 @@
 using LabsQueueBot.BusinessLogic;
+using LabsQueueBot.Repository;
 using LabsQueueBot.Web.ServiceCollectionExtensions;
 using Serilog;
 
@@ -16,6 +17,7 @@ builder.Services
             .ReadFrom.Configuration(builder.Configuration);
     })
     .AddDbContext(builder.Configuration)
+    .AddPersistence()
     .AddManagementServices()
     .AddCommonServices(builder.Configuration)
     .AddCommandExecutors(builder.Configuration)

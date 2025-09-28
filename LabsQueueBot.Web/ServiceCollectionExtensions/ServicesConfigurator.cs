@@ -1,6 +1,4 @@
 ﻿using LabsQueueBot.Core.Settings;
-using LabsQueueBot.Repository.Repository;
-using LabsQueueBot.Repository.Repository.Implements;
 using LabsQueueBot.Web.Services;
 using LabsQueueBot.Web.Services.Implementation;
 using Telegram.Bot;
@@ -13,9 +11,6 @@ public static class ServicesConfigurator
     {
         var settings = configuration.GetRequiredSection(nameof(TelegramBotSettings)).Get<TelegramBotSettings>();
         ArgumentNullException.ThrowIfNull(settings);
-        
-        serviceCollection.AddScoped<IUserRepository, UserRepository>();
-        serviceCollection.AddScoped<ISubjectRepository, SubjectRepository>();
         
         serviceCollection.AddSingleton<ITelegramBotClient>(new TelegramBotClient(settings.Token));
         

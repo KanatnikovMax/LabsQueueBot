@@ -3,4 +3,6 @@
 public static class GlobalConstants
 {
     public const string ErrorDocumentPath = "logs/ErrorDocument_{0}.txt";
+
+    public const int DefaultMaxBanTimeoutInDays = 7;
 }

@@ -90,13 +90,13 @@ public static class UpdateExtensions
         switch (update.Type)
         {
             case UpdateType.Message:
-                return update.Message!.From?.Username;
+                return '@' + update.Message!.From?.Username;
             
             case UpdateType.CallbackQuery:
-                return update.CallbackQuery!.Message!.From?.Username;
+                return '@' + update.CallbackQuery!.Message!.From?.Username;
             
             case UpdateType.MyChatMember:
-                return update.MyChatMember!.From.Username;
+                return '@' + update.MyChatMember!.From.Username;
             
             default:
                 return null;

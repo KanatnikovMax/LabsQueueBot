@@ -10,20 +10,16 @@ public enum UserState
     ShowQueue,
     Unregistered,
     Register,
-    UnsetStudentData,
     Join,
     Quit,
     Skip,
     AddGroup,
-    RefToAddSubject,
     AddSubject,
     Rename,
     ChooseGroup,
-    ChangeData,
     Ban,
     Union,
     ShowTimetable,
     SetTimetable,
-    SetTimetableDays,
-    ShowWaiting
+    SetTimetableDays
 }

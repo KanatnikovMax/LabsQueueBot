@@ -149,15 +149,13 @@ public class QueueBotUpdateHandler(
             await ReactAnInvalidUpdate(botClient, update, user.Id, cancellationToken);
             return;
         }
-
-        var isCommandMessage = user.State == UserState.None && update.IsCommand();
-
-        var command = isCommandMessage
+        
+        var command = user.State == UserState.None && update.IsCommand()
             ? commandExecutorProvider.GetCommandExecutorByText(update.Message!.Text!, user.Role)
             : commandExecutorProvider.GetCommandExecutorByState(user.State, update.Type, user.Role);
         if (command == null)
         {
-            if (isCommandMessage)
+            if (user.State == UserState.None)
             {
                 await botClient.SendTextMessageAsync(
                     chatId: user.Id,

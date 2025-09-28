@@ -25,6 +25,8 @@ public class UsersCleanerJob(
             try
             {
                 await userCleanerService.ClearOrDeleteAll(cancellationToken);
+                // TODO UsersCleanerJob должна разбанить пользователей, если время бана истекло
+                // await userUnbanService.UnbanByDate(cancellationToken);
             }
             catch (Exception e)
             {

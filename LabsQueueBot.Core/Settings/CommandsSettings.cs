@@ -18,4 +18,8 @@ public class CommandsSettings
     public required CommandSettings Rename { get; init; }
     public required CommandSettings Start { get; init; }
     public required CommandSettings Stop { get; init; }
+    public required CommandSettings Ban { get; init; }
+    public required CommandSettings Unban { get; init; }
+    public required CommandSettings Grant { get; init; }
+    public required CommandSettings Revoke { get; init; }
 }
