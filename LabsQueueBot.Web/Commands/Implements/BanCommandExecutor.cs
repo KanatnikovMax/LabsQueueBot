@@ -1,8 +1,8 @@
 ﻿using System.Text.RegularExpressions;
+using LabsQueueBot.BusinessLogic.Services;
 using LabsQueueBot.Core.Enums;
 using LabsQueueBot.Core.Settings;
 using LabsQueueBot.Core.Validators;
-using LabsQueueBot.DataAccess.Entities;
 using LabsQueueBot.Repository.Repository;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
@@ -16,7 +16,7 @@ namespace LabsQueueBot.Web.Commands.Implements;
 public class BanCommandExecutor(
     IUserRepository userRepository,
     ISubjectRepository subjectRepository,
-    IBlackListRepository blackListRepository,
+    IBlackListManagementService blackListManagementService,
     IOptions<TelegramBotSettings> botOptions,
     IOptions<CommandsSettings> commandsOptions,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
@@ -37,10 +37,10 @@ public class BanCommandExecutor(
     private const string BanInfoInvalidFormatMessage = "Данные введены в некорректном формате";
     private const string InvalidInfoMessage = "Введены некорректные данные:\n{0}";
     private const string UserToBanNotFoundMessage = "Пользователя с именем {0} не существует";
-    private const string YouAreWhoYouAre = "Забанить самого себя нельзя. Ты тот, кто ты есть, смирись с этим.";
+    private const string YouAreWhoYouAre = "Забанить самого себя нельзя. Ты тот, кто ты есть!";
     private const string OutOfTimeoutMessage = "Нельзя забанить пользователя на большее число дней, чем {0}";
     private const string SubjectNotFountMessage = "Дисциплины {0} не существует на курсе выбранного пользователя";
-    private const string AlreadyBanedMessage =
+    private const string AlreadyBannedMessage =
         """
         Пользователь {0} уже находится в черном списке по дисциплине {1}.
         Бан истекает {2} в {3}
@@ -199,36 +199,18 @@ public class BanCommandExecutor(
             return;
         }
 
-        var baned = await blackListRepository.GetBanByUserAndSubject(userToBan.Id, subject.Id, cancellationToken);
-
-        // проверяем, что если пользователь уже был забанен и время бана еще не вышло
-        if (baned != null && baned.UnbanDate > DateTime.UtcNow)
+        var unbanDate = await blackListManagementService.BanUserBySubject(userToBan.Id, subject.Id, timeout, user.Id, cancellationToken);
+        // проверяем, что если пользователь уже был забанен, то время бана еще не вышло
+        if (unbanDate > DateTime.UtcNow)
         {
             // переводим из utc в местное время
-            var localUnbanDate = baned.UnbanDate.Value.AddHours(botOptions.Value.LocalUtcOffset);
+            var localUnbanDate = unbanDate.AddHours(botOptions.Value.LocalUtcOffset);
             await botClient.SendTextMessageAsync(
                 chatId: user.Id,
-                text: string.Format(AlreadyBanedMessage, username, subjectName, localUnbanDate.Date.ToString("dd/MM/yyyy"), localUnbanDate.TimeOfDay.ToString("hh\\:mm")),
+                text: string.Format(AlreadyBannedMessage, username, subjectName, localUnbanDate.Date.ToString("dd/MM/yyyy"), localUnbanDate.TimeOfDay.ToString("hh\\:mm")),
                 cancellationToken: cancellationToken);
             return;
         }
-        
-        // удаляем пользователя из очереди ожидания
-        subject.Waiting = subject.Waiting.Where(x => x != userToBan.Id).ToArray();
-
-        // обновляем информацию о бане
-        baned ??= new Baned
-        {
-            UserId = userToBan.Id,
-            SubjectId = subject.Id
-        };
-        baned.ExecutorId = user.Id;
-        baned.UnbanDate = DateTime.UtcNow + TimeSpan.FromDays(timeout);
-
-        Task.WaitAll([
-                subjectRepository.SaveAsync(subject, cancellationToken),
-                blackListRepository.SaveAsync(baned, cancellationToken)
-            ], cancellationToken);
 
         await botClient.SendTextMessageAsync(
             chatId: user.Id,

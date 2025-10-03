@@ -8,10 +8,10 @@ using Telegram.Bot;
 
 namespace LabsQueueBot.BusinessLogic.Services.Implementation;
 
-public class UserCleanerService(
+public class UserStateCleanerService(
     ITelegramBotClient botClient,
     IServiceScopeFactory scopeFactory,
-    IOptions<TelegramBotSettings> options) : IUserCleanerService
+    IOptions<TelegramBotSettings> options) : IUserStateCleanerService
 {
     public async Task ClearAll(CancellationToken cancellationToken)
     {
@@ -28,6 +28,11 @@ public class UserCleanerService(
                 .Select(x => new { x.Id, x.LastCallbackableMessageId })
                 .ToDictionary(x => x.Id, x => x.LastCallbackableMessageId!.Value);
             
+            var messagesToClear = users
+                .Where(x => x.LastCallbackableMessageId == null)
+                .Select(x => x.Id)
+                .ToList();
+            
             foreach (var user in users)
             {
                 user.State = UserState.None;
@@ -35,7 +40,9 @@ public class UserCleanerService(
             }
             await userRepository.UpdateBatchAsync(users, cancellationToken);
 
-            ClearReplyMarkupsInChats(markupsToClear, cancellationToken);
+            var clearMarkups = ClearReplyMarkupsInChats(markupsToClear, cancellationToken);
+            var clearMessages = ClearReplyMessagesInChats(messagesToClear, cancellationToken);
+            Task.WaitAll([clearMarkups, clearMessages], cancellationToken);
         }
     }
 
@@ -58,6 +65,11 @@ public class UserCleanerService(
                 .Where(x => x.LastCallbackableMessageId != null)
                 .Select(x => new { x.Id, x.LastCallbackableMessageId })
                 .ToDictionary(x => x.Id, x => x.LastCallbackableMessageId!.Value);
+
+            var messagesToClear = users
+                .Where(x => x.LastCallbackableMessageId == null)
+                .Select(x => x.Id)
+                .ToList();
             
             foreach (var user in users)
             {
@@ -66,7 +78,9 @@ public class UserCleanerService(
             }
             await userRepository.UpdateBatchAsync(users, cancellationToken);
             
-            ClearReplyMarkupsInChats(markupsToClear, cancellationToken);
+            var clearMarkups = ClearReplyMarkupsInChats(markupsToClear, cancellationToken);
+            var clearMessages = ClearReplyMessagesInChats(messagesToClear, cancellationToken);
+            Task.WaitAll([clearMarkups, clearMessages], cancellationToken);
         }
 
         await deleteUnregisteredUsersTask;
@@ -76,23 +90,40 @@ public class UserCleanerService(
     {
         return await userRepository.GetByConditionAsync(u =>
                 u.State != UserState.None
-                && u.State != UserState.Register        // ответ на текстовое сообщение
-                && u.State != UserState.AddGroup        // ответ на текстовое сообщение
+                && u.State != UserState.Register        // ответ на текстовое сообщение регистрации
                 && u.State != UserState.Unregistered    // удаляются, а не очищаются
                 && u.LastActivityAt.AddMinutes(options.Value.StateUpdateTimeoutInMinutes) < DateTime.UtcNow,
             cancellationToken);
     }
 
-    private void ClearReplyMarkupsInChats(IReadOnlyDictionary<long, int> markupsToClear, CancellationToken cancellationToken)
+    private Task ClearReplyMarkupsInChats(IReadOnlyDictionary<long, int> markupsToClear, CancellationToken cancellationToken)
     {
         var clearTasks = markupsToClear
             .Select(Task (markup) =>
-                Task.Run(() => botClient.EditMessageReplyMarkupAsync(
-                        chatId: markup.Key,
-                        messageId: markup.Value,
-                        replyMarkup: null,
-                        cancellationToken: cancellationToken),
+                Task.Run(() => 
+                        botClient.EditMessageReplyMarkupAsync(
+                            chatId: markup.Key, 
+                            messageId: markup.Value, 
+                            replyMarkup: null, 
+                            cancellationToken: cancellationToken), 
                     cancellationToken)).ToArray();
+        
         Task.WaitAll(clearTasks, cancellationToken);
+        return Task.CompletedTask;
+    }
+
+    private Task ClearReplyMessagesInChats(IReadOnlyCollection<long> messagesToClear, CancellationToken cancellationToken)
+    {
+        var clearTasks = messagesToClear
+            .Select(Task (chatId) =>
+                Task.Run(() => 
+                        botClient.SendTextMessageAsync(
+                            chatId: chatId, 
+                            text: "Время на ответ вышло",
+                            cancellationToken: cancellationToken), 
+                    cancellationToken)).ToArray();
+        
+        Task.WaitAll(clearTasks, cancellationToken);
+        return Task.CompletedTask;
     }
 }

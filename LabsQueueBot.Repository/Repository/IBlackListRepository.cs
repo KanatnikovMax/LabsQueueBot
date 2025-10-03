@@ -2,7 +2,7 @@
 
 namespace LabsQueueBot.Repository.Repository;
 
-public interface IBlackListRepository : IRepository<Baned>
+public interface IBlackListRepository : IRepository<Banned>
 {
-    Task<Baned?> GetBanByUserAndSubject(long banedUserId, int subjectId, CancellationToken cancellationToken);
+    Task<Banned?> GetBanByUserAndSubject(long banedUserId, int subjectId, CancellationToken cancellationToken);
 }

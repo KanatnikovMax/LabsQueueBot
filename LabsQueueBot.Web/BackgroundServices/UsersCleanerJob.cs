@@ -7,7 +7,7 @@ using ILogger = Serilog.ILogger;
 namespace LabsQueueBot.Web.BackgroundServices;
 
 public class UsersCleanerJob(
-    IUserCleanerService userCleanerService,
+    IUserStateCleanerService userStateCleanerService,
     IOptions<TelegramBotSettings> options,
     ILogger logger) : BackgroundService
 {
@@ -24,9 +24,9 @@ public class UsersCleanerJob(
             _stopwatch.Restart();
             try
             {
-                await userCleanerService.ClearOrDeleteAll(cancellationToken);
+                await userStateCleanerService.ClearOrDeleteAll(cancellationToken);
                 // TODO UsersCleanerJob должна разбанить пользователей, если время бана истекло
-                // await userUnbanService.UnbanByDate(cancellationToken);
+                // await userUnbanService.UnbanAllByTiemout(cancellationToken);
             }
             catch (Exception e)
             {

@@ -7,7 +7,7 @@ public class QueueBotContext : DbContext
 {
     public DbSet<User> UserRepository { get; set; }
     public DbSet<Subject> SubjectRepository { get; set; }
-    public DbSet<Baned> BlackListRepository { get; set; }
+    public DbSet<Banned> BlackListRepository { get; set; }
 
     public QueueBotContext(DbContextOptions options)
         : base(options) { }
@@ -22,8 +22,8 @@ public class QueueBotContext : DbContext
         modelBuilder.Entity<Subject>().HasIndex(s => new { s.CourseNumber, s.GroupNumber, s.SubjectName })
             .IsUnique();
 
-        modelBuilder.Entity<Baned>().HasKey(b => b.Id);
-        modelBuilder.Entity<Baned>().HasIndex(b => new { b.UserId, b.SubjectId })
+        modelBuilder.Entity<Banned>().HasKey(b => b.Id);
+        modelBuilder.Entity<Banned>().HasIndex(b => new { b.UserId, b.SubjectId })
             .IsUnique();
     }
 }
