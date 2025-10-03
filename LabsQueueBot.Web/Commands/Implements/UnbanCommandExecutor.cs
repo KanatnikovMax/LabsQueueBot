@@ -182,7 +182,7 @@ public class UnbanCommandExecutor(
             return;
         }
 
-        var result = await blackListManagementService.UnbanUserBySubject(userToUnban.Id, subject.Id, cancellationToken);
+        var result = await blackListManagementService.UnbanBySubject(userToUnban.Id, subject.Id, cancellationToken);
         if (!result)
         {
             await botClient.SendTextMessageAsync(

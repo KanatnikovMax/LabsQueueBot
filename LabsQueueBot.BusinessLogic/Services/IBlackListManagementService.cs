@@ -2,6 +2,7 @@
 
 public interface IBlackListManagementService
 {
-    Task<DateTime> BanUserBySubject(long userToBanId, int subjectId, int timeoutInDays, long executorId, CancellationToken cancellationToken);
-    Task<bool> UnbanUserBySubject(long userId, int subjectId, CancellationToken cancellationToken);
+    Task<DateTime> BanBySubject(long userToBanId, int subjectId, int timeoutInDays, long executorId, CancellationToken cancellationToken);
+    Task<bool> UnbanBySubject(long userId, int subjectId, CancellationToken cancellationToken);
+    Task UnbanAllByTimeout(CancellationToken cancellationToken);
 }

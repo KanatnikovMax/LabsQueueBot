@@ -7,7 +7,7 @@ public class BlackListManagementService(
     IBlackListRepository blackListRepository,
     ISubjectRepository subjectRepository) : IBlackListManagementService
 {
-    public async Task<DateTime> BanUserBySubject(long userToBanId, int subjectId, int timeoutInDays, long executorId, CancellationToken cancellationToken)
+    public async Task<DateTime> BanBySubject(long userToBanId, int subjectId, int timeoutInDays, long executorId, CancellationToken cancellationToken)
     {
         var banned = await blackListRepository.GetBanByUserAndSubject(userToBanId, subjectId, cancellationToken);
         if (banned != null && banned.UnbanDate > DateTime.UtcNow)
@@ -41,7 +41,7 @@ public class BlackListManagementService(
         return banned.UnbanDate;
     }
 
-    public async Task<bool> UnbanUserBySubject(long userId, int subjectId, CancellationToken cancellationToken)
+    public async Task<bool> UnbanBySubject(long userId, int subjectId, CancellationToken cancellationToken)
     {
         var banned = await blackListRepository.GetBanByUserAndSubject(userId, subjectId, cancellationToken);
         if (banned == null || banned.UnbanDate < DateTime.UtcNow)
@@ -53,5 +53,10 @@ public class BlackListManagementService(
         await blackListRepository.SaveAsync(banned, cancellationToken);
 
         return true;
+    }
+
+    public async Task UnbanAllByTimeout(CancellationToken cancellationToken)
+    {
+        await blackListRepository.DeleteByConditionAsync(x => x.UnbanDate < DateTime.UtcNow, cancellationToken);
     }
 }

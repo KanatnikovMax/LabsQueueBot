@@ -10,12 +10,12 @@ public static class TelegramBotConfigurator
     {
         serviceCollection.AddSingleton<IUpdateHandler, QueueBotUpdateHandler>();
         
-        serviceCollection.AddHostedService<LabsQueueBotService>();
+        // serviceCollection.AddHostedService<LabsQueueBotService>();
         
         // serviceCollection.AddHostedService<NotificationSenderJob>();
         
         // // джоба обновления состояний и чатов пользователей во время бездействия
-        // serviceCollection.AddHostedService<UsersCleanerJob>(); 
+        serviceCollection.AddHostedService<UsersCleanerJob>(); 
         
         return serviceCollection;
     }

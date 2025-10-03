@@ -67,4 +67,12 @@ public class BlackListRepository(IDbContextFactory<QueueBotContext> contextFacto
         await using var dbContext = await contextFactory.CreateDbContextAsync(cancellationToken);
         return await dbContext.Set<Banned>().AsNoTracking().FirstOrDefaultAsync(e => e.UserId == banedUserId && e.SubjectId == subjectId, cancellationToken);
     }
+    
+    public async Task DeleteByConditionAsync(Expression<Func<Banned, bool>> predicate, CancellationToken cancellationToken)
+    {
+        await using var dbContext = await contextFactory.CreateDbContextAsync(cancellationToken);
+        var entities = dbContext.Set<Banned>().Where(predicate);
+        dbContext.Set<Banned>().RemoveRange(entities);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
 }

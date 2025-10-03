@@ -8,6 +8,7 @@ namespace LabsQueueBot.Web.BackgroundServices;
 
 public class UsersCleanerJob(
     IUserStateCleanerService userStateCleanerService,
+    IServiceScopeFactory scopeFactory,
     IOptions<TelegramBotSettings> options,
     ILogger logger) : BackgroundService
 {
@@ -24,9 +25,12 @@ public class UsersCleanerJob(
             _stopwatch.Restart();
             try
             {
-                await userStateCleanerService.ClearOrDeleteAll(cancellationToken);
-                // TODO UsersCleanerJob должна разбанить пользователей, если время бана истекло
-                // await userUnbanService.UnbanAllByTiemout(cancellationToken);
+                await using var scope = scopeFactory.CreateAsyncScope();
+                var blackListService = scope.ServiceProvider.GetRequiredService<IBlackListManagementService>();
+                
+                var clearUsers = userStateCleanerService.ClearOrDeleteAll(cancellationToken);
+                var unbanUsers = blackListService.UnbanAllByTimeout(cancellationToken);
+                Task.WaitAll([clearUsers, unbanUsers], cancellationToken);
             }
             catch (Exception e)
             {

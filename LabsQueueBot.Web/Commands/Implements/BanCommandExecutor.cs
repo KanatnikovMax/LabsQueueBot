@@ -199,7 +199,7 @@ public class BanCommandExecutor(
             return;
         }
 
-        var unbanDate = await blackListManagementService.BanUserBySubject(userToBan.Id, subject.Id, timeout, user.Id, cancellationToken);
+        var unbanDate = await blackListManagementService.BanBySubject(userToBan.Id, subject.Id, timeout, user.Id, cancellationToken);
         // проверяем, что если пользователь уже был забанен, то время бана еще не вышло
         if (unbanDate > DateTime.UtcNow)
         {
