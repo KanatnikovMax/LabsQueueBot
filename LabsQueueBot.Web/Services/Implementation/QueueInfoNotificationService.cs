@@ -153,4 +153,32 @@ public class QueueInfoNotificationService(
             text: message,
             cancellationToken: cancellationToken);
     }
+
+    public async Task NotifyGroupAboutTimetable(byte course, byte group, string timetableMessage, CancellationToken cancellationToken)
+    {
+        await using var scope = scopeFactory.CreateAsyncScope();
+
+        var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
+        
+        //// TODO проверить, работает ли без UserState.None
+        // var users = (await userRepository.GetByConditionAsync(
+        //         u => u.CourseNumber == course && u.GroupNumber == group && u.State == UserState.None,
+        //         cancellationToken))
+        //     .ToList();
+        var users = (await userRepository.GetGroup(course, group, cancellationToken))
+            .ToList();
+
+        var tasks = users
+            .Select(Task (user) =>
+                Task.Run(() => 
+                    {
+                        botClient.SendTextMessageAsync(
+                            chatId: user.Id,
+                            text: timetableMessage,
+                            cancellationToken: cancellationToken);
+                    },
+                    cancellationToken))
+            .ToArray();
+        Task.WaitAll(tasks, cancellationToken);
+    }
 }

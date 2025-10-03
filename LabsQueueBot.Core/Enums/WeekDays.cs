@@ -1,5 +1,6 @@
 ﻿namespace LabsQueueBot.Core.Enums;
 
+[Flags]
 public enum WeekDays
 {
     None      = 0b0000000,  // 0

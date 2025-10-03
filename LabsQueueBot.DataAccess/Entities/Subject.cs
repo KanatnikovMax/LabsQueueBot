@@ -31,12 +31,12 @@ namespace LabsQueueBot.DataAccess.Entities
         /// <summary>
         /// Маска дней недели в числитель
         /// </summary>
-        public int NumWeekTimetableMask { get; set; } = (int) WeekDays.Sunday;
+        public int NumWeekTimetableMask { get; set; } = (int) WeekDays.None;
     
         /// <summary>
         /// Маска дней недели в знаменатель
         /// </summary>
-        public int DenWeekTimetableMask { get; set; } = (int) WeekDays.Sunday;
+        public int DenWeekTimetableMask { get; set; } = (int) WeekDays.None;
 
         public long[] Queue { get; set; } = [];
         public long[] Waiting { get; set; } = [];

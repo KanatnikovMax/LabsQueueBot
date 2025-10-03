@@ -13,7 +13,7 @@ public static class CommandsConfigurator
     public static IServiceCollection AddCommandExecutors(this IServiceCollection serviceCollection, IConfiguration configuration)
     {
         serviceCollection.AddScoped<ICommandExecutor, SwitchNotificationCommandExecutor>();
-        // serviceCollection.AddScoped<ICommandExecutor, SetTimetableCommandExecutor>();
+        serviceCollection.AddScoped<ICommandExecutor, SetTimetableCommandExecutor>();
         // serviceCollection.AddScoped<ICommandExecutor, ShowTimetableCommandExecutor>();
         // TODO GrantCommandExecutor
         // TODO RevokeCommandExecutor
