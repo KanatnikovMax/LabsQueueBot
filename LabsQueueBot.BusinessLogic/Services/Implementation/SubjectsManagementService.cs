@@ -1,10 +1,24 @@
-﻿using LabsQueueBot.DataAccess.Entities;
+﻿using LabsQueueBot.Core.Enums;
+using LabsQueueBot.Core.Helpers;
+using LabsQueueBot.DataAccess.Entities;
 using LabsQueueBot.Repository.Repository;
 
 namespace LabsQueueBot.BusinessLogic.Services.Implementation;
 
 public class SubjectsManagementService(ISubjectRepository subjectRepository) : ISubjectsManagementService
 {
+    public async Task<IReadOnlyCollection<Subject>> GetByDayOfWeekInTimetable(WeekDays dayOfWeek, bool isNumWeek, CancellationToken cancellationToken)
+    {
+        var subjects = (await subjectRepository.GetByConditionAsync(
+                x => isNumWeek
+                    ? WeekDaysHelper.ParseWeekDays((WeekDays)x.NumWeekTimetableMask).Contains(dayOfWeek)
+                    : WeekDaysHelper.ParseWeekDays((WeekDays)x.DenWeekTimetableMask).Contains(dayOfWeek), 
+                cancellationToken))
+            .ToList();
+
+        return subjects;
+    }
+    
     public async Task DeleteUserFromSubjectsQueues(long userId, byte course, byte group, CancellationToken cancellationToken)
     {
         var subjects = (await subjectRepository.GetByGroup(course, group, cancellationToken)).ToList();

@@ -12,7 +12,7 @@ public static class TelegramBotConfigurator
         
         serviceCollection.AddHostedService<LabsQueueBotService>();
         
-        // serviceCollection.AddHostedService<NotificationSenderJob>();
+        // serviceCollection.AddHostedService<QueueWaitingUnionJob>();
         
         // джоба обновления состояний и чатов пользователей во время бездействия
         // serviceCollection.AddHostedService<UsersCleanerJob>(); 

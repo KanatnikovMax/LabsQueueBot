@@ -1,7 +1,9 @@
-﻿namespace LabsQueueBot.BusinessLogic.Services;
+﻿using LabsQueueBot.DataAccess.Entities;
+
+namespace LabsQueueBot.BusinessLogic.Services;
 
 public interface IRandomizeUnionWaitingService
 {
     Task RandomizeAndUnionWaitingByGroup(byte course, byte group, CancellationToken cancellationToken);
-    Task RandomizeAndUnionWaitingBySubject(int subjectId, CancellationToken cancellationToken);
+    Task<Subject?> RandomizeAndUnionWaitingBySubject(int subjectId, CancellationToken cancellationToken);
 }

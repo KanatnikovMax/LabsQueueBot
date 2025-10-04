@@ -51,4 +51,19 @@ public static class WeekDaysHelper
 
         return result;
     }
+
+    public static WeekDays ToWeekDay(DayOfWeek dayOfWeek)
+    {
+        return dayOfWeek switch
+        {
+            DayOfWeek.Monday => WeekDays.Monday,
+            DayOfWeek.Tuesday => WeekDays.Tuesday,
+            DayOfWeek.Wednesday => WeekDays.Wednesday,
+            DayOfWeek.Thursday => WeekDays.Thursday,
+            DayOfWeek.Friday => WeekDays.Friday,
+            DayOfWeek.Saturday => WeekDays.Saturday,
+            DayOfWeek.Sunday => WeekDays.Sunday,
+            _ => WeekDays.None
+        };
+    }
 }

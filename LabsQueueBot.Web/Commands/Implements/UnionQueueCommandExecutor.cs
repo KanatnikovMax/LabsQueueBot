@@ -137,7 +137,15 @@ public class UnionQueueCommandExecutor(
             return;
         }
 
-        await randomizeUnionWaitingService.RandomizeAndUnionWaitingBySubject(subject.Id, cancellationToken);
+        subject = await randomizeUnionWaitingService.RandomizeAndUnionWaitingBySubject(subject.Id, cancellationToken);
+        if (subject == null)
+        {
+            await botClient.SendTextMessageAsync(
+                chatId: user.Id,
+                text: SubjectNotFoundMessage,
+                cancellationToken: cancellationToken);
+            return;
+        }
 
         await botClient.SendTextMessageAsync(
             chatId: user.Id,

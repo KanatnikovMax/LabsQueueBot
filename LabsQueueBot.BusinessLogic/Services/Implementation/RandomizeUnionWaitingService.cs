@@ -1,4 +1,5 @@
 ﻿using System.Security.Cryptography;
+using LabsQueueBot.DataAccess.Entities;
 using LabsQueueBot.Repository.Repository;
 
 namespace LabsQueueBot.BusinessLogic.Services.Implementation;
@@ -24,18 +25,19 @@ public class RandomizeUnionWaitingService(
         await subjectRepository.UpdateBatchAsync(subjects, cancellationToken);
     }
 
-    public async Task RandomizeAndUnionWaitingBySubject(int subjectId, CancellationToken cancellationToken)
+    public async Task<Subject?> RandomizeAndUnionWaitingBySubject(int subjectId, CancellationToken cancellationToken)
     {
         var subject = await subjectRepository.GetByIdAsync(subjectId, cancellationToken);
         if (subject == null)
-            return;
+            return null;
         
         var randomizedWaiting = RandomizeWaiting(subject.Waiting.ToList());
         
         subject.Queue = subject.Queue.Concat(randomizedWaiting).ToArray();
         subject.Waiting = [];
         
-        await subjectRepository.SaveAsync(subject, cancellationToken);
+        subject = await subjectRepository.SaveAsync(subject, cancellationToken);
+        return subject;
     }
     
     private static List<long> RandomizeWaiting(List<long> waiting)
