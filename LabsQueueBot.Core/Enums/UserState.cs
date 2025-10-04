@@ -17,5 +17,6 @@ public enum UserState
     Union,
     ShowTimetable,
     SetTimetable,
-    Unban
+    Unban,
+    Grant
 }

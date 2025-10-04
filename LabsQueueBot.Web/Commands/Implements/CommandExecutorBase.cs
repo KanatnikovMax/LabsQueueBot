@@ -15,7 +15,7 @@ public abstract class CommandExecutorBase(ILogger logger) : ICommandExecutor
     private const string Error = "failure";
     private const string DebugMessage = "Command {0} execution by Update:\n{1}";
     private const string InfoMessage = "UpdateId: {0} Command: {1} UserId: {2}";
-    private const string ProfilingMessage = "UpdateId: {0} Command: {1} Ellapsed: {2}ms Result: {3}";
+    private const string ProfilingMessage = "UpdateId: {0} CommandExecutor: {1} Ellapsed ms: {2} Result: {3}";
     
     private readonly Stopwatch _stopwatch = new();
     
@@ -24,6 +24,8 @@ public abstract class CommandExecutorBase(ILogger logger) : ICommandExecutor
     public abstract IReadOnlyCollection<(UserState State, UpdateType Type)> Allows { get; }
     public abstract Role AcceptRole { get; }
     public abstract string? Definition { get; }
+    
+    protected abstract Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken);
 
     public async Task Execute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
@@ -46,9 +48,7 @@ public abstract class CommandExecutorBase(ILogger logger) : ICommandExecutor
         finally
         {
             _stopwatch.Stop();
-            logger.Information(ProfilingMessage, update.Id, GetType(), _stopwatch.Elapsed.Milliseconds, isSuccess ? Success : Error);
+            logger.Information(ProfilingMessage, update.Id, GetType().Name, _stopwatch.Elapsed.Milliseconds, isSuccess ? Success : Error);
         }
     }
-    
-    protected abstract Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken);
 }

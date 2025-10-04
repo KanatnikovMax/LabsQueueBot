@@ -17,7 +17,7 @@ public class AdminNotificationService(
         var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
         
         var users = (await userRepository.GetByConditionAsync(
-                u => u.Role == Role.Admin, // && u.State == UserState.None,
+                u => u.Role == Role.Admin,
                 cancellationToken))
             .ToList();
 

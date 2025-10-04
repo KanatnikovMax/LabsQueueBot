@@ -20,7 +20,7 @@ builder.Services
     .AddPersistence()
     .AddManagementServices()
     .AddCommonServices(builder.Configuration)
-    .AddCommandExecutors(builder.Configuration)
+    .AddCommandExecutors()
     .AddTelegramBotServices();
 
 var app = builder.Build();

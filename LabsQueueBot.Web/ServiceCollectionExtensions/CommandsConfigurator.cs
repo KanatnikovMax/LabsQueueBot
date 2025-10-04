@@ -10,13 +10,13 @@ namespace LabsQueueBot.Web.ServiceCollectionExtensions;
 
 public static class CommandsConfigurator
 {
-    public static IServiceCollection AddCommandExecutors(this IServiceCollection serviceCollection, IConfiguration configuration)
+    public static IServiceCollection AddCommandExecutors(this IServiceCollection serviceCollection)
     {
         serviceCollection.AddScoped<ICommandExecutor, SwitchNotificationCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, SetTimetableCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, ShowTimetableCommandExecutor>();
-        // TODO GrantCommandExecutor
-        // TODO RevokeCommandExecutor
+        serviceCollection.AddScoped<ICommandExecutor, GrantCommandExecutor>();
+        // serviceCollection.AddScoped<ICommandExecutor, RevokeCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, ShowSubjectsCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, ShowQueueCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, AddSubjectCommandExecutor>();
