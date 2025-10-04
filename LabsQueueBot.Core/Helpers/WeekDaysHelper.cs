@@ -18,8 +18,8 @@ public static class WeekDaysHelper
             _ => WeekDays.None
         };
     }
-
-    public static string ToString(this WeekDays weekDay)
+    
+    public static string ToString(WeekDays weekDay)
     {
         return weekDay switch
         {
@@ -32,5 +32,23 @@ public static class WeekDaysHelper
             WeekDays.Sunday => "вс",
             _ => ""
         };
+    }
+
+    public static string ToString(IEnumerable<WeekDays> weekDays)
+        => weekDays.Select(ToString).Aggregate((left, right) => $"{left} {right}");
+
+    public static IEnumerable<WeekDays> ParseWeekDays(WeekDays weekDays)
+    {
+        var result = new List<WeekDays>();
+        
+        if (weekDays.HasFlag(WeekDays.Monday)) result.Add(WeekDays.Monday);
+        if (weekDays.HasFlag(WeekDays.Tuesday)) result.Add(WeekDays.Tuesday);
+        if (weekDays.HasFlag(WeekDays.Wednesday)) result.Add(WeekDays.Wednesday);
+        if (weekDays.HasFlag(WeekDays.Thursday)) result.Add(WeekDays.Thursday);
+        if (weekDays.HasFlag(WeekDays.Friday)) result.Add(WeekDays.Friday);
+        if (weekDays.HasFlag(WeekDays.Saturday)) result.Add(WeekDays.Saturday);
+        if (weekDays.HasFlag(WeekDays.Sunday)) result.Add(WeekDays.Sunday);
+
+        return result;
     }
 }

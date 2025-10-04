@@ -43,10 +43,7 @@ public class SetTimetableCommandExecutor(
     
     public override string Type => options.Value.SetTimetable.Type;
     public override string Name => options.Value.SetTimetable.Name;
-    public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [
-        (UserState.None, UpdateType.Message),
-        (UserState.SetTimetable, UpdateType.Message)
-    ];
+    public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [ (UserState.SetTimetable, UpdateType.Message) ];
     public override Role AcceptRole => Role.Privileged;
     public override string Definition => options.Value.SetTimetable.Definition;
     
@@ -131,7 +128,7 @@ public class SetTimetableCommandExecutor(
             subject.DenWeekTimetableMask = (int)weekDaysMask;
         await subjectsRepository.SaveAsync(subject, cancellationToken);
 
-        var prettifiedWeekDays = daysOfWeek.Select(WeekDaysHelper.ToString).Aggregate((left, right) => $"{left} {right}");
+        var prettifiedWeekDays = WeekDaysHelper.ToString(daysOfWeek);
         var notifyMessage = string.Format(CompleteSetTimetableMessage, subjectName, prettifiedWeekDays);
         await queueInfoNotificationService.NotifyGroupAboutTimetable(user.CourseNumber, user.GroupNumber, notifyMessage, cancellationToken);
     }

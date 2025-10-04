@@ -106,9 +106,9 @@ public class SetGroupCommandExecutor(
             message: $"{SendGroupsKeyboardMessage} {update.CallbackQuery.Data}",
             cancellationToken: cancellationToken);
         
-        var subjectName = update.CallbackQuery.Data;
+        var rawCourseGroup = update.CallbackQuery.Data;
         
-        if (subjectName == InlineKeyboardHelper.AddMessage)
+        if (rawCourseGroup == InlineKeyboardHelper.AddMessage)
         {
             user.State = UserState.AddGroup;
             await userRepository.SaveAsync(user, cancellationToken);
@@ -120,7 +120,7 @@ public class SetGroupCommandExecutor(
             return;
         }
         
-        if (subjectName == InlineKeyboardHelper.BackMessage)
+        if (rawCourseGroup == InlineKeyboardHelper.BackMessage)
         {
             user.State = UserState.None;
             await userRepository.SaveAsync(user, cancellationToken);
@@ -130,7 +130,7 @@ public class SetGroupCommandExecutor(
         user.State = UserState.None;
         await userRepository.SaveAsync(user, cancellationToken);
         
-        var validationResult = CourseGroupValidator.ValidateFormatted(update.CallbackQuery.Data);
+        var validationResult = CourseGroupValidator.ValidateFormatted(rawCourseGroup);
         if (validationResult != null)
         {
             await botClient.SendTextMessageAsync(
@@ -140,7 +140,7 @@ public class SetGroupCommandExecutor(
             return;
         }
         
-        var courseGroup = update.CallbackQuery.Data!.Split(' ');
+        var courseGroup = rawCourseGroup!.Split(' ');
         var course = byte.Parse(courseGroup[0]);
         var group = byte.Parse(courseGroup[1]);
         

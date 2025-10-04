@@ -14,7 +14,7 @@ public static class CommandsConfigurator
     {
         serviceCollection.AddScoped<ICommandExecutor, SwitchNotificationCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, SetTimetableCommandExecutor>();
-        // serviceCollection.AddScoped<ICommandExecutor, ShowTimetableCommandExecutor>();
+        serviceCollection.AddScoped<ICommandExecutor, ShowTimetableCommandExecutor>();
         // TODO GrantCommandExecutor
         // TODO RevokeCommandExecutor
         serviceCollection.AddScoped<ICommandExecutor, ShowSubjectsCommandExecutor>();

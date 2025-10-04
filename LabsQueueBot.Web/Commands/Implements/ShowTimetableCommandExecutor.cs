@@ -1,13 +1,14 @@
-﻿using System.Text;
-using LabsQueueBot.Core.Enums;
+﻿using LabsQueueBot.Core.Enums;
+using LabsQueueBot.Core.Helpers;
 using LabsQueueBot.Core.Settings;
-using LabsQueueBot.DataAccess.Entities;
+using LabsQueueBot.Core.Utils;
 using LabsQueueBot.Repository.Repository;
 using LabsQueueBot.Web.Helpers;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using ILogger = Serilog.ILogger;
 using User = LabsQueueBot.DataAccess.Entities.User;
 
 namespace LabsQueueBot.Web.Commands.Implements;
@@ -15,51 +16,46 @@ namespace LabsQueueBot.Web.Commands.Implements;
 public class ShowTimetableCommandExecutor(
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
-    IOptions<CommandsSettings> options) : ICommandExecutor // TODO доделать
+    IOptions<CommandsSettings> options,
+    ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";
-    private const string WrongCallbackQueryMessageRequest = "Не в той табличке ты тыкнул";
     private const string SubjectNotFoundMessage = "Такой дисциплины не существует";
+    private const string SubjectTimetableMessage =
+        """
+        Расписание для дисциплины {0}:
+        Числитель: {1}
+        Знаменатель: {2}
+        """;
     
-    public string Type => options.Value.ShowTimetable.Type;
-    public string Name => options.Value.ShowTimetable.Name;
-    public IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [ (UserState.ShowTimetable, UpdateType.CallbackQuery) ];
-    public Role AcceptRole => Role.Default;
-    public string Definition => options.Value.ShowTimetable.Definition;
+    public override string Type => options.Value.ShowTimetable.Type;
+    public override string Name => options.Value.ShowTimetable.Name;
+    public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [ (UserState.ShowTimetable, UpdateType.CallbackQuery) ];
+    public override Role AcceptRole => Role.Default;
+    public override string Definition => options.Value.ShowTimetable.Definition;
 
-    public async Task Execute(ITelegramBotClient botClient, Update update, User user,
-        CancellationToken cancellationToken)
+    protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
-        /*
+        var isSuccess = false;
         switch (user.State)
         {
             case UserState.None:
             {
-                user.State = UserState.ShowTimetable;
-                await userRepository.SaveAsync(user, cancellationToken);
-
                 await SendSubjectsKeyboard(botClient, user, cancellationToken);
-
-                return;
+                isSuccess = true;
+                break;
             }
             case UserState.ShowTimetable:
             {
-                if (!update.Type.Equals(UpdateType.CallbackQuery))
-                {
-                    await botClient.DeleteMessageAsync(
-                        chatId: user.Id,
-                        messageId: update.Message.MessageId,
-                        cancellationToken: cancellationToken);
-                    return;
-                }
-
+                user.LastCallbackableMessageId = null;
                 await SendSubjectTimetable(botClient, update, user, cancellationToken);
-                return;
+                isSuccess = true;
+                break;
             }
         }
-        */
+        return isSuccess;
     }
-    /*
+    
     private async Task SendSubjectsKeyboard(ITelegramBotClient botClient, User user,
         CancellationToken cancellationToken)
     {
@@ -67,46 +63,38 @@ public class ShowTimetableCommandExecutor(
                     s.CourseNumber == user.CourseNumber && s.GroupNumber == user.GroupNumber,
                 cancellationToken))
             .Select(s => s.SubjectName).ToList();
-        var keyboard = InlineKeyboardHelper.ListToKeyboard(subjects, false, true, 1);
+        var keyboard = InlineKeyboardHelper.ListToKeyboard(subjects, 1);
 
-        await botClient.SendTextMessageAsync(
+        var message = await botClient.SendTextMessageAsync(
             chatId: user.Id,
             text: SendSubjectsKeyboardMessage,
             replyMarkup: keyboard,
             cancellationToken: cancellationToken);
+        
+        user.State = UserState.ShowTimetable;
+        user.LastCallbackableMessageId = message.MessageId;
+        await userRepository.SaveAsync(user, cancellationToken);
     }
 
     private async Task SendSubjectTimetable(ITelegramBotClient botClient, Update update, User user,
         CancellationToken cancellationToken)
     {
-        await botClient.DeleteMessageAsync(
+        await BotClientUtils.ClearMarkupMessage(
+            botClient: botClient,
             chatId: user.Id,
-            messageId: update.CallbackQuery.Message.MessageId,
+            messageId: update.CallbackQuery!.Message!.MessageId,
+            message: $"{SendSubjectsKeyboardMessage} {update.CallbackQuery.Data}",
             cancellationToken: cancellationToken);
-
-        if (update.CallbackQuery.Message.Text != SendSubjectsKeyboardMessage)
-        {
-            user.State = UserState.None;
-            await userRepository.SaveAsync(user, cancellationToken);
-
-            await botClient.SendTextMessageAsync(
-                chatId: user.Id,
-                text: WrongCallbackQueryMessageRequest,
-                cancellationToken: cancellationToken);
-            return;
-        }
-
-        var subjectName = update.CallbackQuery.Data;
-
-        if (subjectName == InlineKeyboardHelper.BackMessage)
-        {
-            user.State = UserState.None;
-            await userRepository.SaveAsync(user, cancellationToken);
-            return;
-        }
-
+        
         user.State = UserState.None;
         await userRepository.SaveAsync(user, cancellationToken);
+        
+        var subjectName = update.CallbackQuery.Data;
+        
+        if (subjectName == InlineKeyboardHelper.BackMessage)
+        {
+            return;
+        }
 
         var subject = await subjectsRepository.GetByGroupAndName(user.CourseNumber, user.GroupNumber, subjectName!, cancellationToken);
         
@@ -119,69 +107,12 @@ public class ShowTimetableCommandExecutor(
             return;
         }
 
-        var subjectTimetable = CreateTimetable(subject);
+        var numWeekTimetable = WeekDaysHelper.ParseWeekDays((WeekDays)subject.NumWeekTimetableMask);
+        var denWeekTimetable = WeekDaysHelper.ParseWeekDays((WeekDays)subject.DenWeekTimetableMask);
 
         await botClient.SendTextMessageAsync(
             chatId: user.Id,
-            text: subjectTimetable,
+            text: string.Format(SubjectTimetableMessage, subjectName, WeekDaysHelper.ToString(numWeekTimetable), WeekDaysHelper.ToString(denWeekTimetable)),
             cancellationToken: cancellationToken);
     }
-
-    private static string CreateTimetable(Subject subject)
-    {
-        var builder = new StringBuilder();
-
-        builder.AppendLine(subject.SubjectName);
-
-        var oddRawTimetable = subject.DenWeekTimetableMask.Split("");
-        if (subject.DenWeekTimetableMask != subject.NumWeekTimetableMask)
-        {
-            builder.AppendLine($"Числитель: {ParseTimetable(oddRawTimetable)}");
-
-            var evenRawTimetable = subject.NumWeekTimetableMask.Split("");
-            builder.AppendLine($"Знаменатель: {ParseTimetable(evenRawTimetable)}");
-        }
-        else
-        {
-            builder.AppendLine(ParseTimetable(oddRawTimetable));
-        }
-
-        return builder.ToString();
-    }
-
-    private static string ParseTimetable(string[] rawDays)
-    {
-        var builder = new StringBuilder();
-
-        foreach (var rawDay in rawDays)
-        {
-            builder.AppendJoin(' ', ParseDayOfWeek(int.Parse(rawDay)));
-        }
-
-        return builder.ToString();
-    }
-
-    private static string ParseDayOfWeek(int day)
-    {
-        return day switch
-        {
-            // 1 => "понедельник",
-            // 2 => "вторник",
-            // 3 => "среда",
-            // 4 => "четверг",
-            // 5 => "пятница",
-            // 6 => "суббота",
-            // 7 => "воскресенье",
-            // _ => "воскресенье"
-            1 => "пн",
-            2 => "вт",
-            3 => "ср",
-            4 => "чт",
-            5 => "пт",
-            6 => "сб",
-            7 => "вс",
-            _ => "вс"
-        };
-    }
-    */
 }
