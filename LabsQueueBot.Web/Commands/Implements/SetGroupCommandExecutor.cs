@@ -19,7 +19,8 @@ public class SetGroupCommandExecutor(
     IUserRepository userRepository,
     ISubjectsManagementService subjectsManagementService,
     IUserManagementService userManagementService,
-    IOptions<CommandsSettings> options, 
+    IOptions<TelegramBotSettings> botOptions,
+    IOptions<CommandsSettings> commandsOptions, 
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string CourseGroupRowPattern = "{0} курс {1} группа";
@@ -29,14 +30,14 @@ public class SetGroupCommandExecutor(
     private const string AlreadyInChosenGroupMessage = "Ты уже находишься в выбранной группе =)";
     private const string SuccessMessage = "Курс и группа успешно обновлены";
     
-    public override string Type => options.Value.SetGroup.Type;
-    public override string Name => options.Value.SetGroup.Name;
+    public override string Type => commandsOptions.Value.SetGroup.Type;
+    public override string Name => commandsOptions.Value.SetGroup.Name;
     public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [
         (UserState.ChooseGroup, UpdateType.CallbackQuery),
         (UserState.AddGroup, UpdateType.Message)
     ];
     public override Role AcceptRole => Role.Nobody;
-    public override string Definition => options.Value.SetGroup.Definition;
+    public override string Definition => commandsOptions.Value.SetGroup.Definition;
     
     protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
@@ -153,9 +154,15 @@ public class SetGroupCommandExecutor(
             return;
         }
         
+        // проверка завершения регистрации
         if (user.Role == Role.Nobody)
         {
-            user.Role = Role.Default;
+            if (botOptions.Value.PrivilegedChatId.Contains(user.Id))
+                user.Role = Role.Privileged;
+            else if (botOptions.Value.AdminChatId.Contains(user.Id)) 
+                user.Role = Role.Admin;
+            else
+                user.Role = Role.Default;
         }
         await subjectsManagementService.DeleteUserFromSubjectsQueues(user.Id, user.CourseNumber, user.GroupNumber, cancellationToken);
         
