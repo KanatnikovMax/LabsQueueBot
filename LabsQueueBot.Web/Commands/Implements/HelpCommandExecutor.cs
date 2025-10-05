@@ -70,7 +70,7 @@ public class HelpCommandExecutor(
             if (descriptions.Count == 0)
                 continue;
             
-            builder.AppendLine(type);
+            builder.AppendLine().AppendLine(type);
             foreach (var description in descriptions)
             {
                 builder.AppendLine(description);

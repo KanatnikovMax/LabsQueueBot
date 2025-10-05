@@ -21,14 +21,14 @@ public class StartCommandExecutor(
     private const string InvalidUserNameMessage = "{0}\nПовторите ввод";
     private const string SuccessMessage = "Регистрация успешно завершена!\nОсталось выбрать курс и группу =)\n{0}";
     
-    public override string Type { get; } = options.Value.Start.Type;
+    public override string? Type { get; } = options.Value.Start.Type;
     public override string Name { get; } = options.Value.Start.Name;
     public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [ 
         (UserState.Unregistered, UpdateType.Message),
         (UserState.Register, UpdateType.Message)
     ];
     public override Role AcceptRole => Role.Nobody;
-    public override string Definition { get; } = options.Value.Start.Definition;
+    public override string? Definition { get; } = options.Value.Start.Definition;
 
     protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user,
         CancellationToken cancellationToken)
