@@ -16,21 +16,27 @@ public class JoinCommandExecutor(
     IUserRepository userRepository,
     ISubjectRepository subjectsRepository,
     IBlackListRepository blackListRepository,
-    IOptions<CommandsSettings> options,
-    ILogger logger) : CommandExecutorBase(logger), ICommandExecutor // TODO проверка на бан
+    IOptions<TelegramBotSettings> botOptions,
+    IOptions<CommandsSettings> commandsOptions,
+    ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";
     private const string AddSubjectMessage = "Введите название дисциплины, которую хотите добавить";
     private const string SubjectNotFoundMessage = "Такой дисциплины не существует";
+    private const string UserBannedMessage =
+        """
+        Вы находитесь в черном списке по дисциплине {0}. Вас разбанит {1} в {2}.
+        Интересно, как же Вы оказались в такой ситуации?..
+        """;
     private const string UserAlreadyInQueueMessage = "Ты уже находишься в этой очереди. Твоё место в очереди: {0}";
     private const string UserAlreadyInWaitingMessage = "Ты уже находишься в списке ожидания";
     private const string JoinCompleteMessage = "Вы добавлены в список ожидания по дисциплине {0}";
     
-    public override string Type => options.Value.Join.Type;
-    public override string Name => options.Value.Join.Name;
+    public override string Type => commandsOptions.Value.Join.Type;
+    public override string Name => commandsOptions.Value.Join.Name;
     public override IReadOnlyCollection<(UserState State, UpdateType Type)> Allows => [ (UserState.Join, UpdateType.CallbackQuery) ];
     public override Role AcceptRole => Role.Default;
-    public override string Definition => options.Value.Join.Definition;
+    public override string Definition => commandsOptions.Value.Join.Definition;
     
     protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
@@ -125,6 +131,17 @@ public class JoinCommandExecutor(
             await botClient.SendTextMessageAsync(
                 chatId: user.Id,
                 text: SubjectNotFoundMessage,
+                cancellationToken: cancellationToken);
+            return;
+        }
+
+        var banned = await blackListRepository.GetBanByUserAndSubject(user.Id, subject.Id, cancellationToken);
+        if (banned != null && banned.UnbanDate > DateTime.UtcNow)
+        {
+            var unbanDate = banned.UnbanDate.AddHours(botOptions.Value.LocalUtcOffset);
+            await botClient.SendTextMessageAsync(
+                chatId: user.Id,
+                text: string.Format(UserBannedMessage, subjectName, unbanDate.Date.ToString("dd/MM/yyyy"), unbanDate.TimeOfDay.ToString("hh\\:mm")),
                 cancellationToken: cancellationToken);
             return;
         }

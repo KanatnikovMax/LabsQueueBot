@@ -18,7 +18,7 @@ public class SkipCommandExecutor(
     ISubjectRepository subjectsRepository,
     IQueueInfoNotificationService queueInfoNotificationService,
     IOptions<CommandsSettings> options,
-    ILogger logger) : CommandExecutorBase(logger), ICommandExecutor // TODO: протестировано, перед деплоем надо раскомментировать рассылку
+    ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
     private const string SendSubjectsKeyboardMessage = "Выберите дисциплину:";
     private const string SubjectNotFoundMessage = "Такой дисциплины не существует";
@@ -152,6 +152,6 @@ public class SkipCommandExecutor(
             text: SkipCompleteMessage,
             cancellationToken: cancellationToken);
 
-        // await queueInfoNotificationService.NotifyUserBySubject(skippedUserId, subject.SubjectName, cancellationToken);
+        await queueInfoNotificationService.NotifyUserBySubject(skippedUserId, subject.SubjectName, cancellationToken);
     }
 }

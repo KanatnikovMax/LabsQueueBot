@@ -11,7 +11,6 @@ public class QueueInfoNotificationService(
 {
     public async Task NotifyAll(CancellationToken cancellationToken)
     {
-        // TODO подумать про закрепление последнего расписания (расписания или очереди? если очереди - нафиг)
         await using var scope = scopeFactory.CreateAsyncScope();
         
         var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
@@ -56,9 +55,8 @@ public class QueueInfoNotificationService(
         var subjectRepository = scope.ServiceProvider.GetRequiredService<ISubjectRepository>();
         
         //// TODO проверить, работает ли без UserState.None
-        // var users = (await userRepository.GetByConditionAsync(
-        //         u => u.CourseNumber == course && u.GroupNumber == group && u.State == UserState.None,
-        //         cancellationToken))
+        // var users = (await userRepository.GetGroup(course, group, cancellationToken))
+        //     .Where(u => u.State == UserState.None)
         //     .ToList();
         var users = (await userRepository.GetGroup(course, group, cancellationToken))
             .ToList();
@@ -89,9 +87,8 @@ public class QueueInfoNotificationService(
         var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
         
         //// TODO проверить, работает ли без UserState.None
-        // var users = (await userRepository.GetByConditionAsync(
-        //         u => u.CourseNumber == course && u.GroupNumber == group && u.State == UserState.None,
-        //         cancellationToken))
+        // var users = (await userRepository.GetGroup(course, group, cancellationToken))
+        //     .Where(u => u.State == UserState.None)
         //     .ToList();
         var users = (await userRepository.GetGroup(course, group, cancellationToken))
             .ToList();
@@ -161,9 +158,8 @@ public class QueueInfoNotificationService(
         var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
         
         //// TODO проверить, работает ли без UserState.None
-        // var users = (await userRepository.GetByConditionAsync(
-        //         u => u.CourseNumber == course && u.GroupNumber == group && u.State == UserState.None,
-        //         cancellationToken))
+        // var users = (await userRepository.GetGroup(course, group, cancellationToken))
+        //     .Where(u => u.State == UserState.None)
         //     .ToList();
         var users = (await userRepository.GetGroup(course, group, cancellationToken))
             .ToList();
