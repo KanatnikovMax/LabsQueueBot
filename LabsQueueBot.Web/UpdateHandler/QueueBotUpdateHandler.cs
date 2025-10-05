@@ -78,8 +78,9 @@ public class QueueBotUpdateHandler(
             // проверка на first message (null если да)
             if (user == null)
             {
-                user = new User(chatId.Value)
+                user = new User
                 {
+                    Id = chatId.Value,
                     Role = Role.Nobody,
                     State = UserState.Unregistered
                 };

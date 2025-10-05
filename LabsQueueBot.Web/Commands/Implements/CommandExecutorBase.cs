@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Text.Json;
 using LabsQueueBot.Core.Enums;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -29,8 +28,7 @@ public abstract class CommandExecutorBase(ILogger logger) : ICommandExecutor
 
     public async Task Execute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
-        // TODO поправить костыльное debug-логгирование
-        logger.Debug(DebugMessage, update.Id, JsonSerializer.Serialize(update.Message?.Text), JsonSerializer.Serialize(update.CallbackQuery?.Data?.Normalize()));
+        logger.Debug(DebugMessage, update.Id, update.Message?.Text, update.CallbackQuery?.Data);
         logger.Information(InfoMessage, update.Id, GetType().Name, user.Id);
 
         var isSuccess = false;

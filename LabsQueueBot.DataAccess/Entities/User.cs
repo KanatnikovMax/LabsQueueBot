@@ -3,68 +3,21 @@ using LabsQueueBot.Core.Validators;
 
 namespace LabsQueueBot.DataAccess.Entities
 {
-    /// <summary>
-    /// Сущность пользователя для хранения в БД; <br/>
-    /// хранит в себе данные о пользователе: Id, имя и фамилию, номер курса и группы, состояние
-    /// </summary>
-    public class User // TODO убрать комментарии
+    public class User
     {
-        /// <summary>
-        /// Id пользователя
-        /// </summary>
-        public long Id { get; init; } = 0;
-
-        /// <summary>
-        /// Имя-фамилия пользователя
-        /// </summary>
-        public string Name { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Номер курса пользователя
-        /// </summary>
+        public required long Id { get; init; } = 0;
+        public string Name { get; set; } = string.Empty; 
         public byte CourseNumber { get; set; } = 0;
-
-        /// <summary>
-        /// Номер группы пользователя
-        /// </summary>
         public byte GroupNumber { get; set; } = 0;
-
-        /// <summary>
-        /// Текущее состояние пользователя
-        /// </summary>
         public UserState State { get; set; } = UserState.None;
-        
-        /// <summary>
-        /// Текущие права пользователя
-        /// </summary>
         public Role Role { get; set; } = Role.Default;
-
-        /// <summary>
-        /// Флаг необходимости в уведомлениях
-        /// </summary>
         public bool IsNotifyNeeded { get; set; } = true;
-        
         public DateTime LastActivityAt { get; set; }
-        
         public int? LastCallbackableMessageId { get; set; }
-        
         public string? Username { get; set; }
+        
+        public User() {}
 
-        /// <summary>
-        /// Конструктор класса User; <br/>
-        /// полностью инициализирует сущность пользователя
-        /// </summary>
-        /// <param name="course"> номер курса пользователя </param>
-        /// <param name="group"> номер группы пользователя </param>
-        /// <param name="name"> имя-фамилия пользователя </param>
-        /// <param name="id"> Id пользователя </param>
-        /// <exception cref="ArgumentException">
-        /// в случае, если: <br/>
-        /// некорректен номер курса; <br/>
-        /// некорректен номер группы; <br/>
-        /// имя или фамилия состоит менее, чем из 2 символов; <br/>
-        /// имя или фамилия содержат цифры или специальные символы
-        /// </exception>
         public User(byte course, byte group, string name, long id) // TODO сделать что-то с конструктором имени пользователя из Ватаги
         {
             // StringBuilder builder = new StringBuilder();
@@ -123,16 +76,6 @@ namespace LabsQueueBot.DataAccess.Entities
             }
 
             Name = name;
-            Id = id;
-        }
-
-        /// <summary>
-        /// Конструктор класса User; <br/>
-        /// State = UserState.None
-        /// </summary>
-        /// <param name="id"> Id пользователя </param>
-        public User(long id)
-        {
             Id = id;
         }
     }

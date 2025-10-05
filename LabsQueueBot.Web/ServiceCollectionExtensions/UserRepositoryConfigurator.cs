@@ -46,8 +46,9 @@ public static class UserRepositoryConfigurator
                 continue;
             }
             
-            user = new User(id)
+            user = new User
             {
+                Id = id,
                 Role = Role.Privileged
             };
             await dbContext.UserRepository.AddAsync(user, cancellationToken);
@@ -70,8 +71,9 @@ public static class UserRepositoryConfigurator
                 continue;
             }
             
-            user = new User(id)
+            user = new User
             {
+                Id = id,
                 Role = Role.Admin
             };
             await dbContext.UserRepository.AddAsync(user, cancellationToken);
