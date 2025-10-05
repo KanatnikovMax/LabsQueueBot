@@ -29,6 +29,6 @@ var app = builder.Build();
 
 await app.Services
     .ConfigureDbContext()
-    .InitializeRepository(builder.Configuration, cancellationToken);
+    .InitializeRepository(cancellationToken);
 
 app.Run();

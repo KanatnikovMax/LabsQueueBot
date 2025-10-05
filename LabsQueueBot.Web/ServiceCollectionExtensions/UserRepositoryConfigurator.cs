@@ -3,21 +3,20 @@ using LabsQueueBot.Core.Settings;
 using LabsQueueBot.DataAccess;
 using LabsQueueBot.DataAccess.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace LabsQueueBot.Web.ServiceCollectionExtensions;
 
 public static class UserRepositoryConfigurator
 {
-    public static async Task<IServiceProvider> InitializeRepository(this IServiceProvider services, IConfiguration configuration, CancellationToken cancellationToken)
+    public static async Task<IServiceProvider> InitializeRepository(this IServiceProvider services, CancellationToken cancellationToken)
     {
-        var settings = configuration.GetRequiredSection(nameof(TelegramBotSettings)).Get<TelegramBotSettings>();
-        ArgumentNullException.ThrowIfNull(settings);
+        var options = services.GetRequiredService<IOptions<TelegramBotSettings>>();
         
         using var scope = services.GetRequiredService<IServiceScopeFactory>().CreateScope();
-        var dbContextFactory = (IDbContextFactory<QueueBotContext>)scope.ServiceProvider.GetRequiredService(
-            typeof(IDbContextFactory<QueueBotContext>));
+        var dbContextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<QueueBotContext>>();
 
-        await InternalInitializeRepository(dbContextFactory, settings, cancellationToken);
+        await InternalInitializeRepository(dbContextFactory, options.Value, cancellationToken);
 
         return services;
     }
