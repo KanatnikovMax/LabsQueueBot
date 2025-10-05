@@ -13,8 +13,8 @@ public abstract class CommandExecutorBase(ILogger logger) : ICommandExecutor
 {
     private const string Success = "success";
     private const string Error = "failure";
-    private const string DebugMessage = "Command {0} execution by Update:\n{1}";
-    private const string InfoMessage = "UpdateId: {0} Command: {1} UserId: {2}";
+    private const string InfoMessage = "UpdateId: {0} CommandExecutor: {1} UserId: {2}";
+    private const string DebugMessage = "UpdateId: {0} Message: {1} CallbackQuery: {2}";
     private const string ProfilingMessage = "UpdateId: {0} CommandExecutor: {1} Ellapsed ms: {2} Result: {3}";
     
     private readonly Stopwatch _stopwatch = new();
@@ -29,9 +29,9 @@ public abstract class CommandExecutorBase(ILogger logger) : ICommandExecutor
 
     public async Task Execute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
-        // TODO почему не пишется дебаг
-        logger.Debug(DebugMessage, Name, JsonSerializer.Serialize(update));
-        logger.Information(InfoMessage, update.Id, Name, user.Id);
+        // TODO поправить костыльное debug-логгирование
+        logger.Debug(DebugMessage, update.Id, JsonSerializer.Serialize(update.Message?.Text), JsonSerializer.Serialize(update.CallbackQuery?.Data?.Normalize()));
+        logger.Information(InfoMessage, update.Id, GetType().Name, user.Id);
 
         var isSuccess = false;
         

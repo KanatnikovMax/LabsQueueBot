@@ -16,7 +16,7 @@ public class GrantCommandExecutor(
     IOptions<CommandsSettings> commandsOptions,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
-    private const string EnterGrantInfoMessage = "Введите имя пользователя, которому хотите повысить роль";
+    private const string EnterUsernameMessage = "Введите имя пользователя, которому хотите повысить роль";
     private const string InvalidUsernameMessage = "Введено некорректное имя пользователя:\n{0}";
     private const string UserToGrantNotFoundMessage = "Пользователя с именем {0} не существует";
     private const string YouAreWhoYouAre = "Повысить роль самому себе нельзя. Хитрюга!";
@@ -38,7 +38,7 @@ public class GrantCommandExecutor(
         {
             case UserState.None:
             {
-                await SendEnterGrantInfo(botClient, user, cancellationToken);
+                await SendEnterUsername(botClient, user, cancellationToken);
                 isSuccess = true;
                 break;
             }
@@ -52,14 +52,14 @@ public class GrantCommandExecutor(
         return isSuccess;
     }
 
-    private async Task SendEnterGrantInfo(ITelegramBotClient botClient, User user, CancellationToken cancellationToken)
+    private async Task SendEnterUsername(ITelegramBotClient botClient, User user, CancellationToken cancellationToken)
     {
         user.State = UserState.Grant;
         await userRepository.SaveAsync(user, cancellationToken);
 
         await botClient.SendTextMessageAsync(
             chatId: user.Id,
-            text: EnterGrantInfoMessage,
+            text: EnterUsernameMessage,
             cancellationToken: cancellationToken);
     }
 

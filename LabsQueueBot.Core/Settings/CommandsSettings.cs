@@ -8,7 +8,6 @@ public class CommandsSettings
     public required CommandSettings ShowTimetable{ get; init; }
     public required CommandSettings ShowSubjects { get; init; }
     public required CommandSettings ShowQueue { get; init; }
-    public required CommandSettings ShowWaiting { get; init; }
     public required CommandSettings AddSubject { get; init; }
     public required CommandSettings Join { get; init; }
     public required CommandSettings Quit { get; init; }

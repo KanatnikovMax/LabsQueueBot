@@ -12,10 +12,11 @@ public static class TelegramBotConfigurator
         
         serviceCollection.AddHostedService<LabsQueueBotService>();
         
+        // TODO включить union-job
         // serviceCollection.AddHostedService<QueueWaitingUnionJob>();
         
         // джоба обновления состояний и чатов пользователей во время бездействия
-        // serviceCollection.AddHostedService<UsersCleanerJob>(); 
+        serviceCollection.AddHostedService<UsersCleanerJob>(); 
         
         return serviceCollection;
     }

@@ -18,5 +18,6 @@ public enum UserState
     ShowTimetable,
     SetTimetable,
     Unban,
-    Grant
+    Grant,
+    Revoke
 }

@@ -10,10 +10,6 @@ public class UserManagementService(IUserRepository userRepository) : IUserManage
     {
         user.CourseNumber = course;
         user.GroupNumber = group;
-        if (user.Role == Role.Nobody)
-        {
-            user.Role = Role.Default;
-        }
         await userRepository.SaveAsync(user, cancellationToken);
     }
 }

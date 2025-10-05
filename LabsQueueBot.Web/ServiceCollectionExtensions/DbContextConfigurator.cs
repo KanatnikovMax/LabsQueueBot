@@ -25,7 +25,6 @@ public static class DbContextConfigurator
         var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<QueueBotContext>>();
         using var context = contextFactory.CreateDbContext();
 
-        context.Database.EnsureCreated();
         context.Database.Migrate();
 
         return services;

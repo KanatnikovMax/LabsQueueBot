@@ -8,6 +8,8 @@ var cancellationToken = cts.Token;
 
 var builder = Host.CreateApplicationBuilder();
 
+Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
+
 builder.Services
     .ConfigureSettings(builder.Configuration)
     .AddSerilog(loggerConfiguration =>

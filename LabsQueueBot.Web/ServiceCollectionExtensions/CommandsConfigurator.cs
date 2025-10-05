@@ -16,6 +16,7 @@ public static class CommandsConfigurator
         serviceCollection.AddScoped<ICommandExecutor, SetTimetableCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, ShowTimetableCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, GrantCommandExecutor>();
+        // TODO включить /revoke
         // serviceCollection.AddScoped<ICommandExecutor, RevokeCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, ShowSubjectsCommandExecutor>();
         serviceCollection.AddScoped<ICommandExecutor, ShowQueueCommandExecutor>();

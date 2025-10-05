@@ -5,20 +5,8 @@ networks:
     driver: bridge
     
 services:
-  queuebot:
-    container_name: queue_bot_app
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "80:8080"
-    networks:
-      - queuebotnetwork
-    depends_on:
-      - queuebotdb
-
   queuebotdb:
-    container_name: queue_bot_db
+    container_name: queuebotdb
     image: postgres:17.0-alpine3.20
     environment:
       POSTGRES_DB: "queuebotdb"
@@ -51,6 +39,16 @@ services:
           memory: 1G
     networks:
       - queuebotnetwork
+        
+  queuebot:
+    container_name: queuebotapp
+    image: chrom1um/labs_queue_bot:1.0.3
+    ports:
+      - "80:8080"
+    networks:
+      - queuebotnetwork
+    depends_on:
+      - queuebotdb
 
 volumes:
   queuebotdb-data:

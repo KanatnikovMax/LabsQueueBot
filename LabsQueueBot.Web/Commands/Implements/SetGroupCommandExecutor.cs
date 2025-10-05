@@ -142,7 +142,7 @@ public class SetGroupCommandExecutor(
         
         var courseGroup = rawCourseGroup!.Split(' ');
         var course = byte.Parse(courseGroup[0]);
-        var group = byte.Parse(courseGroup[1]);
+        var group = byte.Parse(courseGroup[2]);
         
         if (course == user.CourseNumber && group == user.GroupNumber)
         {
@@ -153,8 +153,13 @@ public class SetGroupCommandExecutor(
             return;
         }
         
+        if (user.Role == Role.Nobody)
+        {
+            user.Role = Role.Default;
+        }
         await subjectsManagementService.DeleteUserFromSubjectsQueues(user.Id, user.CourseNumber, user.GroupNumber, cancellationToken);
         
+        user.Role = Role.Default;
         await userManagementService.PutUserIntoGroup(user, course, group, cancellationToken);
         
         await botClient.SendTextMessageAsync(
@@ -186,6 +191,10 @@ public class SetGroupCommandExecutor(
         
         await subjectsManagementService.DeleteUserFromSubjectsQueues(user.Id, user.CourseNumber, user.GroupNumber, cancellationToken);
 
+        if (user.Role == Role.Nobody)
+        {
+            user.Role = Role.Default;
+        }
         await userManagementService.PutUserIntoGroup(user, course, group, cancellationToken);
         
         await botClient.SendTextMessageAsync(

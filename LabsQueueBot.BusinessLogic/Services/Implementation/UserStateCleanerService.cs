@@ -15,10 +15,12 @@ public class UserStateCleanerService(
 {
     public async Task ClearAll(CancellationToken cancellationToken)
     {
+        var now = DateTime.UtcNow;
+        
         await using var scope = scopeFactory.CreateAsyncScope();
         var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
 
-        var users = (await GetUsersToClear(userRepository, cancellationToken))
+        var users = (await GetUsersToClear(userRepository, now, cancellationToken))
             .ToList();
 
         if (users.Count != 0)
@@ -48,15 +50,17 @@ public class UserStateCleanerService(
 
     public async Task ClearOrDeleteAll(CancellationToken cancellationToken)
     {
+        var now = DateTime.UtcNow;
+        
         await using var scope = scopeFactory.CreateAsyncScope();
         var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
 
         var deleteUnregisteredUsersTask = userRepository.DeleteByConditionAsync(x => 
                 x.State == UserState.Unregistered 
-                && x.LastActivityAt.AddMinutes(options.Value.StateAllowedIntervalInMinutes) < DateTime.UtcNow, 
+                && x.LastActivityAt.AddMinutes(options.Value.ClearStateTimeoutInMinutes) < now, 
             cancellationToken);
 
-        var users = (await GetUsersToClear(userRepository, cancellationToken))
+        var users = (await GetUsersToClear(userRepository, now, cancellationToken))
             .ToList();
 
         if (users.Count != 0)
@@ -86,13 +90,13 @@ public class UserStateCleanerService(
         await deleteUnregisteredUsersTask;
     }
 
-    private async Task<IEnumerable<User>> GetUsersToClear(IUserRepository userRepository, CancellationToken cancellationToken)
+    private async Task<IEnumerable<User>> GetUsersToClear(IUserRepository userRepository, DateTime now, CancellationToken cancellationToken)
     {
         return await userRepository.GetByConditionAsync(u =>
                 u.State != UserState.None
                 && u.State != UserState.Register        // ответ на текстовое сообщение регистрации
                 && u.State != UserState.Unregistered    // удаляются, а не очищаются
-                && u.LastActivityAt.AddMinutes(options.Value.StateUpdateTimeoutInMinutes) < DateTime.UtcNow,
+                && u.LastActivityAt.AddMinutes(options.Value.ClearStateTimeoutInMinutes) < now,
             cancellationToken);
     }
 
