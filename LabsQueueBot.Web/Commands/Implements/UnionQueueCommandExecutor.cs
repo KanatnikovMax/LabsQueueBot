@@ -93,18 +93,6 @@ public class UnionQueueCommandExecutor(
             message: $"{SendSubjectsKeyboardMessage} {update.CallbackQuery.Data}",
             cancellationToken: cancellationToken);
 
-        // по идее никогда не выполняется
-        if (user.Role < AcceptRole)
-        {
-            user.State = UserState.None;
-            await userRepository.SaveAsync(user, cancellationToken);
-
-            await botClient.SendTextMessageAsync(
-                chatId: user.Id,
-                text: WrongUserAcceptRole,
-                cancellationToken: cancellationToken);
-        }
-
         var subjectName = update.CallbackQuery.Data;
 
         if (subjectName == InlineKeyboardHelper.BackMessage)
@@ -152,6 +140,7 @@ public class UnionQueueCommandExecutor(
             text: $"{UnionCompleteMessage} {subject.SubjectName}",
             cancellationToken: cancellationToken);
 
-        await queueInfoNotificationService.NotifyGroup(user.CourseNumber, user.GroupNumber, cancellationToken);
+        await queueInfoNotificationService.NotifyGroupBySubject(user.CourseNumber, user.GroupNumber,
+            subject.SubjectName, subject.Queue.ToList(), subject.Waiting.ToList(), cancellationToken);
     }
 }

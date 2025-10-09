@@ -9,7 +9,8 @@ public static class QueueInfoBuildHelper
     private const string SingleQueueHeader = "Твое место в очереди по дисциплине:\n{0} \u2192 {1}";
     private const string OutOfSubject = "отсутствует";
     private const string Waiting = "в ожидании";
-    private const string PositionPattern = "{0} \u2192 {1}";
+    private const string PositionPattern = "{0}. {1}";
+    private const string QueuePositionPattern = "{0}. {1}";
     private const string QueueHeader = "Текущая очередь по дисциплине {0}:";
     private const string WaitingHeader = "Текущая очередь ожидания по дисциплине {0}:";
     private const string QueueWaitingEmpty = " пуста";
@@ -32,7 +33,7 @@ public static class QueueInfoBuildHelper
         return builder.ToString();
     }
 
-    public static string GetAllBySubject(string subjectName, List<(string Name, int Num)> queue, List<string> waiting)
+    public static string GetAllBySubject(string subjectName, List<(string Name, int Idx)> queue, List<string> waiting)
     {
         var builder = new StringBuilder();
 
@@ -43,8 +44,9 @@ public static class QueueInfoBuildHelper
         }
         else
         {
+            builder.AppendLine();
             foreach (var userInfo in queue)
-                builder.AppendLine(string.Format(PositionPattern, userInfo.Name, userInfo.Num));
+                builder.AppendLine(string.Format(PositionPattern, userInfo.Idx + 1, userInfo.Name));
         }
 
         builder.AppendLine();

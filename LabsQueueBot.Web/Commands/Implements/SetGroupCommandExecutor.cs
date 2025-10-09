@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using LabsQueueBot.BusinessLogic.Services;
+﻿using LabsQueueBot.BusinessLogic.Services;
 using LabsQueueBot.Core.Enums;
 using LabsQueueBot.Core.Settings;
 using LabsQueueBot.Core.Utils;
@@ -198,9 +197,15 @@ public class SetGroupCommandExecutor(
         
         await subjectsManagementService.DeleteUserFromSubjectsQueues(user.Id, user.CourseNumber, user.GroupNumber, cancellationToken);
 
+        // проверка завершения регистрации
         if (user.Role == Role.Nobody)
         {
-            user.Role = Role.Default;
+            if (botOptions.Value.PrivilegedChatId.Contains(user.Id))
+                user.Role = Role.Privileged;
+            else if (botOptions.Value.AdminChatId.Contains(user.Id)) 
+                user.Role = Role.Admin;
+            else
+                user.Role = Role.Default;
         }
         await userManagementService.PutUserIntoGroup(user, course, group, cancellationToken);
         
