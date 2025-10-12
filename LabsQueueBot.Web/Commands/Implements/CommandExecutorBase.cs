@@ -28,7 +28,7 @@ public abstract class CommandExecutorBase(ILogger logger) : ICommandExecutor
 
     public async Task Execute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
-        logger.Debug(DebugMessage, update.Id, update.Message?.Text, update.CallbackQuery?.Data);
+        logger.Information(DebugMessage, update.Id, update.Message?.Text, update.CallbackQuery?.Data);
         logger.Information(InfoMessage, update.Id, GetType().Name, user.Id);
 
         var isSuccess = false;

@@ -147,11 +147,18 @@ public class SkipCommandExecutor(
         (subject.Queue[queueIndex], subject.Queue[queueIndex + 1]) = (subject.Queue[queueIndex + 1], subject.Queue[queueIndex]);
         await subjectsRepository.SaveAsync(subject, cancellationToken);
 
-        await botClient.SendTextMessageAsync(
+        var sendSuccess = botClient.SendTextMessageAsync(
             chatId: user.Id,
             text: SkipCompleteMessage,
             cancellationToken: cancellationToken);
-
-        await queueInfoNotificationService.NotifyUserBySubject(skippedUserId, subject.SubjectName, cancellationToken);
+        var notifySkipped = Task.Run(
+            async () => 
+            {
+                var skippedUser = await userRepository.GetByIdAsync(skippedUserId, cancellationToken);
+                if (skippedUser is { IsNotifyNeeded: true })
+                    await queueInfoNotificationService.NotifyUserBySubject(skippedUserId, subject.SubjectName,
+                        cancellationToken);
+            }, cancellationToken);
+        Task.WaitAll([sendSuccess, notifySkipped], cancellationToken);
     }
 }

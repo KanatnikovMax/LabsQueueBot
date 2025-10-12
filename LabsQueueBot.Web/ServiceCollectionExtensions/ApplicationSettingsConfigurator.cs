@@ -15,7 +15,11 @@ public static class ApplicationSettingsConfigurator
                 var section = configuration.GetRequiredSection(nameof(TelegramBotSettings));
                 settings.AdminChatId = section.GetLongArray(nameof(TelegramBotSettings.AdminChatId));
                 settings.PrivilegedChatId = section.GetLongArray(nameof(TelegramBotSettings.PrivilegedChatId));
-            });
+            })
+            .Configure<JobsSettings>(configuration.GetRequiredSection(nameof(JobsSettings)))
+            .Configure<CleanerJobSettings>(configuration.GetSection(nameof(JobsSettings)).GetRequiredSection(nameof(CleanerJobSettings)))
+            .Configure<UnionJobSettings>(configuration.GetSection(nameof(JobsSettings)).GetRequiredSection(nameof(UnionJobSettings)))
+            .Configure<NotifyQueuesJobSettings>(configuration.GetSection(nameof(JobsSettings)).GetRequiredSection(nameof(NotifyQueuesJobSettings)));
         
         return serviceCollection;
     }

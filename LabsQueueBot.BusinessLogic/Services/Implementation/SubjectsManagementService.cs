@@ -9,11 +9,11 @@ public class SubjectsManagementService(ISubjectRepository subjectRepository) : I
 {
     public async Task<IReadOnlyCollection<Subject>> GetByDayOfWeekInTimetable(WeekDays dayOfWeek, bool isNumWeek, CancellationToken cancellationToken)
     {
-        var subjects = (await subjectRepository.GetByConditionAsync(
-                x => isNumWeek
-                    ? WeekDaysHelper.ParseWeekDays((WeekDays)x.NumWeekTimetableMask).Contains(dayOfWeek)
-                    : WeekDaysHelper.ParseWeekDays((WeekDays)x.DenWeekTimetableMask).Contains(dayOfWeek), 
-                cancellationToken))
+        var subjects = (await subjectRepository.GetAllAsync(cancellationToken))
+            .Where(x =>
+                isNumWeek
+                ? WeekDaysHelper.ParseWeekDays((WeekDays)x.NumWeekTimetableMask).Contains(dayOfWeek)
+                : WeekDaysHelper.ParseWeekDays((WeekDays)x.DenWeekTimetableMask).Contains(dayOfWeek))
             .ToList();
 
         return subjects;

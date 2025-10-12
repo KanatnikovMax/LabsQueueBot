@@ -23,7 +23,7 @@ builder.Services
     .AddManagementServices()
     .AddCommonServices(builder.Configuration)
     .AddCommandExecutors()
-    .AddTelegramBotServices();
+    .AddTelegramBotServices(builder.Configuration);
 
 var app = builder.Build();
 

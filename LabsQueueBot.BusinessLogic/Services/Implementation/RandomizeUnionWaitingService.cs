@@ -39,6 +39,27 @@ public class RandomizeUnionWaitingService(
         subject = await subjectRepository.SaveAsync(subject, cancellationToken);
         return subject;
     }
+
+    public async Task<IEnumerable<Subject>> RandomizeAndUnionWaitingByBatch(IReadOnlyCollection<int> subjectsIds, CancellationToken cancellationToken)
+    {
+        var subjects = (await subjectRepository.GetByConditionAsync(
+                s => subjectsIds.Contains(s.Id), 
+                cancellationToken))
+            .ToList();
+        if (subjects.Count == 0)
+            return [];
+
+        foreach (var subject in subjects)
+        {
+            var randomizedWaiting = RandomizeWaiting(subject.Waiting.ToList());
+        
+            subject.Queue = subject.Queue.Concat(randomizedWaiting).ToArray();
+            subject.Waiting = [];
+        }
+
+        await subjectRepository.UpdateBatchAsync(subjects, cancellationToken);
+        return subjects;
+    }
     
     private static List<long> RandomizeWaiting(List<long> waiting)
     {

@@ -5,9 +5,9 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types.Enums;
 using ILogger = Serilog.ILogger;
 
-namespace LabsQueueBot.Web.BackgroundServices;
+namespace LabsQueueBot.Web.Jobs;
 
-public class LabsQueueBotService(
+public class LabsQueueBotStartingJob(
     ILogger logger,
     ITelegramBotClient tgBotClient,
     IUpdateHandler updateHandler,

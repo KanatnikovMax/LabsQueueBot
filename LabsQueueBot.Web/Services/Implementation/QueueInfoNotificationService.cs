@@ -59,6 +59,7 @@ public class QueueInfoNotificationService(
         //     .Where(u => u.State == UserState.None)
         //     .ToList();
         var users = (await userRepository.GetGroup(course, group, cancellationToken))
+            .Where(u => u.IsNotifyNeeded)
             .ToList();
         var subjects = (await subjectRepository.GetByConditionAsync(
                 s => s.CourseNumber == course && s.GroupNumber == group,
@@ -91,6 +92,7 @@ public class QueueInfoNotificationService(
         //     .Where(u => u.State == UserState.None)
         //     .ToList();
         var users = (await userRepository.GetGroup(course, group, cancellationToken))
+            .Where(u => u.IsNotifyNeeded)
             .ToList();
 
         var tasks = users
@@ -162,17 +164,42 @@ public class QueueInfoNotificationService(
         //     .Where(u => u.State == UserState.None)
         //     .ToList();
         var users = (await userRepository.GetGroup(course, group, cancellationToken))
+            .Where(u => u.IsNotifyNeeded)
             .ToList();
 
         var tasks = users
             .Select(Task (user) =>
                 Task.Run(() => 
-                    {
                         botClient.SendTextMessageAsync(
                             chatId: user.Id,
                             text: timetableMessage,
-                            cancellationToken: cancellationToken);
-                    },
+                            cancellationToken: cancellationToken),
+                    cancellationToken))
+            .ToArray();
+        Task.WaitAll(tasks, cancellationToken);
+    }
+
+    public async Task NotifyUsersWithMessages(Dictionary<long, string> usersWithMessages, CancellationToken cancellationToken)
+    {
+        await using var scope = scopeFactory.CreateAsyncScope();
+
+        var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
+
+        var users = (await userRepository.GetByConditionAsync(
+                u => usersWithMessages.Keys.Contains(u.Id) && u.IsNotifyNeeded,
+                cancellationToken))
+            .ToList();
+        
+        if (users.Count == 0)
+            return;
+        
+        var tasks = users
+            .Select(Task (user) =>
+                Task.Run(() => 
+                        botClient.SendTextMessageAsync(
+                            chatId: user.Id,
+                            text: usersWithMessages[user.Id],
+                            cancellationToken: cancellationToken),
                     cancellationToken))
             .ToArray();
         Task.WaitAll(tasks, cancellationToken);

@@ -13,17 +13,25 @@ namespace LabsQueueBot.Web.Commands.Implements;
 public class HelpCommandExecutor(
     Func<IEnumerable<ICommandExecutor>> commands,
     IOptions<TelegramBotSettings> botOptions,
+    IOptions<UnionJobSettings> jobOptions,
     IOptions<CommandsSettings> commandsOptions,
     ILogger logger) : CommandExecutorBase(logger), ICommandExecutor
 {
-    private const string InformationMessage = """
-                                              При добавлении в очередь пользователь записывается в список ожидающих.
-                                              В установленный день в {0} список ожидающих случайным образом перемешивается и добавляется в конец соответствующей очереди.
-                                              Тем, кто подписан на рассылку, приходит уведомление с его местами в очередях, в которые он записан.
-                                              Пользователи с правами администратора соответствующей командой могут вызвать генерацию очередей для своей группы в любой момент времени и изменять расписание генерации.
-                                              Для получения прав администратора староста группы (или другое ответственный гражданин) должен написать админу бота в лс (ссылка на профиль админа в описании).
-                                              
-                                              """;
+    private const string InformationMessage =
+        """
+        При добавлении в очередь пользователь записывается в список ожидающих.{0}
+        Пользователи с правами администратора соответствующей командой могут вызвать формирование очередей для своей группы в любой момент времени.
+        Администратор может изменять расписание автоматического формирования очередей для отдельных дисциплин, если оно включено.
+        Для получения прав администратора староста группы (или другой ответственный гражданин) должен написать админу бота в лс (ссылка на профиль админа в описании).
+        Пользователи, которые подписаны на рассылку, получают уведомления о своих местах в очередях после их формирования.
+        
+        """;
+
+    private const string NotificationMessagePart =
+        """
+        
+        Для каждой дисциплины в установленный день в {0} список ожидающих случайным образом перемешивается и добавляется в конец соответствующей очереди.
+        """;
     
     public override string Type => commandsOptions.Value.Help.Type;
     public override string Name => commandsOptions.Value.Help.Name;
@@ -33,13 +41,18 @@ public class HelpCommandExecutor(
     
     protected override async Task<bool> InternalExecute(ITelegramBotClient botClient, Update update, User user, CancellationToken cancellationToken)
     {
-        var notificationTime = botOptions.Value.UnionTimeUtc + TimeSpan.FromHours(botOptions.Value.LocalUtcOffset);
+        var notificationInfo = string.Empty;
+        if (jobOptions.Value.IsEnabled)
+        {
+            var notificationTime = jobOptions.Value.UnionTimeUtc + TimeSpan.FromHours(botOptions.Value.LocalUtcOffset);
+            notificationInfo = string.Format(NotificationMessagePart, notificationTime.ToString("hh\\:mm"));
+        }
         
         var commandsDescription = GetDescription(user.Role);
         
         var builder = new StringBuilder();
         
-        builder.AppendLine(string.Format(InformationMessage, notificationTime.ToString("hh\\:mm")));
+        builder.AppendLine(string.Format(InformationMessage, notificationInfo));
         builder.AppendLine(commandsDescription);
 
         await botClient.SendTextMessageAsync(
