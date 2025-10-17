@@ -1,6 +1,8 @@
 ﻿using LabsQueueBot.BusinessLogic.Services;
+using LabsQueueBot.Core.Enums;
 using LabsQueueBot.Core.Helpers;
 using LabsQueueBot.Core.Settings;
+using LabsQueueBot.Web.Providers;
 using LabsQueueBot.Web.Services;
 using Microsoft.Extensions.Options;
 using ILogger = Serilog.ILogger;
@@ -9,8 +11,10 @@ namespace LabsQueueBot.Web.Jobs;
 
 public class NotifyQueuesJob(
     IServiceScopeFactory scopeFactory,
+    IWeekProvider weekProvider,
     IQueueInfoNotificationService notificationService,
-    IOptions<NotifyQueuesJobSettings> options,
+    IOptions<TelegramBotSettings> botOptions,
+    IOptions<NotifyQueuesJobSettings> jobOptions,
     ILogger logger) : JobBase(logger)
 {
     private const string NotificationMessage =
@@ -20,21 +24,24 @@ public class NotifyQueuesJob(
         """;
     
     protected override TimeSpan JobDelayBeforeStart => 
-        DateTime.UtcNow.TimeOfDay > options.Value.NotificationTimeUtc
-            ? DateTime.UtcNow.TimeOfDay - options.Value.NotificationTimeUtc
-            : options.Value.NotificationTimeUtc - DateTime.UtcNow.TimeOfDay;
+        DateTime.UtcNow.TimeOfDay > jobOptions.Value.NotificationTimeUtc
+            ? DateTime.UtcNow.TimeOfDay - jobOptions.Value.NotificationTimeUtc
+            : jobOptions.Value.NotificationTimeUtc - DateTime.UtcNow.TimeOfDay;
     protected override TimeSpan JobTimeout => TimeSpan.FromDays(1);
     
     protected override async Task JobBody(CancellationToken cancellationToken)
     {
-        var currentDayOfWeek = WeekDaysHelper.ToWeekDay(DateTime.UtcNow.DayOfWeek);
+        var dayOfWeek = WeekDaysHelper.ToWeekDay(DateTime.UtcNow.AddHours(botOptions.Value.LocalUtcOffset).AddDays(1).DayOfWeek);
+        
+        if (dayOfWeek == WeekDays.Monday) // обновляем флаг, если будем упоминать о следующей неделе (числитель <==> знаменатель)
+            weekProvider.SwitchWeekNumerate();
 
         await using var scope = scopeFactory.CreateAsyncScope();
         var subjectsManagementService = scope.ServiceProvider.GetRequiredService<ISubjectsManagementService>();
 
         var subjects = (await subjectsManagementService.GetByDayOfWeekInTimetable(
-                dayOfWeek: currentDayOfWeek, 
-                isNumWeek: true, 
+                dayOfWeek: dayOfWeek,
+                isNumWeek: weekProvider.IsNumWeek,
                 cancellationToken: cancellationToken))
             .Where(x => x.Queue.Length > 0)
             .ToList();

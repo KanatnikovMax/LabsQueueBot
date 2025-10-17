@@ -16,6 +16,7 @@ public static class ApplicationSettingsConfigurator
                 settings.AdminChatId = section.GetLongArray(nameof(TelegramBotSettings.AdminChatId));
                 settings.PrivilegedChatId = section.GetLongArray(nameof(TelegramBotSettings.PrivilegedChatId));
             })
+            .Configure<WeekSettings>(configuration.GetRequiredSection(nameof(WeekSettings)))
             .Configure<JobsSettings>(configuration.GetRequiredSection(nameof(JobsSettings)))
             .Configure<CleanerJobSettings>(configuration.GetSection(nameof(JobsSettings)).GetRequiredSection(nameof(CleanerJobSettings)))
             .Configure<UnionJobSettings>(configuration.GetSection(nameof(JobsSettings)).GetRequiredSection(nameof(UnionJobSettings)))

@@ -1,4 +1,6 @@
 ﻿using LabsQueueBot.Core.Settings;
+using LabsQueueBot.Web.Providers;
+using LabsQueueBot.Web.Providers.Services;
 using LabsQueueBot.Web.Services;
 using LabsQueueBot.Web.Services.Implementation;
 using Telegram.Bot;
@@ -16,6 +18,8 @@ public static class ServicesConfigurator
         
         serviceCollection.AddSingleton<IQueueInfoNotificationService, QueueInfoNotificationService>();
         serviceCollection.AddSingleton<IAdminNotificationService, AdminNotificationService>();
+
+        serviceCollection.AddSingleton<IWeekProvider, WeekProvider>();
 
         return serviceCollection;
     }

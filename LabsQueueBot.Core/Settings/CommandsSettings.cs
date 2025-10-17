@@ -21,4 +21,5 @@ public class CommandsSettings
     public required CommandSettings Unban { get; init; }
     public required CommandSettings Grant { get; init; }
     public required CommandSettings Revoke { get; init; }
+    public required CommandSettings SwitchWeekNumeration { get; init; }
 }
