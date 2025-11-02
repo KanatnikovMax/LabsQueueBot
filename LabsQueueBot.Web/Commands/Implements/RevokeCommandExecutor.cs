@@ -151,6 +151,6 @@ public class RevokeCommandExecutor(
             text: string.Format(RevokedMessage, userToRevoke.Role.ToString()),
             cancellationToken: cancellationToken);
 
-        Task.WaitAll([sendToExecutor, sendToGranted], cancellationToken);
+        await Task.WhenAll(sendToExecutor, sendToGranted);
     }
 }

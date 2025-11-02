@@ -159,6 +159,6 @@ public class SkipCommandExecutor(
                     await queueInfoNotificationService.NotifyUserBySubject(skippedUserId, subject.SubjectName,
                         cancellationToken);
             }, cancellationToken);
-        Task.WaitAll([sendSuccess, notifySkipped], cancellationToken);
+        await Task.WhenAll(sendSuccess, notifySkipped);
     }
 }

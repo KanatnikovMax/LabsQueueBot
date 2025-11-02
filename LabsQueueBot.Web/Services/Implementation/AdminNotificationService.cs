@@ -3,6 +3,7 @@ using LabsQueueBot.Core.Enums;
 using LabsQueueBot.Repository.Repository;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using File = System.IO.File;
 
 namespace LabsQueueBot.Web.Services.Implementation;
 
@@ -22,21 +23,20 @@ public class AdminNotificationService(
             .ToList();
 
         var path = string.Format(GlobalConstants.ErrorDocumentPath, documentId);
-        
-        await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read);
-        var document = new InputFileStream(stream, path);
+        var fileBytes = await File.ReadAllBytesAsync(path, cancellationToken);
+        var fileName = Path.GetFileName(path);
         
         var tasks = users
-            .Select(Task (user) =>
-                Task.Run(() => 
-                        botClient.SendDocumentAsync(
-                            chatId: user.Id,
-                            document: document,
-                            caption: message,
-                            cancellationToken: cancellationToken),
-                    cancellationToken))
-            .ToArray();
-        Task.WaitAll(tasks, cancellationToken);
+            .Select(user =>
+            {
+                var fileStream = new MemoryStream(fileBytes, writable: false);
+                return botClient.SendDocumentAsync(
+                    chatId: user.Id,
+                    document: InputFile.FromStream(fileStream, fileName),
+                    caption: message,
+                    cancellationToken: cancellationToken);
+            });
+        await Task.WhenAll(tasks);
     }
 
     public async Task NotifyWithMessage(string message, CancellationToken cancellationToken)
@@ -51,14 +51,13 @@ public class AdminNotificationService(
             .ToList();
         
         var tasks = users
-            .Select(Task (user) =>
+            .Select(user =>
                 Task.Run(() => 
                     botClient.SendTextMessageAsync(
                         chatId: user.Id,
                         text: message,
                         cancellationToken: cancellationToken),
-                    cancellationToken))
-            .ToArray();
-        Task.WaitAll(tasks, cancellationToken);
+                    cancellationToken));
+        await Task.WhenAll(tasks);
     }
 }

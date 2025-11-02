@@ -68,7 +68,7 @@ public class QueueBotUpdateHandler(
         try
         {
             await using var scope = scopeFactory.CreateAsyncScope();
-        
+            
             var usersRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
             
             var chatId = update.GetChatId()!;
@@ -130,7 +130,7 @@ public class QueueBotUpdateHandler(
                 lastUpdate: update,
                 cancellationToken: cancellationToken);
 
-            Task.WaitAll([notifyAdmins, sendFailedUpdateResponse], cancellationToken);
+            await Task.WhenAll(notifyAdmins, sendFailedUpdateResponse);
         }
     }
 

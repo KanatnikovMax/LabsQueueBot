@@ -33,11 +33,10 @@ public class BlackListManagementService(
         banned.ExecutorId = executorId;
         banned.UnbanDate = DateTime.UtcNow + TimeSpan.FromDays(timeoutInDays);
 
-        Task.WaitAll([
+        await Task.WhenAll(
             subjectRepository.SaveAsync(subject, cancellationToken),
-            blackListRepository.SaveAsync(banned, cancellationToken)
-        ], cancellationToken);
-
+            blackListRepository.SaveAsync(banned, cancellationToken));
+        
         return banned.UnbanDate;
     }
 

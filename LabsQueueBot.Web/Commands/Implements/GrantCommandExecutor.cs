@@ -131,6 +131,6 @@ public class GrantCommandExecutor(
             text: string.Format(GrantedMessage, userToGrant.Role.ToString()),
             cancellationToken: cancellationToken);
 
-        Task.WaitAll([sendToExecutor, sendToGranted], cancellationToken);
+        await Task.WhenAll(sendToExecutor, sendToGranted);
     }
 }

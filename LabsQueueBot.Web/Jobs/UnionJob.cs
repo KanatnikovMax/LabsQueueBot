@@ -52,7 +52,7 @@ public class UnionJob(
         }
     }
 
-    private Task NotifyGroups(IReadOnlyCollection<(byte Course, byte Group)> groups, CancellationToken cancellationToken)
+    private async Task NotifyGroups(IReadOnlyCollection<(byte Course, byte Group)> groups, CancellationToken cancellationToken)
     {
         var tasks = groups
             .Select(g => 
@@ -61,7 +61,6 @@ public class UnionJob(
                     cancellationToken))
             .ToArray();
 
-        Task.WaitAll(tasks, cancellationToken);
-        return Task.CompletedTask;
+        await Task.WhenAll(tasks);
     }
 }

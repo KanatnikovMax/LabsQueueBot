@@ -21,6 +21,6 @@ public class UsersCleanerJob(
                 
         var clearUsers = userStateCleanerService.ClearOrDeleteAll(cancellationToken);
         var unbanUsers = blackListService.UnbanAllByTimeout(cancellationToken);
-        Task.WaitAll([clearUsers, unbanUsers], cancellationToken);
+        await Task.WhenAll(clearUsers, unbanUsers);
     }
 }

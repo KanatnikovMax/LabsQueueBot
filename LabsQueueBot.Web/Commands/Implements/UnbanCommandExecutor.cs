@@ -81,7 +81,7 @@ public class UnbanCommandExecutor(
         return isSuccess;
     }
     
-    private Task SendCallAdmin(ITelegramBotClient botClient, User user, CancellationToken cancellationToken)
+    private async Task SendCallAdmin(ITelegramBotClient botClient, User user, CancellationToken cancellationToken)
     {
         var sendMessages = new List<Task>
         {
@@ -103,8 +103,7 @@ public class UnbanCommandExecutor(
                             cancellationToken: cancellationToken), 
                     cancellationToken)));
 
-        Task.WaitAll(sendMessages.ToArray(), cancellationToken);
-        return Task.CompletedTask;
+        await Task.WhenAll(sendMessages);
     }
     
     private async Task SendEnterUnbanInfo(ITelegramBotClient botClient, User user, CancellationToken cancellationToken)
